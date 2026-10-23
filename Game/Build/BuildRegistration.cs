@@ -47,16 +47,6 @@ namespace FlowerPainter.Game.Build
             // carrier SubNet links are dropped before anything reads them next frame; runs while paused.
             updateSystem.UpdateAt<GroupRegistrySystem>(SystemUpdatePhase.ModificationEnd);
 
-            // ── Economy (isolated; failures disable it, never the build) ───────────────
-            // Fee/comfort must be written AFTER ParkingLaneDataSystem, which zeroes them for lanes whose
-            // root owner is not a parking building (RESEARCH-NOTES 17).
-            updateSystem.UpdateAfter<ParkingEconomySystem, global::Game.Pathfind.ParkingLaneDataSystem>(SystemUpdatePhase.ModificationEnd);
-            // Companion components must exist before Game.Buildings.InitializeSystem sees the Building.
-            updateSystem.UpdateBefore<ParkingCompanionSystem, global::Game.Buildings.InitializeSystem>(SystemUpdatePhase.Modification2);
-            updateSystem.UpdateBefore<ParkCompanionSystem, global::Game.Buildings.InitializeSystem>(SystemUpdatePhase.Modification2);
-            updateSystem.UpdateAt<ParkCompanionCleanupSystem>(SystemUpdatePhase.PreTool);
-            // Upkeep usage / workers are set before vanilla charges upkeep and hires.
-            updateSystem.UpdateBefore<ParkingCompanionUpkeepSystem, global::Game.Simulation.CityServiceUpkeepSystem>(SystemUpdatePhase.GameSimulation);
         }
     }
 }

@@ -769,7 +769,7 @@ export const FlowerPainterPanel = () => {
     }
 
     const collapsed = state.panelCollapsed;
-    const showPreviewToggle = state.stage === "design" || state.stage === "review";
+    const showPreviewToggle = false;
     // Header tips open UPWARDS (over the game's top bar), so they never sit on the stage bar below.
     const header = (
         <TipDirectionContext.Provider value="up">

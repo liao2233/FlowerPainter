@@ -212,7 +212,7 @@ export class MockBackend {
                 this.hostLayers.add(l.id);
                 this.layers = this.layers.filter((x) => x.id.toLowerCase() !== l.id.toLowerCase());
             }
-            this.layers = [...real, ...this.layers];
+            this.layers = real;
             if (Array.isArray(cat?.categories)) this.categories = cat.categories;
             // Shipped recipes first; keep fake recipes only where no real layer covers their root.
             const shipped: MockRecipe[] = (cat?.recipes ?? []).map((r: any) => ({
@@ -221,9 +221,9 @@ export class MockBackend {
             }));
             if (shipped.length) {
                 const ids = new Set(shipped.map((r) => r.info.id));
-                const fake = this.recipes.filter((r) => !ids.has(r.info.id) && !this.hostLayers.has(r.root.layer) && !r.info.custom);
+                const fake: MockRecipe[] = [];
                 this.recipes = [...shipped, ...fake, ...this.recipes.filter((r) => r.info.custom)];
-                const cur = this.recipes.find((r) => r.info.id === this.recipeId) ?? this.recipes[0];
+                const cur = this.recipes.find((r) => r.info.id === "floral") ?? this.recipes[0];
                 this.recipeId = cur.info.id;
                 this.root = this.instantiate(cur.root);
                 this.focus = "0";
@@ -1380,7 +1380,7 @@ export class MockBackend {
         if (this.planTimer) window.clearTimeout(this.planTimer);
         this.planTimer = 0;
         const root = this.effectiveRoot();
-        if (root) void this.refreshReadiness(root).then(() => this.publishAll());
+        if (root) void this.refreshReadiness(root).then(() => { if (root.layer === "floral" && this.areaValid()) this.schedulePlan(200); this.publishAll(); });
         this.publishAll();
     }
 

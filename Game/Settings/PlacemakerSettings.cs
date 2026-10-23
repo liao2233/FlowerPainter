@@ -16,7 +16,7 @@ namespace FlowerPainter.Game.Settings
 {
     public enum PreviewDetail { Simple = 0, Normal = 1, Detailed = 2 }
 
-    [FileLocation("ModsSettings/FlowerPainter/FlowerPainter")]
+    [FileLocation("ModsSettings/FlowerPainter")]
     [SettingsUIGroupOrder(GroupGeneral, GroupBrush, GroupBuild, GroupKeys, GroupMaintenance)]
     [SettingsUIShowGroupName(GroupGeneral, GroupBrush, GroupBuild, GroupKeys, GroupMaintenance)]
     [SettingsUIKeyboardAction(ActionToggleTool, ActionType.Button)]
@@ -228,7 +228,7 @@ namespace FlowerPainter.Game.Settings
 
         // ───────────── Keys ─────────────
 
-        [SettingsUIKeyboardBinding(BindingKeyboard.A, ActionToggleTool, ctrl: true, shift: true)]
+        [SettingsUIKeyboardBinding(BindingKeyboard.F, ActionToggleTool, ctrl: true, shift: true)]
         [SettingsUISection(SectionMain, GroupKeys)]
         public ProxyBinding ToggleToolBinding { get; set; }
 
