@@ -569,6 +569,8 @@ export class MockBackend {
 
     // ───────────── triggers (contract.ts Triggers) ─────────────
 
+    floralEdit: {path:string;index:number} | undefined;
+    floralDrawing = false;
     onTrigger(name: string, args: unknown[]) {
         const a = args as any[];
         const json = (s: unknown) => {
@@ -639,6 +641,10 @@ export class MockBackend {
                 });
                 if (this.stage !== "area") this.stage = "area";
                 return;
+            case "selectFloralPattern": {
+                let index=Number(a[1]);this.floralDrawing=index>=1000;if(this.floralDrawing)index-=1000;
+                this.floralEdit=index>=0 || index===-2?{path:String(a[0]),index}:undefined;break;
+            }
             case "selectRecipe": {
                 const r = this.recipes.find((x) => x.info.id === a[0]);
                 if (!r) break;
@@ -1516,6 +1522,7 @@ export class MockBackend {
         const next = this.redoStack[this.redoStack.length - 1];
         return {
             open: this.open,
+            floralEdit:this.floralEdit, floralDrawing:this.floralDrawing,
             stage: this.stage,
             reachable: this.reachable(),
             areaMode: this.mode,

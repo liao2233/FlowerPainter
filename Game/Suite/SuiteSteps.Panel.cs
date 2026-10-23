@@ -157,7 +157,7 @@ namespace FlowerPainter.Game.Suite
             if (string.IsNullOrEmpty(layer)) { rec["error"] = "type: no layer given"; st.Result["status"] = "type-not-selected"; yield break; }
             yield return EnsureDesign(st, rec, "The type browser");
             if (layer == "floral") {
-                if (fresh) _tool.SelectRecipe("floral");
+                if (fresh) { _tool.SelectRecipe("floral"); _tool.ResetStep("0"); }
                 bool compose = preset == "pattern-collage" || preset == "arc-and-wave" || preset == "wave-and-petals" || preset == "crossing-arcs";
                 string mode=compose?"collage":"flow";
                 yield return UiAct(st,rec,"flower planting method",compose?"flower-mode-compose":"flower-mode-carpet",null,null,()=>((string)_tool.SuiteValue("0","shape"))==mode,null,mustChange:false);

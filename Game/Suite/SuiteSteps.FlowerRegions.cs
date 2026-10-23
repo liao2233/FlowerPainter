@@ -19,8 +19,8 @@ namespace FlowerPainter.Game.Suite
                 string asset=(string)step["flower"]??Services.Assets.Items("flower").FirstOrDefault()?.Id;
                 yield return UiAct(st,rec,"choose region flower","fill-flower",null,null,null,null,mustChange:false);
                 JObject picked=null; yield return UiRun(SuiteUiSystem.ElementJs("asset-"+asset,click:true),r=>picked=r);
-                yield return Frames(4);
-                if((bool?)picked?["value"]?["ok"]!=true || ((string)_tool.SuiteValue("0","activeFillFlower"))!=asset){rec["error"]="region flower did not commit";yield break;}
+                yield return Until(()=>((string)_tool.SuiteValue("0","activeFillFlower"))==asset,3f,"selected region flower");
+                if((bool?)picked?["value"]?["found"]!=true || ((string)_tool.SuiteValue("0","activeFillFlower"))!=asset){rec["error"]="region flower did not commit";rec["picker"]=picked;yield break;}
                 rec["flower"]=asset;
             }
             yield return UiAct(st,rec,"pick connected gap","fill-pick-region",null,null,()=>_tool.FloralIndex==-2,null,mustChange:false);
