@@ -1,0 +1,22 @@
+{
+  "FlowerPainter.Neighborhood.Feature": "Neighborhood landscaping",
+  "FlowerPainter.Neighborhood.Feature.Tooltip": "Keep homes along the streets and create shared gardens with public walks in the block interiors. Choose a residential pre-zone type.",
+  "FlowerPainter.Neighborhood.Name": "Shared neighborhood garden",
+  "FlowerPainter.Neighborhood.style": "Garden style",
+  "FlowerPainter.Neighborhood.style.Tooltip": "Reuse the park planner for compact green spaces, natural groves or formal gardens.",
+  "FlowerPainter.Neighborhood.style.pocket": "Pocket green",
+  "FlowerPainter.Neighborhood.style.natural": "Natural groves",
+  "FlowerPainter.Neighborhood.style.formal": "Formal garden",
+  "FlowerPainter.Neighborhood.treeDensity": "Trees",
+  "FlowerPainter.Neighborhood.treeDensity.Tooltip": "Trees per hectare of shared garden; homes and access walks keep their own clear space.",
+  "FlowerPainter.Neighborhood.furniture": "Seating",
+  "FlowerPainter.Neighborhood.furniture.Tooltip": "Benches per 100 m of garden walk, with lamps and bins when enabled.",
+  "FlowerPainter.Neighborhood.lamps": "Lamps",
+  "FlowerPainter.Neighborhood.bins": "Bins",
+  "FlowerPainter.Neighborhood.treeSpecies": "Tree species",
+  "FlowerPainter.Neighborhood.Issue.ResidentialOnly": "Neighborhood landscaping needs residential pre-zoning. Select a residential zone type first.",
+  "FlowerPainter.Neighborhood.Issue.NoSpace": "No block has enough room left for a shared garden. Use larger blocks or shallower residential plots.",
+  "FlowerPainter.Neighborhood.Issue.NoAccess": "No public street access fits this garden; it was left empty.",
+  "FlowerPainter.Neighborhood.Issue.Skipped": "{0} small block(s) keep their housing without an interior garden.",
+  "FlowerPainter.Neighborhood.Issue.Limit": "At most {0} shared gardens are planned in one build. Split larger areas to add more."
+}

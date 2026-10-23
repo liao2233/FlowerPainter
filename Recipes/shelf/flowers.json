@@ -1,0 +1,13 @@
+{
+  "id": "flowers",
+  "name": "Flowers",
+  "order": 1,
+  "groups": [
+    "gardens"
+  ],
+  "types": [
+    "floral"
+  ],
+  "hiddenTypes": [],
+  "hiddenStyles": {}
+}

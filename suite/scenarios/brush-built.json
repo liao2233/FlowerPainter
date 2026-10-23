@@ -1,0 +1,62 @@
+{
+  "scenarios": [
+    {
+      "id": "brush-park",
+      "land": {"size":[220,180],"roads":"none"},
+      "steps": [
+        {"do":"area","tool":"points","rect":[120,100]},
+        {"do":"type","layer":"park","preset":"natural"},
+        {"do":"entrances"},
+        {"do":"preview","shot":"plan"},
+        {"do":"build"},
+        {"do":"camera","target":"build","view":"top","shot":"before","shotMode":"render"},
+        {"do":"brushBuilt","size":24,"erase":true,"stroke":[[0,0],[0,0]],"expectRegions":1},
+        {"do":"camera","target":"build","view":"top","shot":"hole","shotMode":"render"},
+        {"do":"brushBuilt","size":36,"stroke":[[52,0],[82,0]],"expectRegions":1},
+        {"do":"camera","target":"build","view":"top","shot":"extended","shotMode":"render"},
+        {"do":"brushBuilt","size":16,"square":true,"erase":true,"stroke":[[-25,-52],[-25,52]],"expectRegions":2},
+        {"do":"camera","target":"build","view":"top","shot":"split","shotMode":"render"},
+        {"do":"terrain","shot":"terrain"},
+        {"do":"brushBuilt","size":260,"erase":true,"stroke":[[0,0],[0,0]],"expectRegions":0}
+      ]
+    },
+    {
+      "id": "brush-floral",
+      "land": {"size":[220,180],"roads":"none"},
+      "steps": [
+        {"do":"area","tool":"points","rect":[120,100]},
+        {"do":"type","layer":"floral","preset":"arc-and-wave"},
+        {"do":"entrances"},
+        {"do":"preview","shot":"plan"},
+        {"do":"build"},
+        {"do":"camera","target":"build","view":"top","shot":"before","shotMode":"render"},
+        {"do":"brushBuilt","size":24,"erase":true,"stroke":[[0,0],[0,0]],"expectRegions":1},
+        {"do":"camera","target":"build","view":"top","shot":"hole","shotMode":"render"},
+        {"do":"brushBuilt","size":36,"stroke":[[52,0],[82,0]],"expectRegions":1},
+        {"do":"camera","target":"build","view":"top","shot":"extended","shotMode":"render"},
+        {"do":"brushBuilt","size":16,"square":true,"erase":true,"stroke":[[-25,-52],[-25,52]],"expectRegions":2},
+        {"do":"camera","target":"build","view":"top","shot":"split","shotMode":"render"},
+        {"do":"terrain","shot":"terrain"}
+      ]
+    },
+    {
+      "id": "brush-parking",
+      "land": {"size":[120,100],"roads":"around"},
+      "steps": [
+        {"do":"area","tool":"points","rect":[120,100]},
+        {"do":"type","layer":"parking","preset":"standard"},
+        {"do":"entrances"},
+        {"do":"preview","shot":"plan"},
+        {"do":"build"},
+        {"do":"camera","target":"build","view":"top","shot":"before","shotMode":"render"},
+        {"do":"brushBuilt","size":24,"erase":true,"stroke":[[0,0],[0,0]],"expectRegions":1},
+        {"do":"camera","target":"build","view":"top","shot":"hole","shotMode":"render"},
+        {"do":"brushBuilt","size":24,"stroke":[[0,0],[0,0]],"expectRegions":1},
+        {"do":"camera","target":"build","view":"top","shot":"extended","shotMode":"render"},
+        {"do":"brushBuilt","size":16,"square":true,"erase":true,"stroke":[[-25,-52],[-25,52]],"expectRegions":2},
+        {"do":"camera","target":"build","view":"top","shot":"split","shotMode":"render"},
+        {"do":"terrain","shot":"terrain"}
+      ]
+    }
+  ]
+}

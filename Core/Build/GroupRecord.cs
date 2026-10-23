@@ -1,0 +1,70 @@
+// FlowerPainter — persistent description of one built group (GPL-3.0).
+// Pure data: the game layer stores the encoded bytes on the group's record entity, so the
+// whole receipt (recipe + area + summary) survives save/load without any managed state.
+
+using System;
+using System.Collections.Generic;
+
+namespace FlowerPainter.Core.Build
+{
+    /// <summary>Flags kept with a group. Values are save format: never renumber.</summary>
+    [Flags]
+    public enum GroupFlags
+    {
+        None = 0,
+        /// <summary>A prefab referenced by the receipt is not loaded (mod/asset pack missing).</summary>
+        MissingAssets = 1,
+        /// <summary>Some members were removed or replaced by other tools since the build.</summary>
+        Modified = 2,
+        /// <summary>Plan included a permanent terrain change (lake basin) that removal cannot undo.</summary>
+        PermanentTerrain = 4,
+        /// <summary>Group runs the parking economy (fee, upkeep, companion).</summary>
+        ParkingEconomy = 8,
+        /// <summary>No selectable group or reserved footprint. Internal links still support parking and save/load.</summary>
+        Dissolved = 16,
+    }
+
+    /// <summary>
+    /// Everything FlowerPainter remembers about a build. Encoded with <see cref="ReceiptCodec"/>.
+    /// Field additions go to the end of the codec with a version bump; never reorder.
+    /// </summary>
+    public sealed class GroupRecord
+    {
+        public int GroupId;
+        public string RecipeId = "";
+        public string RecipeNameKey = "";
+        public string CustomName = "";
+        public GroupFlags Flags;
+        /// <summary>Simulation-independent build stamp (DateTime.UtcNow.Ticks) for sorting in lists.</summary>
+        public long BuiltAtTicks;
+        public double Cost;
+        public double Upkeep;
+        public List<PlanStat> Stats = new List<PlanStat>();
+        /// <summary>Generator facts summed over layers (e.g. "parking.capacity").</summary>
+        public Dictionary<string, double> Facts = new Dictionary<string, double>(StringComparer.Ordinal);
+        /// <summary>Every prefab name the build used — the missing-asset check compares these with the loaded prefabs.</summary>
+        public List<string> PrefabNames = new List<string>();
+        /// <summary>Receipt for Edit/repair. May be null when the recipe could not be stored.</summary>
+        public Recipe Recipe;
+        public AreaShape Area;
+        /// <summary>
+        /// (s17, receipt v2) Park stats of the build: the player's settings and the values applied in game at build
+        /// time. Null = not a park type, or built before s17.
+        /// </summary>
+        public ParkStatsRecord ParkStats;
+
+        /// <summary>v3: footprint after brush edits, with islands and holes. Null = legacy Area.</summary>
+        public List<Geometry.Region> BrushRegions;
+
+        public List<Geometry.Region> Footprint() => BrushRegions ??
+            (Area?.Ring != null && Area.Ring.Length >= 3
+                ? new List<Geometry.Region> { new Geometry.Region(Area.Ring2D()) } : new List<Geometry.Region>());
+
+        public GroupRecord Clone()
+        {
+            // Round-tripping through the codec is the simplest deep copy that is guaranteed to
+            // match what the save holds.
+            return ReceiptCodec.Decode(ReceiptCodec.Encode(this)) ?? new GroupRecord { GroupId = GroupId };
+        }
+    }
+}

@@ -1,0 +1,9 @@
+{
+  "FlowerPainter.Problem.NeedFourPoints": "请依次放置四个角，完成矩形。",
+  "FlowerPainter.Undo.Rectangle": "切换严格矩形",
+  "FlowerPainter.UI.Area.Rectangle": "严格矩形",
+  "FlowerPainter.UI.Area.RectangleTip": "前两个点确定方向，第三个点确定宽度，第四个角自动对齐。拖动顶点或边调整大小，始终保持 90°。",
+  "FlowerPainter.UI.Area.RectangleStops": "外轮廓保持矩形。实际建设仍保护已有建筑。",
+  "FlowerPainter.Hint.RectangleDraw": "依次点四个角：先定第一条边，再定宽度，第四个角自动对齐。",
+  "FlowerPainter.Hint.RectangleResize": "拖动顶点或边调整矩形，保持直角。"
+}

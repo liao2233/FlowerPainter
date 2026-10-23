@@ -1,0 +1,550 @@
+// FlowerPainter — emitting CreationDefinitions for each plan element (GPL-3.0).
+// Net courses follow ParkManager's CreateNetCourseDefinition and GridRoadGenerator's
+// CreateGridDefinitions/MakeCoursePos (attach to an existing edge via m_Entity + m_SplitPosition,
+// Upgraded composition flags on the definition). Object definitions follow ParkingLotTool's
+// "field by field like ObjectToolBaseSystem" ObjectDefinition. Credits: tomkpunkt, Ti4goc,
+// KruemelGames (GPL-3.0).
+
+using System;
+using System.Collections.Generic;
+using Colossal.Mathematics;
+using Game.Common;
+using Game.Net;
+using Game.Prefabs;
+using Game.Simulation;
+using Game.Tools;
+using FlowerPainter.Core;
+using FlowerPainter.Core.Build;
+using Unity.Entities;
+using Unity.Mathematics;
+
+namespace FlowerPainter.Game.Build
+{
+    public sealed partial class BuildService
+    {
+        private readonly HashSet<Entity> _ownDefinitions = new HashSet<Entity>();
+        private readonly HashSet<long> _notedRings = new HashSet<long>();
+
+        /// <summary>Setting: paved surfaces (paving/asphalt/plaza/decorative) draw on top (priority −94).</summary>
+        public static bool OverlayPavedSurfaces = true;
+
+        /// <summary>
+        /// (s21) Decals take no space. A decal-only prop still has a 1 m tall collision box (a leaves decal: 6×1×6 m) and
+        /// meets every prop, tree and path it lies on: the ghost cancels both, the build hides one (OverrideSystem).
+        /// ObjectUtils.GetCollisionMask gives an object with Elevation &lt; 0 (and no Lowered flag) only the Underground
+        /// mask, which no ground prop, tree or surface net shares (decompiled 1.6.2f1: Objects.ValidationHelpers
+        /// ObjectIterator/NetIterator, OverrideSystem — all use the elevation-aware mask). So decals are emitted with a
+        /// hair of negative elevation; the decal still projects onto the ground (its box spans ±0.5 m).
+        /// Needs in-game confirmation (docs/DECALS.md, open problems).
+        /// </summary>
+        public static bool SinkDecals = true;
+        public const float DecalSink = -0.01f;
+        /// <summary>(s44) Stall markings and arrows sink like decals (PlanWork.SinkInBuild). Off = s25 behaviour.</summary>
+        public static bool SinkStallMarkings = false;   // 2026-10-14 in game: sunk markings were rejected (3 of 18 built); plain markings built 401/401 before
+
+        private static bool IsPaved(SurfaceRole r) => r == SurfaceRole.Paving || r == SurfaceRole.Asphalt || r == SurfaceRole.Plaza || r == SurfaceRole.Decorative;
+        /// <summary>Resolved prefab per work item key.</summary>
+        private readonly Dictionary<long, Entity> _itemPrefab = new Dictionary<long, Entity>();
+        /// <summary>Emitted keys (plan keys and synthetic keys for fence pieces) → work item.</summary>
+        private readonly Dictionary<long, WorkItem> _itemByKey = new Dictionary<long, WorkItem>();
+        private PlanIndex _netIndex, _objectIndex, _areaIndex;
+        private long _syntheticKey = 1L << 62;
+        private readonly HashSet<string> _usedPrefabNames = new HashSet<string>(StringComparer.Ordinal);
+        private readonly HashSet<Entity> _usedPrefabs = new HashSet<Entity>();
+        private int _emittedObjects, _emittedAreas;
+        private TerrainHeightData _heights;
+        private bool _heightsValid;
+
+        // ───────────────────────── prefab resolution ─────────────────────────
+
+        private void ResolvePrefabs()
+        {
+            _itemPrefab.Clear();
+            int missing = 0;
+            foreach (var w in _work.All())
+            {
+                if (w.Kind == WorkKind.Terraform) continue;
+                var prefab = _catalog.Resolve(w.Asset, w.Category);
+                if (prefab == Entity.Null) { missing++; AuditMissing(w); continue; }
+                _itemPrefab[PlanWork.Key(w)] = prefab;
+            }
+            if (missing > 0)
+            {
+                _warnings.Add("FlowerPainter.Build.AssetsMissing");
+                Mod.Log.Warn($"FlowerPainter: {missing} planned parts have no usable asset in this playset and are skipped.");
+            }
+        }
+
+        private void ResetIndexes()
+        {
+            _emittedObjects = _emittedAreas = 0;
+            _netIndex = _objectIndex = _areaIndex = null;
+            _itemByKey.Clear();
+            _heightsValid = false;
+        }
+
+        private Entity PrefabOf(WorkItem w) => _itemPrefab.TryGetValue(PlanWork.Key(w), out var e) ? e : Entity.Null;
+
+        private void NoteUsed(Entity prefab)
+        {
+            var n = _catalog.NameOf(prefab);
+            if (!string.IsNullOrEmpty(n)) _usedPrefabNames.Add(n);
+            _usedPrefabs.Add(prefab);
+        }
+
+        private static long PrefabId(Entity e) => ((long)e.Version << 32) | (uint)e.Index;
+
+        private float Height(float2 p)
+        {
+            if (!_heightsValid)
+            {
+                _heights = _terrain.GetHeightData(true);
+                _heightsValid = true;
+            }
+            float h = TerrainUtils.SampleHeight(ref _heights, new float3(p.x, 0f, p.y));
+            return math.isfinite(h) ? h : 0f;
+        }
+
+        private int _sagNotes;
+
+        /// <summary>The curve parameter of a planned net nearest a point (16 samples).</summary>
+        private static float ClosestT(PlannedNet n, float2 p)
+        {
+            float best = float.MaxValue, bt = 0.5f;
+            for (int k = 0; k <= 16; k++) { float t = k / 16f; float d = math.distancesq(Composer.Bezier(n.A, n.B, n.C, n.D, t).xz, p); if (d < best) { best = d; bt = t; } }
+            return bt;
+        }
+
+        private Entity NewDefinition()
+        {
+            var e = EntityManager.CreateEntity();
+            _ownDefinitions.Add(e);
+            return e;
+        }
+
+        // ───────────────────────── nets ─────────────────────────
+
+        private void EmitNets()
+        {
+            _heightsValid = false;
+            _sagNotes = 0;
+            if (!_gEmission) ScanLivePits("before the nets");
+            _netIndex = new PlanIndex();
+            _objectIndex = _objectIndex ?? new PlanIndex();
+            var random = new Unity.Mathematics.Random(Seeds.Mix(0x5EEDu, (uint)_groupId));
+            foreach (var w in _work.Nets)
+            {
+                var prefab = PrefabOf(w);
+                if (prefab == Entity.Null) continue;
+                var net = _request.Plan.Layers[w.Layer].Nets[w.Index];
+                if (net.Role == NetRole.Fence && !EntityManager.HasComponent<NetData>(prefab))
+                {
+                    EmitFencePieces(w, net, prefab);
+                    continue;
+                }
+                if (!EntityManager.HasComponent<NetGeometryData>(prefab)) continue;
+                var settings = CourseFitSettings.Default;
+                settings.FollowTerrain = net.FollowTerrain;
+                settings.MaxLength = _catalog.MaxEdgeLength(prefab);
+                // Bridges/piers/boardwalks keep their planned deck: short pieces, each node with its own
+                // elevation and forced elevated (CourseFitting.FitElevated explains why not one course).
+                bool elevated = !net.FollowTerrain;
+                var pieces = net.PreserveCurve ? new List<Cubic> { new Cubic(net.A, net.B, net.C, net.D) } : elevated
+                    ? CourseFitting.FitElevated(new Cubic(net.A, net.B, net.C, net.D), settings.MaxLength > 1f ? math.min(ElevatedPieceLength, settings.MaxLength) : ElevatedPieceLength)
+                    : CourseFitting.Fit(new Cubic(net.A, net.B, net.C, net.D), GroundHeight, settings);
+                long key = PlanWork.Key(w);
+                bool any = false;
+                for (int p = 0; p < pieces.Count; p++)
+                {
+                    var c = pieces[p];
+                    if (c.Length() < CourseFitting.MinCourseLength) continue;
+                    // (core) Pit diagnosis: a course that sags or humps more than 1 m away from the plan at its middle.
+                    if (!elevated && _sagNotes < 12)
+                    {
+                        var mid = c.Position(0.5f);
+                        float planned = Composer.Bezier(net.A, net.B, net.C, net.D, ClosestT(net, mid.xz)).y;
+                        if (math.abs(mid.y - planned) > 1f)
+                        {
+                            _sagNotes++;
+                            Mod.Log.Warn($"FlowerPainter net course off its plan: {net.Role} piece {p + 1}/{pieces.Count} at ({mid.x:F0}, {mid.z:F0}) y {c.A.y:F1}/{c.B.y:F1}/{c.C.y:F1}/{c.D.y:F1} (middle {mid.y:F1}), planned {planned:F1}; "
+                                + $"ground {GroundHeight(c.Position(1f / 3f).xz):F1}/{GroundHeight(c.Position(2f / 3f).xz):F1} at 1/3, 2/3 (live {Height(c.Position(1f / 3f).xz):F1}/{Height(c.Position(2f / 3f).xz):F1}), length {c.Length():F1} m, {(_gEmission ? "ghost" : "build")}.");
+                        }
+                    }
+                    var start = MakeCoursePos(c.A, c.Tangent(0), 0f, CoursePosFlags.IsFirst, p == 0 ? net.StartAttach : -1, prefab);
+                    var end = MakeCoursePos(c.D, -c.Tangent(1), 1f, CoursePosFlags.IsLast, p == pieces.Count - 1 ? net.EndAttach : -1, prefab);
+                    if (elevated) Elevate(ref start, ref end, c, p > 0, p < pieces.Count - 1);
+                    // Attached ends snap onto the existing net: rebuild the curve to the snapped points.
+                    var curve = new Bezier4x3(c.A, c.B, c.C, c.D);
+                    if (!start.m_Position.Equals(c.A) || !end.m_Position.Equals(c.D))
+                    {
+                        float3 da = start.m_Position - c.A, dd = end.m_Position - c.D;
+                        curve = new Bezier4x3(start.m_Position, c.B + da, c.C + dd, end.m_Position);
+                    }
+                    start.m_Rotation = NetUtils.GetNodeRotation(MathUtils.StartTangent(curve));
+                    end.m_Rotation = NetUtils.GetNodeRotation(MathUtils.EndTangent(curve));
+                    var def = NewDefinition();
+                    // Fences: one random seed for the whole build, so lane objects / colour variations of the
+                    // fence net are the same on every segment (FEEDBACK-2 #1: "every segment a different fence").
+                    int seed = net.Role == NetRole.Fence ? AutoAssets.UniformSeed(w.Category, (uint)_groupId) : random.NextInt();
+                    EntityManager.AddComponentData(def, new CreationDefinition { m_Prefab = prefab, m_RandomSeed = seed });
+                    EntityManager.AddComponent<Updated>(def);
+                    EntityManager.AddComponentData(def, new NetCourse
+                    {
+                        m_Curve = curve,
+                        m_Length = MathUtils.Length(curve),
+                        m_FixedIndex = -1,
+                        m_Elevation = float2.zero,
+                        m_StartPosition = start,
+                        m_EndPosition = end,
+                    });
+                    var upgraded = ParseUpgrades(net.Upgrades);
+                    // CourseSplitSystem copies Upgraded from the definition onto the edge (GRG);
+                    // writing it on a finished edge crashed CS2 natively (PLT).
+                    if (!upgraded.Equals(default(CompositionFlags))) EntityManager.AddComponentData(def, new Upgraded { m_Flags = upgraded });
+                    _netIndex.AddCurve(key, PrefabId(prefab), new Cubic(curve.a, curve.b, curve.c, curve.d));
+                    any = true;
+                }
+                if (any)
+                {
+                    _itemByKey[key] = w;
+                    NoteUsed(prefab);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Course end. Roads attach to an existing edge/node through CoursePos.m_Entity (GRG). Paths
+        /// and invisible drivable paths do NOT: they join roads through LocalConnect at a dead end
+        /// (PLT, RESEARCH-NOTES 15), so the node simply ends at the planned point.
+        /// FreeHeight is left off on purpose: CourseSplitSystem would recompute heights (PLT).
+        /// </summary>
+        private CoursePos MakeCoursePos(float3 position, float3 tangent, float delta, CoursePosFlags flags, long attach, Entity prefab)
+        {
+            var pos = new CoursePos
+            {
+                m_Entity = Entity.Null,
+                m_Position = position,
+                m_Rotation = NetUtils.GetNodeRotation(tangent),
+                m_CourseDelta = delta,
+                m_Elevation = float2.zero,
+                m_Flags = flags,
+                m_ParentMesh = -1,
+                m_SplitPosition = 0f,
+            };
+            if (EntityManager.HasComponent<RoadData>(prefab)) pos.m_Flags |= CoursePosFlags.IsLeft | CoursePosFlags.IsRight;
+            if (attach < 0) return pos;
+            var target = DecodeEntity(attach);
+            if (!CanAttach(target, prefab)) return pos;
+            if (EntityManager.HasComponent<Edge>(target))
+            {
+                var curve = EntityManager.GetComponentData<Curve>(target).m_Bezier;
+                float d = MathUtils.Distance(curve.xz, position.xz, out float t);
+                if (d > AttachTolerance) return pos;
+                var edge = EntityManager.GetComponentData<Edge>(target);
+                if (t <= 0.01f) { pos.m_Entity = edge.m_Start; pos.m_SplitPosition = 0f; }
+                else if (t >= 0.99f) { pos.m_Entity = edge.m_End; pos.m_SplitPosition = 1f; }
+                else { pos.m_Entity = target; pos.m_SplitPosition = t; }
+                pos.m_Position = MathUtils.Position(curve, t);
+            }
+            else if (EntityManager.HasComponent<global::Game.Net.Node>(target))
+            {
+                var node = EntityManager.GetComponentData<global::Game.Net.Node>(target);
+                if (math.distance(node.m_Position.xz, position.xz) > AttachTolerance) return pos;
+                pos.m_Entity = target;
+                pos.m_Position = node.m_Position;
+            }
+            return pos;
+        }
+
+        private const float ElevatedPieceLength = 12f;
+        private const float ElevatedMin = 0.75f;
+
+        /// <summary>
+        /// Elevation (planned height above the live terrain) on both course ends; interior nodes and
+        /// pieces whose deck is clearly above the ground are forced elevated, so CS2 builds a bridge at
+        /// the planned heights instead of re-deriving a ground course from the terrain/water bed.
+        /// </summary>
+        private void Elevate(ref CoursePos start, ref CoursePos end, Cubic c, bool startInterior, bool endInterior)
+        {
+            float ea = c.A.y - Height(c.A.xz), ed = c.D.y - Height(c.D.xz);
+            var mid = c.Position(0.5f);
+            float em = mid.y - Height(mid.xz);
+            start.m_Elevation = new float2(math.max(0f, ea));
+            end.m_Elevation = new float2(math.max(0f, ed));
+            if (startInterior && ea > ElevatedMin) start.m_Flags |= CoursePosFlags.ForceElevatedNode;
+            if (endInterior && ed > ElevatedMin) end.m_Flags |= CoursePosFlags.ForceElevatedNode;
+            if (em > ElevatedMin)
+            {
+                start.m_Flags |= CoursePosFlags.ForceElevatedEdge;
+                end.m_Flags |= CoursePosFlags.ForceElevatedEdge;
+            }
+        }
+
+        /// <summary>Attachments are stale after save/load (entity ids change); verify by geometry too.</summary>
+        private const float AttachTolerance = 4f;
+
+        private bool CanAttach(Entity target, Entity prefab)
+        {
+            if (target == Entity.Null || !EntityManager.Exists(target) || EntityManager.HasComponent<Deleted>(target)
+                || EntityManager.HasComponent<Temp>(target) || !EntityManager.HasComponent<PrefabRef>(target)) return false;
+            if (!EntityManager.HasComponent<Edge>(target) && !EntityManager.HasComponent<global::Game.Net.Node>(target)) return false;
+            var other = EntityManager.GetComponentData<PrefabRef>(target).m_Prefab;
+            bool mineRoad = EntityManager.HasComponent<RoadData>(prefab), otherRoad = EntityManager.HasComponent<RoadData>(other);
+            bool minePath = EntityManager.HasComponent<PathwayData>(prefab), otherPath = EntityManager.HasComponent<PathwayData>(other);
+            // Footpath entrances (parking US3/US4) may end on a road like a vanilla pedestrian path does.
+            return (mineRoad && otherRoad) || (minePath && (otherPath || otherRoad));
+        }
+
+        /// <summary>Inverse of <see cref="NetRefs.Encode"/>.</summary>
+        private Entity DecodeEntity(long id) => NetRefs.Decode(EntityManager, id);
+
+        private static CompositionFlags ParseUpgrades(string[] names)
+        {
+            var flags = default(CompositionFlags);
+            if (names == null) return flags;
+            foreach (var raw in names)
+            {
+                if (string.IsNullOrWhiteSpace(raw)) continue;
+                var name = raw.Trim();
+                string side = null;
+                int colon = name.IndexOf(':');
+                if (colon > 0) { side = name.Substring(0, colon).ToLowerInvariant(); name = name.Substring(colon + 1); }
+                if (side == null || side == "general")
+                {
+                    if (Enum.TryParse(name, true, out CompositionFlags.General g) && g != 0) { flags.m_General |= g; continue; }
+                    if (side == "general") continue;
+                }
+                if (Enum.TryParse(name, true, out CompositionFlags.Side s) && s != 0)
+                {
+                    if (side == null || side == "left") flags.m_Left |= s;
+                    if (side == null || side == "right") flags.m_Right |= s;
+                }
+            }
+            return flags;
+        }
+
+        private void EmitFencePieces(WorkItem w, PlannedNet net, Entity prefab)
+        {
+            if (!EntityManager.HasComponent<ObjectGeometryData>(prefab)) return;
+            var size = EntityManager.GetComponentData<ObjectGeometryData>(prefab).m_Size;
+            float piece = math.max(0.5f, math.max(size.x, size.z));
+            var c = new Cubic(net.A, net.B, net.C, net.D);
+            float len = c.LengthXZ();
+            // FEEDBACK-4: never overlapping — the game cancels (ghost) or hides (build) one of every two
+            // overlapping props, which left every other hedge piece missing. Small even gaps instead.
+            int count = FlowerPainter.Core.Layers.Common.Fences.SpacedPieceCount(len, piece);
+            int seed = AutoAssets.UniformSeed(w.Category, (uint)_groupId);   // one look for every piece
+            // Pieces run along their longer local axis (fences usually X; vanilla hedge pieces are long in Z).
+            bool alongZ = size.z > size.x;
+            for (int i = 0; i < count; i++)
+            {
+                float t = (i + 0.5f) / count;
+                var p = c.Position(t);
+                var tan = c.Tangent(t);
+                float yaw = math.atan2(tan.x, tan.z) - (alongZ ? 0f : math.PI * 0.5f);
+                long key = _syntheticKey++;
+                _itemByKey[key] = w;
+                EmitObjectDefinition(prefab, p, yaw, 1f, -1, (uint)i, key, true, seed);
+            }
+            NoteUsed(prefab);
+        }
+
+        // ───────────────────────── objects ─────────────────────────
+
+        private void EmitObject(WorkItem w)
+        {
+            var prefab = PrefabOf(w);
+            if (prefab == Entity.Null) return;
+            var o = _request.Plan.Layers[w.Layer].Objects[w.Index];
+            // s23: decorative decals are built see-through (runtime clone per opacity tier; the original until it is ready).
+            if (o.Role == ObjectRole.Decal && _decalClones != null)
+            {
+                float opacity = Core.Decals.DecalLook.OpacityOf(o);
+                if (opacity < 0.995f)
+                {
+                    var used = _decalClones.CloneFor(prefab, opacity, out string why);
+                    if (used != prefab) _decalsSeeThrough++;
+                    else { _decalsFull++; _decalsFullWhy[why] = (_decalsFullWhy.TryGetValue(why, out var nWhy) ? nWhy : 0) + 1; }
+                    prefab = used;
+                }
+            }
+            long key = PlanWork.Key(w);
+            _itemByKey[key] = w;
+            // Uniform categories (benches, lamps, bins…): one random seed per build, so colour/mesh
+            // variations do not turn a row of one bench into a mix (FEEDBACK-2 #1).
+            int? seed = AutoAssets.IsUniform(w.Category) ? AutoAssets.UniformSeed(w.Category, (uint)_groupId) : (int?)null;
+            if (_recovering && _recoveryAppearance.TryGetValue(w.Index, out var recovered)) seed = recovered.Seed;
+            float elevation = SinkDecals && (o.Role == ObjectRole.Decal || SinkStallMarkings && PlanWork.SinkInBuild(o.Role)) ? DecalSink : 0f;
+            EmitObjectDefinition(prefab, o.Position, o.Yaw, o.Scale, o.Age, o.Variation, key, true, seed, elevation, optional: !IgnoreOwnCollisions && !PlanWork.IsFunctional(o.Role));   // (s59) anarchy: the ghost shows what the build places — nothing is cancelled
+            NoteUsed(prefab);
+        }
+
+        private static readonly float[] AgeStages = { 0f, 0.17500001f, 0.425f, 0.77500004f };   // ToolUtils.GetRandomAge
+
+        private void EmitObjectDefinition(Entity prefab, float3 position, float yaw, float scale, int age, uint variation, long key, bool snapToGround, int? randomSeed = null, float elevation = 0f, bool optional = true)
+        {
+            _objectIndex = _objectIndex ?? new PlanIndex();
+            var p = position;
+            if ((!_recovering && snapToGround) || !math.isfinite(p.y)) p.y = GroundHeight(p.xz);
+            var rotation = quaternion.RotateY(yaw);
+            var def = NewDefinition();
+            EntityManager.AddComponentData(def, new CreationDefinition
+            {
+                m_Prefab = prefab,
+                m_RandomSeed = randomSeed ?? (int)Seeds.Mix(variation, (uint)key),
+                // Ghost: a colliding object is silently cancelled (hidden, no error icon) like a vanilla brush.
+                // (s25) Never for functional parking pieces (PlanWork.IsFunctional): overlapping optional bays cancel each other.
+                m_Flags = _gEmission && optional ? CreationFlags.Optional : 0,
+            });
+            EntityManager.AddComponent<Updated>(def);
+            EntityManager.AddComponentData(def, new ObjectDefinition
+            {
+                m_Position = p,
+                m_LocalPosition = p,
+                m_Rotation = rotation,
+                m_LocalRotation = rotation,
+                m_Scale = new float3(math.isfinite(scale) && scale > 0.05f ? scale : 1f),
+                m_Intensity = 1f,
+                m_Age = age >= 0 && age < AgeStages.Length ? AgeStages[age] : AgeStages[2],
+                m_Probability = 100,
+                m_PrefabSubIndex = -1,
+                m_ParentMesh = -1,
+                m_Elevation = elevation,
+            });
+            _objectIndex.AddPoint(key, PrefabId(prefab), p.xz);
+            _emittedObjects++;
+            _usedPrefabs.Add(prefab);
+        }
+
+        // ───────────────────────── surfaces and areas ─────────────────────────
+
+        private void EmitSurface(WorkItem w)
+        {
+            var prefab = PrefabOf(w);
+            if (prefab == Entity.Null) return;
+            var s = _request.Plan.Layers[w.Layer].Surfaces[w.Index];
+            // Parking surfaces must draw over roads (priority −94, Terrain|Roads decal layers): use
+            // the runtime overlay clone when it is ready; otherwise the original still builds.
+            // US6: paved surfaces of parks/plazas also use the clone, so they stack deterministically
+            // above grass/ground (vanilla −100…−95) instead of z-fighting where they overlap.
+            if (w.GeneratorId == "parking" || (OverlayPavedSurfaces && IsPaved(s.Role))) prefab = _clones.OverlayFor(prefab);
+            EmitPreparedRings(prefab, s.Ring, w, true);
+        }
+
+        private void EmitArea(WorkItem w)
+        {
+            var prefab = PrefabOf(w);
+            if (prefab == Entity.Null) return;
+            if (VanillaIndustryLotRefused(prefab, w)) return;
+            var a = _request.Plan.Layers[w.Layer].Areas[w.Index];
+            EmitPreparedRings(prefab, a.Ring, w, false);
+        }
+
+        /// <summary>
+        /// (core) No vanilla extractor or storage lot ("Agriculture Lot - Field", "Extractor Lot", warehouse yards) in a build that is not a
+        /// farm or industry type: they carry their own economy, a crop surface, a border fence across entrances, and CanOverrideObjects,
+        /// which hides every tree, bush and lamp inside them (Game.Prefabs.AreaInitializeSystem, Game.Objects.OverrideSystem.AreaIterator).
+        /// </summary>
+        private bool VanillaIndustryLotRefused(Entity prefab, WorkItem w)
+        {
+            if (_recovering) return false;
+            if (!EntityManager.HasComponent<ExtractorAreaData>(prefab) && !EntityManager.HasComponent<StorageAreaData>(prefab)) return false;
+            var group = GeneratorGroups.Of(GeneratorRegistry.Get(w.GeneratorId ?? ""));
+            if (group == "farms" || group == "industrial") return false;
+            if (_refusedLots++ == 0)
+                Mod.Log.Warn($"FlowerPainter: left out the vanilla industry lot '{_prefabs.GetPrefabName(prefab)}' planned by '{w.GeneratorId}' (no farm or extractor lot outside farm and industry builds).");
+            return true;
+        }
+
+        private int _refusedLots;
+
+        /// <summary>
+        /// US8 root-cause fix for ErrorType.InvalidShape: every ring is checked against the game's own
+        /// shape rules for its prefab (AreaRings, d = m_SnapDistance / 2) and, for surfaces, the
+        /// triangulation model. Offending nodes are removed; a ring that cannot be repaired is split
+        /// into acceptable pieces (extra pieces get synthetic keys mapped to the same work item) or,
+        /// as the last resort, skipped and reported.
+        /// </summary>
+        private void EmitPreparedRings(Entity prefab, float3[] ring, WorkItem w, bool surface)
+        {
+            if (ring == null || ring.Length < 3) return;
+            float d = AreaRings.SurfaceMinNodeDistance;
+            if (EntityManager.HasComponent<AreaGeometryData>(prefab))
+            {
+                float snap = EntityManager.GetComponentData<AreaGeometryData>(prefab).m_SnapDistance;
+                if (math.isfinite(snap) && snap > 0f) d = AreaRings.MinNodeDistanceForSnap(snap);
+            }
+            var ring2 = FlowerPainter.Core.Geometry.Poly.To2D(ring);
+            List<float2[]> rings;
+            if (AreaRings.IsValid(ring2, d + AreaRings.Margin) && (!surface || FlowerPainter.Core.Geometry.SurfaceAcceptance.IsAccepted(ring2)))
+                rings = new List<float2[]> { ring2 };
+            else
+            {
+                if (surface) rings = AreaRings.PrepareSurface(ring2, d);
+                else
+                {
+                    var v = AreaRings.MakeValid(ring2, d);
+                    rings = v != null ? new List<float2[]> { v } : new List<float2[]>();
+                }
+                var at = new float3(w.Anchor.x, Height(w.Anchor), w.Anchor.y);
+                bool first = _notedRings.Add(PlanWork.Key(w));   // retries re-emit: count each piece once
+                if (rings.Count == 0)
+                {
+                    if (first) NoteSkip(surface ? "FlowerPainter.Build.Skipped.Surface" : "FlowerPainter.Build.Skipped.Area", at);
+                    Mod.Log.Info($"FlowerPainter skipped a {(surface ? "surface" : "area")} ring the game would reject ({ring.Length} nodes, d={d:0.###}).");
+                    return;
+                }
+                if (first) NoteSkip(surface ? "FlowerPainter.Build.Repaired.Surface" : "FlowerPainter.Build.Repaired.Area", at, IssueSeverity.Info);
+            }
+            long key = PlanWork.Key(w);
+            for (int i = 0; i < rings.Count; i++)
+            {
+                var r = rings[i];
+                var r3 = new float3[r.Length];
+                for (int k = 0; k < r.Length; k++) r3[k] = new float3(r[k].x, 0f, r[k].y);
+                long k2 = i == 0 ? key : _syntheticKey++;
+                EmitAreaDefinition(prefab, r3, k2, w);
+            }
+        }
+
+        private Entity EmitAreaDefinition(Entity prefab, float3[] ring, long key, WorkItem w)
+        {
+            if (ring == null || ring.Length < 3) return Entity.Null;
+            if (!EntityManager.HasComponent<AreaData>(prefab) || !EntityManager.GetComponentData<AreaData>(prefab).m_Archetype.Valid) return Entity.Null;
+            _areaIndex = _areaIndex ?? new PlanIndex();
+            var def = NewDefinition();
+            EntityManager.AddComponentData(def, new CreationDefinition { m_Prefab = prefab });
+            EntityManager.AddComponent<Updated>(def);
+            var nodes = EntityManager.AddBuffer<global::Game.Areas.Node>(def);
+            nodes.ResizeUninitialized(ring.Length + 1);
+            for (int i = 0; i < ring.Length; i++)
+            {
+                var p = ring[i];
+                // float.MinValue elevation = "on the ground" (vanilla AreaToolSystem).
+                nodes[i] = new global::Game.Areas.Node(new float3(p.x, GroundHeight(p.xz), p.z), float.MinValue);
+            }
+            nodes[ring.Length] = nodes[0];   // vanilla closes the ring by repeating the first node
+            _areaIndex.AddPoint(key, PrefabId(prefab), PlanWork.Centroid(ring));
+            _emittedAreas++;
+            _itemByKey[key] = w;
+            NoteUsed(prefab);
+            return def;
+        }
+    }
+
+    /// <summary>
+    /// Encoding of existing net entities in Core's opaque ids (BoundaryAttachment.ExternalId,
+    /// NearbyNet.ExternalId). The tool workstream must use the same encoding.
+    /// </summary>
+    public static class NetRefs
+    {
+        public static long Encode(Entity e) => e == Entity.Null ? -1 : ((long)e.Version << 32) | (uint)e.Index;
+
+        public static Entity Decode(EntityManager em, long id)
+        {
+            if (id < 0) return Entity.Null;
+            var e = new Entity { Index = (int)(uint)(id & 0xFFFFFFFF), Version = (int)(id >> 32) };
+            return e.Index >= 0 && e.Version > 0 && em.Exists(e) ? e : Entity.Null;
+        }
+    }
+}

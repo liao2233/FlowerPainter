@@ -1,0 +1,7 @@
+{
+  "set": "full",
+  "description": "Every type offered in the Make row with its default preset (enumerated from GeneratorRegistry at run time).",
+  "scenarios": [
+    { "expand": "types", "site": "any" }
+  ]
+}

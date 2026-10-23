@@ -1,0 +1,749 @@
+@use "../styles/tokens" as *;
+
+// Full-screen layer (appended to "Game"); only the panel catches the mouse, so the map stays usable.
+.dock {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    font-family: var(--fontFamily);
+}
+
+// Click-outside catcher while a picker is open (closes it; the map is not clicked through by accident).
+.backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: auto;
+    background-color: rgba(0, 0, 0, 0.08);
+}
+
+// The moving element. Docked: right edge, from below the top bar (64rem) to above the bottom toolbar
+// (112rem). Insets mirror DOCK_TOP / DOCK_BOTTOM in Panel.tsx. Panel.tsx sets the width inline (resizable
+// by the left edge, remembered); when dragged it also sets left/top/height.
+.wrap {
+    position: absolute;
+    top: 64rem;
+    right: 12rem;
+    bottom: 112rem;
+    width: 400rem;
+    pointer-events: none;
+}
+
+// Left-edge resize grip: a thin strip over the panel border; a faint accent line on hover / while dragging.
+.resize {
+    position: absolute;
+    top: 8rem;
+    bottom: 8rem;
+    left: -4rem;
+    width: 8rem;
+    z-index: 2;
+    pointer-events: auto;
+    cursor: ew-resize;
+    border-radius: 4rem;
+    transition-property: background-color;
+    transition-duration: $t-fast;
+    &:hover {
+        background-color: rgba(143, 209, 255, 0.35);
+    }
+}
+
+.resizeActive {
+    background-color: rgba(143, 209, 255, 0.55);
+}
+
+// Bottom-edge height grip: drag to make the panel taller or shorter (moving never changes the height).
+.resizeBottom {
+    position: absolute;
+    left: 8rem;
+    right: 8rem;
+    bottom: -4rem;
+    height: 8rem;
+    z-index: 2;
+    pointer-events: auto;
+    cursor: ns-resize;
+    border-radius: 4rem;
+    transition-property: background-color;
+    transition-duration: $t-fast;
+    &:hover {
+        background-color: rgba(143, 209, 255, 0.35);
+    }
+}
+
+.wrapCollapsed {
+    bottom: auto;
+}
+
+// Two stacked backgrounds: a near-opaque dark base under the vanilla panel colour, so the panel stays
+// readable (≥ 0.92 combined alpha) whatever transparency the player's UI settings give --panelColorNormal.
+.panel {
+    @include col;
+    height: 100%;
+    pointer-events: auto;
+    border-radius: $radius-l;
+    background-color: rgba(12, 18, 23, 0.84);
+    backdrop-filter: var(--panelBlur);
+    @include border(1rem, rgba(255, 255, 255, 0.13));
+    box-shadow: 0 10rem 34rem rgba(0, 0, 0, 0.45);
+    color: var(--menuText1Normal);
+    overflow: hidden;
+}
+
+.panelTint {
+    @include col;
+    flex: 1 1 auto;
+    min-height: 0;
+    background-color: var(--panelColorNormal);
+}
+
+.panelCompact {
+    height: auto;
+}
+
+// ── header (drag handle) ──
+.header {
+    @include row;
+    flex-shrink: 0;
+    height: 34rem;
+    padding: 0 4rem 0 2rem;
+    background-color: rgba(0, 0, 0, 0.22);
+    border-bottom-width: 1rem;
+    border-bottom-style: solid;
+    border-bottom-color: $c-line;
+    cursor: move;
+}
+
+.headerDragging {
+    background-color: rgba(143, 209, 255, 0.12);
+}
+
+.grip {
+    @include row;
+    justify-content: center;
+    width: 16rem;
+    height: 26rem;
+    margin-right: 2rem;
+    cursor: move;
+}
+
+.title {
+    margin-left: 6rem;
+    font-size: $fs;
+    font-weight: bold;
+    color: #ffffff;
+    @include ellipsis;
+}
+
+.logo {
+    @include row;
+    flex-shrink: 0;
+}
+
+// ── preview mode: Sketch | Real (header, Design / Review) ──
+.previewToggle {
+    @include row;
+    flex-shrink: 0;
+    height: 24rem;
+    margin-left: 8rem;
+    padding: 2rem;
+    border-radius: $radius;
+    background-color: rgba(0, 0, 0, 0.3);
+    @include border(1rem, $c-line);
+}
+
+.pvBtn {
+    @include row;
+    @include button-reset;
+    height: 18rem;
+    padding: 0 7rem 0 5rem;
+    border-radius: $radius-s;
+    color: $c-text-dim;
+    transition-property: background-color, color;
+    transition-duration: $t-fast;
+    &:hover {
+        background-color: $c-surface-hover;
+        color: #ffffff;
+    }
+}
+
+.pvOn {
+    background-color: rgba(63, 182, 240, 0.4);
+    color: #ffffff;
+    &:hover {
+        background-color: rgba(63, 182, 240, 0.4);
+    }
+}
+
+.pvLabel {
+    margin-left: 4rem;
+    font-size: $fs-s;
+    white-space: nowrap;
+}
+
+// Ghost rebuilding: a small ring spinning where the cube icon was.
+.spinner {
+    width: 12rem;
+    height: 12rem;
+    margin: 0 0.5rem;
+    border-radius: 6rem;
+    @include border(2rem, rgba(255, 255, 255, 0.25));
+    border-top-color: var(--accentColorNormal);
+    animation-name: pmSpin;
+    animation-duration: 0.8s;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+}
+
+@keyframes pmSpin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.flex {
+    flex: 1 1 auto;
+}
+
+.headSep {
+    width: 1rem;
+    height: 16rem;
+    margin: 0 3rem;
+    background-color: $c-line-strong;
+}
+
+.editingPill {
+    margin-left: 8rem;
+    padding: 1rem 6rem;
+    border-radius: 8rem;
+    background-color: rgba(255, 169, 77, 0.22);
+    color: #ffd2a6;
+    font-size: 11rem;
+    flex-shrink: 0;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+@keyframes pmPulse {
+    0% {
+        opacity: 0.25;
+    }
+    50% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0.25;
+    }
+}
+
+.planningDot {
+    width: 8rem;
+    height: 8rem;
+    margin-left: 10rem;
+    border-radius: 4rem;
+    background-color: var(--accentColorNormal);
+    animation-name: pmPulse;
+    animation-duration: 1s;
+    animation-iteration-count: infinite;
+}
+
+.undoRedo {
+    @include row;
+}
+
+// ── stage bar: three equal steps under the header ──
+.stageBar {
+    @include row;
+    flex-shrink: 0;
+    padding: 4rem 6rem;
+    border-bottom-width: 1rem;
+    border-bottom-style: solid;
+    border-bottom-color: $c-line;
+}
+
+.stageItem {
+    @include row;
+    @include button-reset;
+    flex: 1 1 0;
+    justify-content: center;
+    min-width: 0;
+    height: 22rem;
+    margin: 0 2rem;
+    overflow: hidden;
+    border-radius: $radius;
+    background-color: rgba(255, 255, 255, 0.04);
+    transition-property: background-color, color, opacity;
+    transition-duration: $t-fast;
+}
+
+.stageNum {
+    @include row;
+    justify-content: center;
+    width: 15rem;
+    height: 15rem;
+    border-radius: 8rem;
+    background-color: rgba(255, 255, 255, 0.14);
+    font-size: 10rem;
+    font-weight: bold;
+    color: var(--menuText1Normal);
+    flex-shrink: 0;
+}
+
+.stageNumDone {
+    background-color: $c-ok;
+}
+
+.stageLabel {
+    margin-left: 6rem;
+    font-size: $fs;
+    @include ellipsis;
+}
+
+.stageCurrent {
+    background-color: rgba(143, 209, 255, 0.2);
+    cursor: default;
+    .stageNum {
+        background-color: var(--accentColorNormal);
+        color: #0b1d26;
+    }
+    .stageLabel {
+        color: #ffffff;
+        font-weight: bold;
+    }
+}
+
+.stageReachable {
+    &:hover {
+        background-color: $c-surface-hover;
+    }
+}
+
+.stageLocked {
+    opacity: 0.45;
+    cursor: default;
+}
+
+// ── body ──
+.bodyWrap {
+    @include col;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+@keyframes pmIn {
+    0% {
+        opacity: 0;
+        transform: translateY(6rem);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0rem);
+    }
+}
+
+.body {
+    @include col;
+    flex-shrink: 0;
+    padding: 8rem 10rem 10rem 10rem;
+    animation-name: pmIn;
+    animation-duration: 0.18s;
+    animation-timing-function: $ease;
+}
+
+// ── footer: info line, then the full-width primary button ──
+.footer {
+    @include col;
+    flex-shrink: 0;
+    padding: 6rem 10rem 8rem 10rem;
+    border-top-width: 1rem;
+    border-top-style: solid;
+    border-top-color: $c-line-strong;
+    background-color: rgba(0, 0, 0, 0.22);
+}
+
+.footerCompact {
+    border-top-width: 0;
+    padding-top: 2rem;
+    background-color: transparent;
+}
+
+.footInfo {
+    @include row;
+    min-height: 18rem;
+    margin-bottom: 5rem;
+    overflow: hidden;
+}
+
+.planNotice, .blockedNotice {
+    @include row;
+    align-items: flex-start;
+    min-width: 0;
+    margin-bottom: 6rem;
+    padding: 6rem 7rem;
+    border-radius: $radius;
+    background-color: rgba(63, 182, 240, 0.09);
+    color: $c-text-dim;
+    font-size: $fs-s;
+    line-height: 1.4;
+}
+
+.blockedNotice {
+    background-color: rgba(255, 181, 71, 0.09);
+    color: #ffd59a;
+}
+
+.noticeText {
+    flex: 1 1 auto;
+    min-width: 0;
+    margin-left: 6rem;
+    white-space: normal;
+    overflow-wrap: break-word;
+}
+
+.reason {
+    @include row;
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+.reasonText {
+    flex: 1 1 auto;
+    margin-left: 6rem;
+    font-size: $fs-s;
+    color: #ffd59a;
+    @include ellipsis;
+}
+
+.quick {
+    @include row;
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    transition-property: opacity;
+    transition-duration: $t-med;
+}
+
+.quickStale {
+    opacity: 0.4;
+}
+
+.quickWrap {
+    @include row;
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+}
+
+// "Planning…": spinner + label, so a slow plan never looks like nothing is happening.
+.busy {
+    @include row;
+    position: relative;
+    flex-shrink: 0;
+    height: 18rem;
+    padding: 0 7rem 0 4rem;
+    margin-right: 8rem;
+    border-radius: 9rem;
+    background-color: rgba(63, 182, 240, 0.16);
+}
+
+.busyTrack {
+    position: absolute;
+    left: 9rem;
+    right: 9rem;
+    bottom: 1rem;
+    height: 2rem;
+    border-radius: 1rem;
+    background-color: rgba(255, 255, 255, 0.12);
+    overflow: hidden;
+}
+
+.busyFill {
+    height: 100%;
+    background-color: var(--accentColorNormal);
+    transition-property: width;
+    transition-duration: 0.1s;
+}
+
+.busyText {
+    margin-left: 5rem;
+    font-size: $fs-s;
+    color: #cfeeff;
+    white-space: nowrap;
+}
+
+.headSpinner {
+    margin-left: 8rem;
+}
+
+.quickItem {
+    @include row;
+    min-width: 0;
+    margin-right: 10rem;
+}
+
+.quickText {
+    margin-left: 4rem;
+    font-size: $fs-s;
+    color: var(--menuText1Normal);
+    @include ellipsis;
+}
+
+.quickBad .quickText {
+    color: $c-danger;
+}
+
+.primary {
+    @include row;
+    @include button-reset;
+    justify-content: center;
+    position: relative;
+    height: 30rem;
+    padding: 0 12rem;
+    border-radius: $radius + 1rem;
+    background-color: var(--accentColorNormal);
+    color: #0b1d26;
+    box-shadow: 0 1rem 6rem rgba(63, 182, 240, 0.3);
+    transition-property: background-color, opacity;
+    transition-duration: $t-fast;
+    &:hover {
+        background-color: var(--accentColorLight);
+    }
+}
+
+.primaryLabel {
+    font-size: $fs;
+    font-weight: bold;
+    @include ellipsis;
+}
+
+.enterKey {
+    position: absolute;
+    right: 8rem;
+    top: 8rem;
+    padding: 0 5rem;
+    border-radius: $radius-s;
+    background-color: rgba(11, 29, 38, 0.16);
+    font-size: 10rem;
+    font-weight: bold;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.primaryOff {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: rgba(234, 242, 246, 0.6);
+    box-shadow: 0 0 0 rgba(0, 0, 0, 0);
+    cursor: default;
+    &:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+}
+
+// Disabled, but pressing it leads to what is missing (the Entrances section).
+.primaryOff.primaryLead {
+    cursor: pointer;
+}
+
+.primaryCancel {
+    background-color: rgba(255, 107, 91, 0.25);
+    color: #ffd2cc;
+    box-shadow: 0 0 0 rgba(0, 0, 0, 0);
+    &:hover {
+        background-color: rgba(255, 107, 91, 0.38);
+    }
+}
+
+// ── hints ──
+.hints {
+    @include row;
+    flex-shrink: 0;
+    min-width: 0;
+    height: 22rem;
+    overflow: hidden;
+    padding: 0 10rem;
+    border-top-width: 1rem;
+    border-top-style: solid;
+    border-top-color: $c-line;
+    background-color: rgba(0, 0, 0, 0.22);
+}
+
+.hint {
+    @include row;
+    flex: 0 0 auto;
+    margin-right: 10rem;
+}
+
+.hintOnly {
+    flex: 0 1 auto;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.hintText {
+    margin-left: 2rem;
+    font-size: 11rem;
+    color: $c-text-dim;
+    white-space: nowrap;
+}
+
+.hintOnly .hintText {
+    @include ellipsis;
+}
+
+// ── marker placement banner (inside the panel, under the stage bar) ──
+.banner {
+    @include row;
+    flex-shrink: 0;
+    min-width: 0;
+    padding: 3rem 6rem 3rem 10rem;
+    background-color: rgba(255, 169, 77, 0.16);
+    border-bottom-width: 1rem;
+    border-bottom-style: solid;
+    border-bottom-color: rgba(255, 169, 77, 0.45);
+}
+
+.bannerText {
+    @include col;
+    flex: 1 1 auto;
+    min-width: 0;
+    margin-left: 6rem;
+    margin-right: 6rem;
+    overflow: hidden;
+}
+
+.bannerTitle {
+    font-size: $fs;
+    @include ellipsis;
+    font-weight: bold;
+    color: #ffffff;
+}
+
+.bannerSub {
+    font-size: 11rem;
+    @include ellipsis;
+    color: #ffe2c2;
+}
+
+// ── collapsed ──
+.compact {
+    @include col;
+}
+
+.compactRow {
+    @include row;
+    min-width: 0;
+    padding: 5rem 10rem 4rem 10rem;
+}
+
+.compactStage {
+    font-size: $fs;
+    @include ellipsis;
+    font-weight: bold;
+}
+
+// ── picker flyout beside the panel ──
+.flyout {
+    @include col;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 380rem;
+    pointer-events: none;
+}
+
+.flyoutLeft {
+    right: 100%;
+    margin-right: 10rem;
+}
+
+.flyoutRight {
+    left: 100%;
+    margin-left: 10rem;
+}
+
+// ── crash ──
+.crash {
+    position: absolute;
+    top: 64rem;
+    right: 12rem;
+    pointer-events: auto;
+    max-width: 400rem;
+    padding: 10rem 14rem;
+    border-radius: $radius;
+    background-color: rgba(90, 20, 20, 0.95);
+    @include border(1rem, #ff6b5b);
+    color: #ffffff;
+    font-size: var(--fontSizeS);
+    cursor: pointer;
+}
+
+.crashDetail {
+    margin-top: 4rem;
+    font-size: var(--fontSizeXS);
+    color: #ffcfc8;
+}
+
+// Arabic / Persian mirroring mods flip the game UI; keep our rows readable.
+.rtl {
+    direction: rtl;
+}
+
+// s15 — UI and DLL disagree (mod updated while the game ran): one amber line under the stage bar.
+.versionNotice {
+    @include row;
+    flex-shrink: 0;
+    min-width: 0;
+    padding: 4rem 10rem;
+    background-color: rgba(255, 169, 77, 0.16);
+    border-bottom-width: 1rem;
+    border-bottom-style: solid;
+    border-bottom-color: rgba(255, 169, 77, 0.45);
+}
+
+.versionText {
+    margin-left: 6rem;
+    font-size: $fs-s;
+    color: var(--menuText1Normal);
+    white-space: normal;
+}
+
+// s42: [☐ OK, permanent] beside the primary button; the button takes the rest of the row.
+.primaryRow {
+    @include row;
+    min-width: 0;
+    > * {
+        flex: 1 1 auto;
+    }
+}
+
+.ackChip {
+    @include col;
+    flex-shrink: 0;
+    min-width: 0;
+    margin-bottom: 6rem;
+    padding: 5rem 8rem;
+    border-radius: $radius + 1rem;
+    background-color: rgba(255, 181, 71, 0.14);
+    @include border(1rem, rgba(255, 181, 71, 0.5));
+}
+
+.ackText {
+    min-width: 0;
+    white-space: normal;
+    overflow-wrap: break-word;
+    line-height: 1.4;
+}
+
+.ackDetail {
+    margin-top: 2rem;
+    font-size: $fs-s;
+    color: $c-text-dim;
+}

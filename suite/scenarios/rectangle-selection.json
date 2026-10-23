@@ -1,0 +1,88 @@
+{
+  "scenarios": [
+    {
+      "id": "rectangle-park",
+      "land": {
+        "size": [
+          230,
+          200
+        ],
+        "roads": "around"
+      },
+      "steps": [
+        {
+          "do": "rectangle",
+          "angle": 23
+        },
+        {
+          "do": "type",
+          "layer": "park",
+          "preset": "natural"
+        },
+        {
+          "do": "entrances"
+        },
+        {
+          "do": "preview",
+          "shot": "plan"
+        },
+        {
+          "do": "build"
+        },
+        {
+          "do": "camera",
+          "target": "build",
+          "view": "oblique",
+          "shot": "built",
+          "shotMode": "render"
+        },
+        {
+          "do": "terrain",
+          "shot": "terrain"
+        }
+      ]
+    },
+    {
+      "id": "rectangle-parking",
+      "land": {
+        "size": [
+          230,
+          200
+        ],
+        "roads": "around"
+      },
+      "steps": [
+        {
+          "do": "rectangle",
+          "angle": -16
+        },
+        {
+          "do": "type",
+          "layer": "parking",
+          "preset": "standard"
+        },
+        {
+          "do": "entrances"
+        },
+        {
+          "do": "preview",
+          "shot": "plan"
+        },
+        {
+          "do": "build"
+        },
+        {
+          "do": "camera",
+          "target": "build",
+          "view": "oblique",
+          "shot": "built",
+          "shotMode": "render"
+        },
+        {
+          "do": "terrain",
+          "shot": "terrain"
+        }
+      ]
+    }
+  ]
+}

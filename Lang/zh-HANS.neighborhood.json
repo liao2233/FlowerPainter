@@ -1,0 +1,22 @@
+{
+  "FlowerPainter.Neighborhood.Feature": "居民街区造景",
+  "FlowerPainter.Neighborhood.Feature.Tooltip": "沿街保留住宅地块，在街区内部设置带公共步道的共享庭院。请先选择住宅预划分区。",
+  "FlowerPainter.Neighborhood.Name": "社区共享庭院",
+  "FlowerPainter.Neighborhood.style": "庭院风格",
+  "FlowerPainter.Neighborhood.style.Tooltip": "使用公园规划逻辑布置紧凑绿地、自然树丛或规整花园。",
+  "FlowerPainter.Neighborhood.style.pocket": "口袋绿地",
+  "FlowerPainter.Neighborhood.style.natural": "自然树丛",
+  "FlowerPainter.Neighborhood.style.formal": "规整花园",
+  "FlowerPainter.Neighborhood.treeDensity": "树木密度",
+  "FlowerPainter.Neighborhood.treeDensity.Tooltip": "每公顷共享庭院的树木数量，住宅地块和通行步道保持留空。",
+  "FlowerPainter.Neighborhood.furniture": "休息设施",
+  "FlowerPainter.Neighborhood.furniture.Tooltip": "每 100 米庭院步道的长椅数量，可搭配路灯和垃圾桶。",
+  "FlowerPainter.Neighborhood.lamps": "路灯",
+  "FlowerPainter.Neighborhood.bins": "垃圾桶",
+  "FlowerPainter.Neighborhood.treeSpecies": "树种",
+  "FlowerPainter.Neighborhood.Issue.ResidentialOnly": "居民街区造景需要住宅预划分区，请先选择一种住宅分区。",
+  "FlowerPainter.Neighborhood.Issue.NoSpace": "街区内没有足够余地设置共享庭院。请增大街区间距或减小住宅地块深度。",
+  "FlowerPainter.Neighborhood.Issue.NoAccess": "此庭院无法接入公共街道，已保持空置。",
+  "FlowerPainter.Neighborhood.Issue.Skipped": "{0} 个较小街区保留住宅用地，不设置内部庭院。",
+  "FlowerPainter.Neighborhood.Issue.Limit": "一次最多规划 {0} 处共享庭院。可拆分较大区域以增加庭院。"
+}

@@ -1,0 +1,364 @@
+@use "../styles/tokens" as *;
+
+.icon {
+    display: block;
+    flex-shrink: 0;
+}
+
+// ── buttons ──
+.btn {
+    @include row;
+    @include button-reset;
+    justify-content: center;
+    min-width: 0;
+    height: 24rem;
+    padding: 0 8rem;
+    border-radius: $radius;
+    font-size: $fs;
+    transition-property: background-color, opacity, color, transform;
+    transition-duration: $t-fast;
+    flex-shrink: 0;
+    overflow: hidden;
+}
+
+.iconOnly {
+    width: 24rem;
+    padding: 0;
+}
+
+.btnLabel {
+    margin-left: 5rem;
+    @include ellipsis;
+}
+
+.iconOnly .btnLabel {
+    margin-left: 0;
+}
+
+.ghost {
+    background-color: transparent;
+    &:hover {
+        background-color: $c-surface-hover;
+    }
+}
+
+.solid {
+    background-color: $c-surface;
+    &:hover {
+        background-color: $c-surface-hover;
+    }
+}
+
+.accent {
+    background-color: var(--accentColorNormal);
+    color: #0b1d26;
+    font-weight: bold;
+    &:hover {
+        background-color: var(--accentColorLight);
+    }
+}
+
+.danger {
+    background-color: rgba(255, 107, 91, 0.18);
+    color: #ffd2cc;
+    &:hover {
+        background-color: rgba(255, 107, 91, 0.32);
+    }
+}
+
+.selected {
+    background-color: rgba(255, 255, 255, 0.16);
+    color: #ffffff;
+}
+
+.disabled {
+    opacity: 0.38;
+    cursor: default;
+    &:hover {
+        background-color: transparent;
+    }
+}
+
+.solid.disabled:hover {
+    background-color: $c-surface;
+}
+
+.accent.disabled {
+    background-color: $c-surface-strong;
+    color: var(--menuText1Normal);
+    opacity: 0.55;
+}
+
+// ── segmented ──
+.segmented {
+    @include row;
+    min-width: 0;
+    padding: 1rem;
+    border-radius: $radius + 1rem;
+    background-color: $c-shade;
+    flex-shrink: 0;
+}
+
+.stretch {
+    flex: 1 1 auto;
+    .seg {
+        flex: 1 1 0;
+    }
+}
+
+.seg {
+    @include row;
+    @include button-reset;
+    justify-content: center;
+    min-width: 0;
+    height: 22rem;
+    padding: 0 7rem;
+    border-radius: $radius;
+    color: $c-text-dim;
+    font-size: $fs;
+    overflow: hidden;
+    transition-property: background-color, color;
+    transition-duration: $t-fast;
+    &:hover {
+        background-color: $c-surface-hover;
+        color: var(--menuText1Normal);
+    }
+}
+
+.segIconOnly {
+    width: 28rem;
+    padding: 0;
+}
+
+.segOn {
+    background-color: rgba(255, 255, 255, 0.17);
+    color: #ffffff;
+    &:hover {
+        background-color: rgba(255, 255, 255, 0.2);
+    }
+}
+
+.segLabel {
+    margin-left: 4rem;
+    @include ellipsis;
+}
+
+.segIconOnly .segLabel {
+    margin-left: 0;
+}
+
+// ── key caps ──
+.keys {
+    @include row;
+    flex-shrink: 0;
+}
+
+.key {
+    @include row;
+    justify-content: center;
+    min-width: 16rem;
+    height: 16rem;
+    padding: 0 4rem;
+    margin-right: 2rem;
+    border-radius: $radius-s;
+    background-color: rgba(255, 255, 255, 0.12);
+    @include border(1rem, rgba(255, 255, 255, 0.14));
+    border-bottom-width: 2rem;
+    font-size: 11rem;
+    white-space: nowrap;
+    color: var(--menuText1Normal);
+}
+
+// ── checkbox / switch ──
+.check {
+    @include row;
+    @include button-reset;
+    min-width: 0;
+    padding: 2rem 0;
+    text-align: left;
+}
+
+.checkBox {
+    @include row;
+    justify-content: center;
+    width: 16rem;
+    height: 16rem;
+    border-radius: $radius-s;
+    @include border(2rem, $c-line-strong);
+    background-color: $c-shade;
+    flex-shrink: 0;
+    transition-property: background-color;
+    transition-duration: $t-fast;
+}
+
+.checkOn .checkBox {
+    background-color: var(--accentColorNormal);
+    @include border-color(var(--accentColorNormal));
+    color: #0b1d26;
+}
+
+.checkLabel {
+    margin-left: 7rem;
+    font-size: $fs;
+    color: var(--menuText1Normal);
+    @include ellipsis;
+}
+
+.switch {
+    @include row;
+    @include button-reset;
+    width: 30rem;
+    height: 17rem;
+    padding: 2rem;
+    border-radius: 9rem;
+    background-color: rgba(255, 255, 255, 0.16);
+    flex-shrink: 0;
+    transition-property: background-color;
+    transition-duration: $t-med;
+}
+
+.knob {
+    width: 13rem;
+    height: 13rem;
+    border-radius: 7rem;
+    background-color: #ffffff;
+    transform: translateX(0rem);
+    transition-property: transform;
+    transition-duration: $t-med;
+    transition-timing-function: $ease;
+}
+
+.switchOn {
+    background-color: var(--accentColorNormal);
+    .knob {
+        transform: translateX(13rem);
+    }
+}
+
+.dot {
+    width: 8rem;
+    height: 8rem;
+    border-radius: 4rem;
+    flex-shrink: 0;
+}
+
+// ── section: small caps heading ──
+.section {
+    @include col;
+    margin-top: 10rem;
+}
+
+.sectionHead {
+    @include row;
+    min-height: 20rem;
+    margin-bottom: 4rem;
+}
+
+.sectionIcon {
+    margin-right: 5rem;
+}
+
+.sectionTitle {
+    font-size: 11rem;
+    font-weight: bold;
+    color: $c-text-dim;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.sectionCount {
+    margin-left: 6rem;
+    padding: 0 5rem;
+    border-radius: 7rem;
+    background-color: $c-surface-strong;
+    font-size: 11rem;
+    color: var(--menuText1Normal);
+    flex-shrink: 0;
+}
+
+.sectionRule {
+    flex: 1 1 auto;
+    min-width: 0;
+    height: 1rem;
+    margin-left: 8rem;
+    margin-right: 4rem;
+    background-color: $c-line;
+}
+
+// ── collapsible: a one-line header (chevron · title · summary) that folds its body ──
+.fold {
+    @include col;
+    border-bottom-width: 1rem;
+    border-bottom-style: solid;
+    border-bottom-color: $c-line;
+}
+
+.foldHead {
+    @include row;
+    min-width: 0;
+    height: 24rem;
+}
+
+.foldToggle {
+    @include row;
+    @include button-reset;
+    flex: 1 1 auto;
+    min-width: 0;
+    height: 24rem;
+    padding: 0 2rem;
+    border-radius: $radius-s;
+    text-align: left;
+    overflow: hidden;
+    &:hover {
+        background-color: $c-surface;
+    }
+}
+
+.foldIcon {
+    margin-left: 3rem;
+}
+
+.foldTitle {
+    margin-left: 4rem;
+    font-size: $fs;
+    font-weight: bold;
+    color: #ffffff;
+    white-space: nowrap;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.foldSummary {
+    flex: 1 1 auto;
+    margin-left: 10rem;
+    font-size: $fs-s;
+    color: $c-text-dim;
+    text-align: right;
+    @include ellipsis;
+}
+
+.foldSpacer {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.foldRight {
+    @include row;
+    flex-shrink: 0;
+    margin-left: 4rem;
+}
+
+.foldBody {
+    @include col;
+    padding: 0 0 4rem 14rem;
+}
+
+.foldNested {
+    border-bottom-width: 0;
+    .foldTitle {
+        font-weight: normal;
+        color: var(--menuText1Normal);
+    }
+}

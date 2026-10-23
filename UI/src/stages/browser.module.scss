@@ -1,0 +1,449 @@
+@use "../styles/tokens" as *;
+
+// s42 picker (1 Category · 2 Type · 3 Style) and editing bar (PresetBrowser.tsx). Dense, aligned, hairline
+// dividers; every chip one 24rem line (Gameface: flexbox + margins only, no grid / gap).
+
+$accent: #8fd1ff;
+$chip-h: 24rem;
+$label-w: 74rem;
+
+.flex {
+    flex: 1 1 auto;
+}
+
+// ── picker panel ──
+.picker {
+    @include col;
+    min-width: 0;
+    border-radius: $radius;
+    background-color: rgba(0, 0, 0, 0.18);
+    @include border(1rem, $c-line-strong);
+}
+
+.head {
+    @include row;
+    min-width: 0;
+    height: 26rem;
+    padding: 0 3rem 0 6rem;
+}
+
+.headToggle {
+    @include row;
+    @include button-reset;
+    flex-shrink: 0;
+    height: 24rem;
+}
+
+.headTitle {
+    margin-left: 5rem;
+    font-size: 11rem;
+    font-weight: bold;
+    letter-spacing: 0.5rem;
+    text-transform: uppercase;
+    color: $c-text-dim;
+    white-space: nowrap;
+}
+
+.headBtn {
+    width: 22rem;
+    height: 22rem;
+}
+
+.search {
+    @include row;
+    flex: 1 1 auto;
+    min-width: 0;
+    height: 20rem;
+    margin: 0 4rem 0 10rem;
+    padding: 0 1rem 0 6rem;
+    border-radius: $radius-s;
+    background-color: $c-shade;
+    @include border(1rem, rgba(143, 209, 255, 0.45));
+}
+
+.searchInput {
+    flex: 1 1 auto;
+    min-width: 0;
+    height: 18rem;
+    padding: 0;
+    @include border(0, transparent);
+    background-color: transparent;
+    font-size: $fs-s;
+    font-family: var(--fontFamily);
+    color: #ffffff;
+    outline-width: 0;
+}
+
+.clear {
+    width: 18rem;
+    height: 18rem;
+}
+
+.browser {
+    @include col;
+    min-width: 0;
+    border-top-width: 1rem;
+    border-top-style: solid;
+    border-top-color: $c-line;
+}
+
+.row {
+    @include row(flex-start);
+    min-width: 0;
+    padding: 4rem 4rem 2rem 6rem;
+}
+
+.rule {
+    height: 1rem;
+    margin-left: 6rem;
+    margin-right: 6rem;
+    background-color: $c-line;
+}
+
+.rowLabel {
+    @include row;
+    flex-shrink: 0;
+    width: $label-w;
+    height: $chip-h;
+}
+
+.rowNum {
+    @include row;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 15rem;
+    height: 15rem;
+    border-radius: 8rem;
+    background-color: rgba(255, 255, 255, 0.1);
+    font-size: 10rem;
+    font-weight: bold;
+    color: $c-text-dim;
+}
+
+.rowLabelText {
+    margin-left: 5rem;
+    font-size: 11rem;
+    color: $c-text-faint;
+    @include ellipsis;
+}
+
+.chips {
+    @include row;
+    flex: 1 1 auto;
+    flex-wrap: wrap;
+    min-width: 0;
+}
+
+.chip {
+    @include row;
+    @include button-reset;
+    position: relative;
+    flex-shrink: 0;
+    max-width: 170rem;
+    height: $chip-h;
+    margin: 0 3rem 2rem 0;
+    padding: 0 6rem 0 3rem;
+    border-radius: $radius;
+    background-color: rgba(255, 255, 255, 0.05);
+    @include border(1rem, rgba(255, 255, 255, 0.07));
+    overflow: hidden;
+    transition-property: background-color;
+    transition-duration: $t-fast;
+    &:hover {
+        background-color: $c-surface-hover;
+    }
+}
+
+.chipOn {
+    background-color: rgba(143, 209, 255, 0.2);
+    @include border-color($accent);
+    &:hover {
+        background-color: rgba(143, 209, 255, 0.28);
+    }
+    .chipName {
+        color: #ffffff;
+        font-weight: bold;
+    }
+}
+
+.chipDashed {
+    padding-left: 6rem;
+    background-color: transparent;
+    border-top-style: dashed;
+    border-right-style: dashed;
+    border-bottom-style: dashed;
+    border-left-style: dashed;
+    @include border-color(rgba(255, 255, 255, 0.28));
+}
+
+.chipMore {
+    padding-left: 7rem;
+    background-color: transparent;
+    .chipName {
+        margin-left: 0;
+        margin-right: 3rem;
+        color: $c-text-dim;
+    }
+}
+
+.tile {
+    @include row;
+    justify-content: center;
+    flex-shrink: 0;
+    border-radius: 3rem;
+}
+
+.chipName {
+    margin-left: 5rem;
+    font-size: $fs-s;
+    color: var(--menuText1Normal);
+    @include ellipsis;
+}
+
+.chipCount {
+    flex-shrink: 0;
+    margin-left: 5rem;
+    font-size: 10rem;
+    color: $c-text-faint;
+}
+
+// a built-in style the player saved over
+.edited {
+    flex-shrink: 0;
+    width: 5rem;
+    height: 5rem;
+    margin-left: 4rem;
+    border-radius: 3rem;
+    background-color: $c-warning;
+}
+
+// the active style has unsaved changes
+.dot {
+    flex-shrink: 0;
+    width: 6rem;
+    height: 6rem;
+    margin-left: 4rem;
+    border-radius: 3rem;
+    background-color: $accent;
+}
+
+// the selected type lives in this (not shown) category
+.mark {
+    position: absolute;
+    top: 3rem;
+    right: 3rem;
+    width: 4rem;
+    height: 4rem;
+    border-radius: 2rem;
+    background-color: $accent;
+}
+
+.empty {
+    padding: 6rem 8rem;
+    font-size: $fs-s;
+    color: $c-text-dim;
+}
+
+// ── editing bar ──
+.bar {
+    @include col;
+    position: relative;
+    min-width: 0;
+    margin-top: 6rem;
+    border-radius: $radius;
+    background-color: rgba(143, 209, 255, 0.07);
+    @include border(1rem, rgba(143, 209, 255, 0.4));
+}
+
+.barModified {
+    @include border-color(rgba(143, 209, 255, 0.7));
+}
+
+.barHead {
+    @include row;
+    min-width: 0;
+    height: 18rem;
+    padding: 0 8rem;
+    background-color: rgba(143, 209, 255, 0.1);
+    border-bottom-width: 1rem;
+    border-bottom-style: solid;
+    border-bottom-color: rgba(143, 209, 255, 0.2);
+}
+
+.barTitle {
+    flex: 1 1 auto;
+    font-size: 10rem;
+    font-weight: bold;
+    letter-spacing: 0.6rem;
+    text-transform: uppercase;
+    color: $accent;
+}
+
+.modified {
+    @include row;
+    flex-shrink: 0;
+}
+
+.modDot {
+    width: 6rem;
+    height: 6rem;
+    border-radius: 3rem;
+    background-color: $c-warning;
+}
+
+.modText {
+    margin-left: 4rem;
+    font-size: 11rem;
+    color: #ffd79a;
+    white-space: nowrap;
+}
+
+.barNote {
+    flex-shrink: 0;
+    font-size: 11rem;
+    color: $c-text-faint;
+}
+
+.barRow {
+    @include row;
+    min-width: 0;
+    height: 32rem;
+    padding: 0 3rem 0 5rem;
+}
+
+.crumbs {
+    @include row;
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.crumb {
+    @include row;
+    flex: 0 1 auto;
+    min-width: 0;
+    height: 22rem;
+    padding: 0 6rem 0 3rem;
+    border-radius: $radius-s;
+    background-color: rgba(255, 255, 255, 0.06);
+}
+
+.crumbOn {
+    background-color: rgba(143, 209, 255, 0.22);
+    @include border(1rem, $accent);
+    .crumbName {
+        color: #ffffff;
+        font-weight: bold;
+    }
+}
+
+.crumbName {
+    margin-left: 5rem;
+    font-size: $fs-s;
+    color: var(--menuText1Normal);
+    @include ellipsis;
+}
+
+.sep {
+    flex-shrink: 0;
+    margin-left: 2rem;
+    margin-right: 2rem;
+}
+
+.tools {
+    @include row;
+    flex-shrink: 0;
+    margin-left: 6rem;
+}
+
+.tool {
+    width: 24rem;
+    height: 24rem;
+    margin-left: 1rem;
+}
+
+.toolPrimary {
+    width: 28rem;
+}
+
+.nameForm {
+    @include row;
+    min-width: 0;
+    height: 32rem;
+    padding: 0 3rem 0 6rem;
+}
+
+.nameInput {
+    flex: 1 1 auto;
+    min-width: 0;
+    height: 22rem;
+    margin-right: 4rem;
+    padding: 0 6rem;
+    border-radius: $radius-s;
+    @include border(1rem, $c-line-strong);
+    background-color: $c-shade;
+    font-size: $fs;
+    font-family: var(--fontFamily);
+    color: #ffffff;
+    outline-width: 0;
+}
+
+.menu {
+    @include col;
+    min-width: 0;
+    padding: 2rem 4rem 4rem 4rem;
+    border-top-width: 1rem;
+    border-top-style: solid;
+    border-top-color: $c-line;
+}
+
+.menuItem {
+    @include row;
+    @include button-reset;
+    min-width: 0;
+    height: 22rem;
+    padding: 0 6rem;
+    border-radius: $radius-s;
+    &:hover {
+        background-color: $c-surface-hover;
+    }
+}
+
+.menuText {
+    margin-left: 6rem;
+    font-size: $fs-s;
+    @include ellipsis;
+}
+
+.menuDanger .menuText {
+    color: $c-danger;
+}
+
+.exported {
+    @include col;
+    min-width: 0;
+    padding: 3rem 6rem 5rem 6rem;
+    border-top-width: 1rem;
+    border-top-style: solid;
+    border-top-color: $c-line;
+}
+
+.exportedHead {
+    @include row;
+    min-width: 0;
+}
+
+.exportedNote {
+    flex: 1 1 auto;
+    margin-left: 6rem;
+    font-size: $fs-s;
+    color: $c-text-dim;
+    @include ellipsis;
+}
+
+.path {
+    margin-top: 2rem;
+    font-size: 11rem;
+    color: $c-text-faint;
+    word-break: break-all;
+}

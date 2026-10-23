@@ -1,0 +1,844 @@
+// FlowerPainter — build transaction: ComposedPlan → game entities → one group (GPL-3.0).
+//
+// The transaction shape follows ParkManager's build workflow (tomkpunkt, GPL-3.0): definitions →
+// temporaries → game validation → apply → adopt. Improvements over the sources:
+//  * Ownership follows the game's own Temp→permanent mechanism: Apply turns a Temp entity with no
+//    original into the permanent entity IN PLACE (ApplyObjects/Net/AreasSystem.Create), so a tag
+//    added to our temporaries before Apply survives. Temporaries are recognised by prefab AND
+//    geometry against the plan (PlanIndex) — never by a baseline diff that could adopt foreign
+//    entities or split pieces of an existing road.
+//  * (s59) Validation is read once (BuildService.Verdicts): Apply never reads Error, so under anarchy everything is applied;
+//    vanilla rules leave refused decorative pieces out in place, once. Money is charged by vanilla ToolApplySystem from Temp.m_Cost.
+//  * Every step is frame-bounded with timeouts and wrapped in try/catch; a failure before Apply
+//    clears the temporaries, a failure after Apply rolls the group back through the removal system.
+//
+// Phase: ToolUpdate, before BuildToolSystem (it hands our requested applyMode to the game in the
+// same frame). Runs while paused (ToolSystem updates every frame).
+
+using System;
+using System.Collections.Generic;
+using Colossal.Serialization.Entities;
+using Game;
+using Game.Common;
+using Game.Prefabs;
+using Game.Simulation;
+using Game.Tools;
+using FlowerPainter.Core;
+using FlowerPainter.Core.Build;
+using FlowerPainter.Game.Assets;
+using FlowerPainter.Game.Groups;
+using Unity.Collections;
+using Unity.Entities;
+using Unity.Mathematics;
+using UnityEngine.Scripting;
+
+namespace FlowerPainter.Game.Build
+{
+    public sealed partial class BuildService : GameSystemBase, IBuildService
+    {
+        // Frame budgets (measured in source mods: definitions materialise next frame; validation
+        // marks errors within ~3 frames; zone blocks of new roads appear within ~20 frames).
+        private const int ToolSwitchFrames = 2;
+        private const int MaterializeTimeoutFrames = 180;
+        private const int MaterializeStableFrames = 12;
+        private const int ValidationSettleFrames = 3;
+        private const int ApplySettleFrames = 3;
+        private const int ApplyTimeoutFrames = 90;
+        private const int ReplaceTimeoutFrames = 900;
+        private const int TerraformTimeoutFrames = 900;
+        private const int ZoningWaitFrames = 24;
+        /// <summary>Objects/areas emitted per frame; nets always go in one frame so junctions merge.</summary>
+        public const int DefinitionsPerFrame = 1500;
+
+        /// <summary>
+        /// Setting "Leave out parts that collide" — only with "Ignore collisions in my builds" OFF (vanilla rules): decorative
+        /// pieces the game refuses are left out in place, once (s59: no exclude-and-retry loop any more). Off: the build stops instead.
+        /// </summary>
+        public static bool AutoExcludeCollisions = true;
+
+        /// <summary>Setting "Fix or skip rejected pieces" — same role as <see cref="AutoExcludeCollisions"/> (either one enables it).</summary>
+        public static bool RecoverRejectedPieces = true;
+
+        private enum Step
+        {
+            Idle, Prepare, WaitReplaced, ActivateTool, Terraform, Paint, EmitNets, EmitRest, WaitTemps, Validate,
+            ResetForRetry, OwnerLot, Apply, Settle, ZoneRefresh, ZoneBlock, ZoningWait, ZoningEmit, ZoningApply, Finish, Cleanup,
+            RoadPreZone,
+        }
+
+        private ToolSystem _toolSystem;
+        private BuildToolSystem _tool;
+        private PrefabSystem _prefabs;
+        private TerrainSystem _terrain;
+        private WaterSystem _water;
+        private AssetCatalogSystem _catalog;
+        private GroupRegistrySystem _registry;
+        private SurfaceCloneSystem _clones;
+        private DecalOpacitySystem _decalClones;
+        // s28: per build, how many decorative decals were built see-through and why the others were not.
+        private int _decalsSeeThrough, _decalsFull;
+        private readonly Dictionary<string, int> _decalsFullWhy = new Dictionary<string, int>(StringComparer.Ordinal);
+
+        private EntityQuery _tempQuery;
+        private EntityQuery _errorQuery;
+        private EntityQuery _iconQuery;
+        private EntityQuery _definitionQuery;
+
+        private BuildStatus _status;
+        private Step _step;
+        private int _stepFrame;
+        /// <summary>
+        /// Set by Go: the next OnUpdate is the step's first frame (_stepFrame = that frame). Go is usually
+        /// called from inside the previous step, so without this "frame == _stepFrame" never held and the
+        /// first-frame work of ResetForRetry (destroy definitions + Clear), Paint and Cleanup was SKIPPED:
+        /// a retry kept the first attempt's temporaries and Apply built everything twice (playtest 4b).
+        /// </summary>
+        private bool _stepFresh;
+        private int _startFrame;
+        private BuildRequest _request;
+        private BuildWork _work;
+        private ToolBaseSystem _previousTool;
+        private bool _toolActivated;
+        private bool _applied;
+        private int _groupId;
+        private Entity _record;
+        private Entity _carrier;
+        private BuildPhase _cleanupPhase;
+        private string _cleanupKey;
+        private object[] _cleanupArgs;
+        private int _emitCursor;
+        private int _lastMatched = -1;
+        private int _stableSince;
+        private int _dropped;
+        private readonly List<string> _warnings = new List<string>();
+
+        public BuildStatus Status => _status;
+
+        /// <summary>True while a build is between Start and Done/Failed/Cancelled.</summary>
+        public bool Busy => _step != Step.Idle;
+        public bool Cancellable => Busy && !_recovering && _step != Step.Cleanup && _step != Step.Finish;
+
+        public bool IsBuildingGroup(int groupId) => Busy && groupId != 0 && (groupId == _groupId || groupId == _request?.BrushGroup);
+
+        /// <summary>
+        /// True while the build has taken over the active tool. A tool that is deactivated for the
+        /// build should keep its state when this is true (it gets reactivated afterwards).
+        /// </summary>
+        public bool HoldsTool => _toolActivated;
+
+        [Preserve]
+        protected override void OnCreate()
+        {
+            base.OnCreate();
+            _toolSystem = World.GetOrCreateSystemManaged<ToolSystem>();
+            _tool = World.GetOrCreateSystemManaged<BuildToolSystem>();
+            _prefabs = World.GetOrCreateSystemManaged<PrefabSystem>();
+            _terrain = World.GetOrCreateSystemManaged<TerrainSystem>();
+            _water = World.GetOrCreateSystemManaged<WaterSystem>();
+            _catalog = World.GetOrCreateSystemManaged<AssetCatalogSystem>();
+            _registry = World.GetOrCreateSystemManaged<GroupRegistrySystem>();
+            _clones = World.GetOrCreateSystemManaged<SurfaceCloneSystem>();
+            _decalClones = World.GetOrCreateSystemManaged<DecalOpacitySystem>();
+            InitOwner();
+            InitGhost();
+            InitProtect();
+            InitVerdicts();
+            _tempQuery = GetEntityQuery(new EntityQueryDesc
+            {
+                All = new[] { ComponentType.ReadOnly<Temp>(), ComponentType.ReadOnly<PrefabRef>() },
+                None = new[] { ComponentType.ReadOnly<Deleted>() },
+            });
+            _errorQuery = GetEntityQuery(new EntityQueryDesc
+            {
+                All = new[] { ComponentType.ReadOnly<Temp>(), ComponentType.ReadOnly<Error>() },
+                None = new[] { ComponentType.ReadOnly<Deleted>() },
+            });
+            _iconQuery = GetEntityQuery(new EntityQueryDesc
+            {
+                All = new[] { ComponentType.ReadOnly<global::Game.Notifications.Icon>(), ComponentType.ReadOnly<PrefabRef>() },
+                None = new[] { ComponentType.ReadOnly<Deleted>() },
+            });
+            _definitionQuery = GetEntityQuery(new EntityQueryDesc
+            {
+                All = new[] { ComponentType.ReadOnly<CreationDefinition>() },
+                None = new[] { ComponentType.ReadOnly<Deleted>() },
+            });
+            _status = new BuildStatus { Phase = BuildPhase.Idle };
+            Services.Build = this;
+        }
+
+        [Preserve]
+        protected override void OnDestroy()
+        {
+            if (ReferenceEquals(Services.Build, this)) Services.Build = null;
+            FlowerPainter.Game.Preview.GhostPreview.Unregister(this);
+            base.OnDestroy();
+        }
+
+        protected override void OnGamePreload(Purpose purpose, GameMode mode)
+        {
+            base.OnGamePreload(purpose, mode);
+            // The world is being replaced: nothing to clean up, just forget the transaction (and do
+            // not touch the tool system while it is being reset for the new world).
+            _toolActivated = false;
+            _previousTool = null;
+            ResetTransaction();
+            ClearEditRecovery();
+            ResetGhost();   // the temporaries die with the old world
+            _status = new BuildStatus { Phase = BuildPhase.Idle };
+        }
+
+        // ───────────────────────── IBuildService ─────────────────────────
+
+        public bool Start(BuildRequest request)
+        {
+            if (Busy)
+            {
+                _status.MessageKey = "FlowerPainter.Build.Busy";
+                return false;
+            }
+            if (request?.Plan == null)
+            {
+                SetFailed("FlowerPainter.Build.NothingToBuild");
+                return false;
+            }
+            if (request.Plan.HasErrors)
+            {
+                SetFailed("FlowerPainter.Build.PlanHasErrors");
+                return false;
+            }
+            if (!request.Plan.HasBuildableContent && request.BrushGroup == 0)
+            {
+                SetFailed("FlowerPainter.Build.NothingToBuild");
+                return false;
+            }
+            if (_catalog == null || !_catalog.Ready)
+            {
+                SetFailed("FlowerPainter.Build.CatalogNotReady");
+                return false;
+            }
+            DropGhostForBuild();   // the build's first Clear frame removes the ghost's temporaries
+            ResetTransaction();
+            ClearEditRecovery();
+            _request = request;
+            _startFrame = UnityEngine.Time.frameCount;
+            DumpBegin();   // s30: "Debug: dump terrain after build" (ground before the build)
+            _status = new BuildStatus { Phase = BuildPhase.Preparing, Progress = 0f, ErrorPositions = new List<float3>(), Warnings = new List<PlanIssue>() };
+            // US5: the same concrete assets as preview and price (idempotent if the tool already did it).
+            int auto = _catalog.ResolveAutomatic(request.Plan);
+            if (auto > 0) Mod.Log.Info($"FlowerPainter resolved {auto} automatic assets at build start (the tool should do this before preview/pricing).");
+            Go(Step.Prepare);
+            Mod.Log.Info($"FlowerPainter build started: {request.Plan.Layers.Count} layers, replace={request.ReplaceGroup}.");
+            _decalsSeeThrough = 0; _decalsFull = 0; _decalsFullWhy.Clear();
+            return true;
+        }
+
+        public void Cancel()
+        {
+            if (_recovering) return;
+            if (!Busy || _step == Step.Cleanup) return;
+            if (_step == Step.Finish) return;   // last frame: let it finish
+            BeginCleanup(BuildPhase.Cancelled, "FlowerPainter.Build.Cancelled");
+        }
+
+        public void Acknowledge()
+        {
+            if (Busy) return;
+            if (_status.Phase == BuildPhase.Done || _status.Phase == BuildPhase.Failed || _status.Phase == BuildPhase.Cancelled)
+                _status = new BuildStatus { Phase = BuildPhase.Idle, ErrorPositions = new List<float3>(), Warnings = new List<PlanIssue>() };
+        }
+
+        /// <summary>US8: red markers vanish as soon as the user changes anything (tool calls this).</summary>
+        public void ClearErrors()
+        {
+            _status.ErrorPositions = new List<float3>();
+        }
+
+        // ───────────────────────── fixed / skipped pieces (US8) ─────────────────────────
+
+        private sealed class SkipInfo { public int Count; public float3? At; public IssueSeverity Severity; }
+        private readonly Dictionary<string, SkipInfo> _skipped = new Dictionary<string, SkipInfo>(StringComparer.Ordinal);
+
+        /// <summary>Counts a fixed (Info) or skipped (Warning) piece under a localisation key; arg 0 = count.</summary>
+        private void NoteSkip(string key, float3? at, IssueSeverity severity = IssueSeverity.Warning, int count = 1)
+        {
+            if (!_skipped.TryGetValue(key, out var s)) _skipped[key] = s = new SkipInfo { Severity = severity };
+            s.Count += count;
+            if (!s.At.HasValue && at.HasValue) s.At = at;
+        }
+
+        private List<PlanIssue> ComposeWarnings(int dropped)
+        {
+            var list = new List<PlanIssue>();
+            foreach (var kv in _skipped)
+                list.Add(new PlanIssue { Severity = kv.Value.Severity, Key = kv.Key, Args = new object[] { kv.Value.Count }, At = kv.Value.At });
+            foreach (var key in _warnings)
+            {
+                bool dup = false;
+                foreach (var i in list) if (i.Key == key) { dup = true; break; }
+                if (!dup) list.Add(new PlanIssue { Severity = IssueSeverity.Warning, Key = key, Args = new object[] { dropped } });
+            }
+            // Warnings (left out) before infos (repaired/cleared).
+            list.Sort((a, b) => b.Severity.CompareTo(a.Severity));
+            return list;
+        }
+
+        /// <summary>Warnings of the last build (e.g. pieces the game dropped), as localisation keys.</summary>
+        public IReadOnlyList<string> LastWarnings => _warnings;
+
+        // ───────────────────────── state machine ─────────────────────────
+
+        [Preserve]
+        protected override void OnUpdate()
+        {
+            if (_step == Step.Idle) { GhostWatchdog(); return; }
+            int frame = UnityEngine.Time.frameCount;
+            _heightsValid = false;   // terrain data handles are only valid within the frame they were fetched
+            if (_stepFresh) { _stepFresh = false; _stepFrame = frame; }
+            try
+            {
+                if (_toolActivated && _step != Step.Cleanup && _toolSystem.activeTool != _tool)
+                {
+                    // The player (or a mod hotkey) switched tools mid-build.
+                    if (!_applied) { BeginCleanup(BuildPhase.Failed, "FlowerPainter.Build.Interrupted"); return; }
+                    _toolSystem.activeTool = _tool;   // after Apply we only need a few quiet frames
+                }
+                switch (_step)
+                {
+                    case Step.Prepare: DoPrepare(); break;
+                    case Step.WaitReplaced: DoWaitReplaced(frame); break;
+                    case Step.ActivateTool: DoActivateTool(frame); break;
+                    case Step.Terraform: DoTerraform(frame); break;
+                    case Step.Paint: DoPaint(frame); break;
+                    case Step.EmitNets: DoEmitNets(); break;
+                    case Step.EmitRest: DoEmitRest(); break;
+                    case Step.WaitTemps: DoWaitTemps(frame); break;
+                    case Step.Validate: DoValidate(frame); break;
+                    case Step.ResetForRetry: DoResetForRetry(frame); break;
+                    case Step.OwnerLot: DoOwnerLot(frame); break;
+                    case Step.Apply: DoApply(); break;
+                    case Step.Settle: DoSettle(frame); break;
+                    case Step.ZoneRefresh: DoZoneRefresh(frame); break;
+                    case Step.RoadPreZone: DoRoadPreZone(frame); break;
+                    case Step.ZoneBlock: DoZoneBlock(frame); break;
+                    case Step.ZoningWait: if (frame - _stepFrame >= ZoningWaitFrames) Go(Step.ZoningEmit); break;
+                    case Step.ZoningEmit: DoZoningEmit(); break;
+                    case Step.ZoningApply: DoZoningApply(frame); break;
+                    case Step.Finish: DoFinish(); break;
+                    case Step.Cleanup: DoCleanup(frame); break;
+                }
+            }
+            catch (Exception e)
+            {
+                Mod.Log.Error(e, $"FlowerPainter build failed in step {_step}");
+                if (_step == Step.Cleanup) ForceIdle(BuildPhase.Failed, "FlowerPainter.Build.Failed");
+                else BeginCleanup(BuildPhase.Failed, "FlowerPainter.Build.Failed", e.GetType().Name);
+            }
+        }
+
+        private void Go(Step step)
+        {
+            _step = step;
+            _stepFrame = UnityEngine.Time.frameCount;
+            _stepFresh = true;
+        }
+
+        private void DoPrepare()
+        {
+            bool first = _work == null;
+            if (first) { SnapshotPreviewZoning(); _work = PlanWork.Flatten(_request.Plan); }
+            if (_work.DefinitionCount == 0 && _work.Terraform.Count == 0 && _work.Zoning.Count == 0 && !HasPaint() && _request.BrushGroup == 0)
+            {
+                ForceIdle(BuildPhase.Failed, "FlowerPainter.Build.NothingToBuild");
+                return;
+            }
+            if (first) ResolvePrefabs();
+            try { CaptureEditRecovery(); }
+            catch (InvalidOperationException e)
+            {
+                Mod.Log.Warn("FlowerPainter kept the original project: " + e.Message);
+                ForceIdle(BuildPhase.Failed, "FlowerPainter.Build.UnsafeReplacement");
+                return;
+            }
+            if (_editBackupWrite != null)
+            {
+                if (!_editBackupWrite.IsCompleted) return;
+                if (_editBackupWrite.IsFaulted) throw _editBackupWrite.Exception.GetBaseException();
+                _editBackupWrite = null;
+            }
+            if (_request.BrushGroup != 0)
+            {
+                if (!BeginBrushEdit()) { ForceIdle(BuildPhase.Failed, "FlowerPainter.Build.ReplaceFailed"); return; }
+                if (_brushRemoval != null) { Go(Step.WaitReplaced); return; }
+            }
+            if (_request.ReplaceGroup != 0 && _registry.TryGetRecordEntity(_request.ReplaceGroup, out _))
+            {
+                // Edit = remove the old group, then build the new one. The old receipt stays in the
+                // tool's hands (GetReceipt before Start) so a failed rebuild can be retried/restored.
+                if (!_registry.RequestRemove(_request.ReplaceGroup))
+                {
+                    ForceIdle(BuildPhase.Failed, "FlowerPainter.Build.ReplaceFailed");
+                    return;
+                }
+                _replacementStarted = true;
+                Go(Step.WaitReplaced);
+                return;
+            }
+            Go(Step.ActivateTool);
+        }
+
+        private void DoWaitReplaced(int frame)
+        {
+            SetProgress(0.05f);
+            if (_request.BrushGroup != 0)
+            {
+                if (_brushRemoval.Failed) { ForceIdle(BuildPhase.Failed, "FlowerPainter.Build.ReplaceFailed"); return; }
+                if (_brushRemoval.Complete && !SuiteStopAfterRemoval()) Go(Step.ActivateTool);
+                return;
+            }
+            if (!_registry.TryGetRecordEntity(_request.ReplaceGroup, out _)) { if (!SuiteStopAfterRemoval()) Go(Step.ActivateTool); return; }
+            if (frame - _stepFrame > ReplaceTimeoutFrames) ForceIdle(BuildPhase.Failed, "FlowerPainter.Build.ReplaceFailed");
+        }
+
+        private void DoActivateTool(int frame)
+        {
+            if (!_toolActivated)
+            {
+                _previousTool = _toolSystem.activeTool;
+                _toolSystem.activeTool = _tool;
+                _toolActivated = true;
+                _stepFrame = frame;
+                return;
+            }
+            if (_toolSystem.activeTool != _tool) { BeginCleanup(BuildPhase.Failed, "FlowerPainter.Build.Interrupted"); return; }
+            if (_instant)
+            {
+                // Instant build: the ghost's temporaries ARE the build — no Clear, no re-emission.
+                if (frame - _stepFrame < ToolSwitchFrames + 1) return;
+                CreateRecord();   // the owner lot follows after validation (Step.OwnerLot)
+                _status.Phase = BuildPhase.Materializing;
+                SetProgress(0.4f);
+                _lastMatched = -1;
+                Go(Step.WaitTemps);
+                return;
+            }
+            if (frame - _stepFrame == 1)
+            {
+                // Clear leftovers of the previous tool so our single Apply never applies them.
+                DestroyForeignDefinitions();
+                _tool.Requested = ApplyMode.Clear;
+                return;
+            }
+            if (frame - _stepFrame < ToolSwitchFrames + 1) return;
+            CreateRecord();
+            _status.Phase = BuildPhase.Materializing;
+            Go(_work.Terraform.Count > 0 ? Step.Terraform : AfterTerraform());
+            if (_step == Step.Terraform) BeginTerraform();
+        }
+
+        private void DoEmitNets()
+        {
+            SetProgress(0.2f);
+            EmitNets();
+            _emitCursor = 0;
+            Go(Step.EmitRest);
+        }
+
+        private void DoEmitRest()
+        {
+            int total = _work.Surfaces.Count + _work.Areas.Count + _work.Objects.Count;
+            if (_emitCursor == 0)
+            {
+                // Same transaction as the build: old trees/props vanish on the one Apply, or not at all.
+                // The owner lot is emitted after validation (Step.OwnerLot) so its overlaps never reject the plan.
+                EmitClearDefinitions();
+            }
+            int end = math.min(total, _emitCursor + DefinitionsPerFrame);
+            var frameBudget = System.Diagnostics.Stopwatch.StartNew();
+            int begin = _emitCursor;
+            for (int i = _emitCursor; i < end; i++)
+            {
+                if (i < _work.Surfaces.Count) EmitSurface(_work.Surfaces[i]);
+                else if (i < _work.Surfaces.Count + _work.Areas.Count) EmitArea(_work.Areas[i - _work.Surfaces.Count]);
+                else EmitObject(_work.Objects[i - _work.Surfaces.Count - _work.Areas.Count]);
+                _emitCursor = i + 1;
+                if (_emitCursor - begin >= 16 && frameBudget.Elapsed.TotalMilliseconds >= 6) break;
+            }
+            SetProgress(0.2f + 0.2f * (total == 0 ? 1f : _emitCursor / (float)total));
+            if (_emitCursor >= total)
+            {
+                _lastMatched = -1;
+                if (_itemByKey.Count == 0)
+                {
+                    if (_work.DefinitionCount > 0) { BeginCleanup(BuildPhase.Failed, "FlowerPainter.Build.AssetsUnavailable"); return; }
+                    // Terraform/zoning-only plan: nothing to adopt, nothing to apply.
+                    _applied = true;
+                    AfterApply();
+                    GoAfterApply();
+                    return;
+                }
+                Go(Step.WaitTemps);
+            }
+        }
+
+        private void DoWaitTemps(int frame)
+        {
+            if (frame - _stepFrame < 2) return;
+            var census = Census();
+            SetProgress(0.4f + 0.15f * (census.Expected == 0 ? 1f : math.saturate(census.Matched / (float)census.Expected)));
+            if (census.Matched >= census.Expected)
+            {
+                Go(Step.Validate);
+                _status.Phase = BuildPhase.Validating;
+                return;
+            }
+            if (census.Matched != _lastMatched) { _lastMatched = census.Matched; _stableSince = frame; }
+            bool stable = frame - _stableSince >= MaterializeStableFrames && census.Matched > 0;
+            if (stable)
+            {
+                // Some pieces never materialised (the game silently drops e.g. surfaces it cannot
+                // triangulate). Build what exists and report the gap.
+                _dropped = census.Expected - census.Matched;
+                _warnings.Add("FlowerPainter.Build.PartsDropped");
+                Mod.Log.Warn($"FlowerPainter: {_dropped} of {census.Expected} planned parts did not materialise; continuing.");
+                Go(Step.Validate);
+                _status.Phase = BuildPhase.Validating;
+                return;
+            }
+            if (frame - _stepFrame > MaterializeTimeoutFrames)
+            {
+                CollectErrors();
+                BeginCleanup(BuildPhase.Failed, _status.ErrorPositions.Count > 0 ? _errorKey : "FlowerPainter.Build.Timeout");
+            }
+        }
+
+        /// <summary>
+        /// (s59) ONE validation pass. The game's verdicts are read once (BuildVerdicts.Decide): under anarchy nothing is refused
+        /// — every planned piece is applied; with vanilla rules the refused decorative pieces are cancelled in place. Existing
+        /// buildings are never demolished (ProtectBuildings + NeutralizeVerdicts). No re-emission, no retry loop.
+        /// </summary>
+        private void DoValidate(int frame)
+        {
+            CollectErrors();
+            if (frame - _stepFrame < ValidationSettleFrames) return;
+            if (_tool.OriginalDeleted)
+            {
+                // Something we modify (an existing road we connect to) was removed meanwhile: nothing sensible to apply.
+                Mod.Log.Warn("FlowerPainter build stopped: an existing piece this build changes was removed meanwhile.");
+                BeginCleanup(BuildPhase.Failed, "FlowerPainter.Build.Interrupted");
+                return;
+            }
+            if (!ApplyVerdicts())
+            {
+                BeginCleanup(BuildPhase.Failed, _errorKey, _errorArgs);
+                return;
+            }
+            // (s15) Never demolish an existing building: its touching pieces are left out in place (nets: see ProtectBuildings).
+            if (ProtectBuildings() < 0) { BeginCleanup(BuildPhase.Failed, "FlowerPainter.Build.WouldDemolish"); return; }
+            int tagged = TagTemporaries();
+            if (TemporariesDuplicated())
+            {
+                // Never apply a doubled set: clear everything and emit once more, then give up.
+                if (!_dupRetried) { _dupRetried = true; Go(Step.ResetForRetry); return; }
+                BeginCleanup(BuildPhase.Failed, "FlowerPainter.Build.Duplicated");
+                return;
+            }
+            int netCost = 0;
+            if (!_recovering && tagged > 0 && !CanAffordNets(out netCost))
+            {
+                Mod.Log.Warn($"FlowerPainter: the roads/paths of this build cost {netCost}, more than the city has.");
+                BeginCleanup(BuildPhase.Failed, BuildErrorKeys.For("NotEnoughMoney"), 1, "NotEnoughMoney");
+                return;
+            }
+            if (tagged == 0)
+            {
+                BeginCleanup(BuildPhase.Failed, "FlowerPainter.Build.NothingMaterialized");
+                return;
+            }
+            _status.ErrorPositions.Clear();   // transient errors seen while settling are not real
+            _status.Phase = BuildPhase.Applying;
+            SetProgress(0.65f);
+            Go(Step.OwnerLot);
+        }
+
+        private void DoResetForRetry(int frame)
+        {
+            if (frame == _stepFrame)
+            {
+                DestroyOwnDefinitions();
+                ClearCarrierSubNets();
+                _tool.Requested = ApplyMode.Clear;
+                return;
+            }
+            if (frame - _stepFrame < 2) return;
+            ResetIndexes();
+            ResetVerdicts();
+            _errorTypeName = "";
+            _work = PlanWork.Flatten(_request.Plan);
+            ResolvePrefabs();
+            if (_work.DefinitionCount == 0) { BeginCleanup(BuildPhase.Failed, "FlowerPainter.Build.NothingToBuild"); return; }
+            _status.Phase = BuildPhase.Materializing;
+            _status.ErrorPositions.Clear();
+            Go(Step.EmitNets);
+        }
+
+        private void DoApply()
+        {
+            if (_recovering) ZeroRecoveryCosts(); else AccountApplyCost();
+            ScanLivePits("before Apply, temporaries in place");
+            if (DebugTerrainDump) LogSaggingEdges("before Apply");
+            TagLateTemporaries();
+            PinMarkerNets(temporaries: true);   // (core) pinned before the first terrain pass after Apply
+            NeutralizeVerdicts();   // (s59) nothing of ours deleted/hidden by a verdict under anarchy; no existing building demolished
+            _tool.Requested = ApplyMode.Apply;
+            _applied = true;   // from here on, failures roll back through group removal
+            SetProgress(0.75f);
+            _status.Phase = BuildPhase.Settling;
+            Go(Step.Settle);
+        }
+
+        private void DoSettle(int frame)
+        {
+            if (SuiteFailAfterApply && !_recovering)
+            {
+                SuiteFailAfterApply = false;
+                BeginCleanup(BuildPhase.Failed, "FlowerPainter.Build.Failed");
+                return;
+            }
+            if (frame - _stepFrame < ApplySettleFrames) return;
+            if (frame - _stepFrame == ApplySettleFrames) DestroyOwnDefinitions();
+            int stillTemp = CountTaggedTemporaries();
+            if (stillTemp > 0 && frame - _stepFrame < ApplyTimeoutFrames) return;
+            if (stillTemp > 0) Mod.Log.Warn($"FlowerPainter: {stillTemp} parts stayed temporary after Apply; they are discarded.");
+            AdoptStrays();
+            _registry.MarkDirty();
+            // Loose builds (road grids) have no group: count what this build claimed and Apply kept.
+            int members = LooseBuild ? CountAppliedClaimed() : _registry.CountMembers(_groupId, false);
+            if (members == 0 && _request.BrushGroup == 0)
+            {
+                CollectErrors();
+                BeginCleanup(BuildPhase.Failed, _status.ErrorPositions.Count > 0 ? _errorKey : "FlowerPainter.Build.ApplyRejected", _errorArgs);
+                return;
+            }
+            ChargeNets();
+            AfterApply();
+            PinMarkerNets();   // (core) no sag of marker nets (lot drives) at lane junctions: the dip
+            if (DebugTerrainDump) LogSaggingEdges("applied");
+            SetProgress(0.85f);
+            GoAfterApply();
+        }
+
+        private void DoFinish()
+        {
+            _registry.MarkDirty();
+            if (VerifyMembers())
+            {
+                // Built twice despite the pre-Apply check: roll the whole group back (Cleanup after Apply
+                // removes it through the phase-correct removal system) and report.
+                BeginCleanup(BuildPhase.Failed, "FlowerPainter.Build.Duplicated");
+                return;
+            }
+            if (LooseBuild) Mod.Log.Info($"FlowerPainter loose build: {CountAppliedClaimed()} parts are ordinary city content (no group).");
+            else FinishRecord();
+            var groupId = _request.BrushGroup != 0 ? _request.BrushGroup : _groupId;
+            int dropped = _dropped;
+            if (_cleared > 0) NoteSkip("FlowerPainter.Build.Cleared", null, IssueSeverity.Info, _cleared);
+            if (_buildingsProtected > 0) NoteSkip("FlowerPainter.Build.BuildingsKept", null, IssueSeverity.Info, _buildingsProtected);
+            if (_ownerTemp == Entity.Null) NoteSkip("FlowerPainter.Build.OwnerUnavailable", null, IssueSeverity.Info, 0);
+            var issues = ComposeWarnings(dropped);
+            var warnings = new List<string>(_warnings);
+            DumpFinish(groupId);   // s30: live ground, water, nets and objects to ModsData/FlowerPainter/debug (when enabled)
+            VerifyLiveHollows();   // s55: a bowl in the built ground, with the target's height next to it
+            ScanLivePits("after the build");
+            if (DebugTerrainDump) LogSaggingEdges("after the build");
+            AuditSurvivors();   // s55: count what the game really left visible (Overridden = hidden), not the temporaries
+            var audit = FinishAudit(groupId);
+            // Retagging a patch (or retiring the last footprint) commits the local edit.
+            // Complete fallible diagnostics before that point so cleanup never deletes surviving members.
+            if (_request.BrushGroup != 0) FinishBrushEdit();
+            if (_recovering) FinishEditRecovery();
+            RestoreTool();
+            bool recovered = _recovering;
+            var recoveredOutcome = _recoveryOutcome;
+            bool permanentRemains = _recoveryPermanentRemains;
+            ResetTransaction();
+            ClearEditRecovery();
+            if (recovered)
+            {
+                recoveredOutcome.GroupId = groupId;
+                if (recoveredOutcome.Warnings == null) recoveredOutcome.Warnings = new List<PlanIssue>();
+                recoveredOutcome.Warnings.Add(new PlanIssue { Key = "FlowerPainter.Build.OriginalRestored", Severity = IssueSeverity.Info });
+                if (permanentRemains) recoveredOutcome.Warnings.Add(new PlanIssue { Key = "FlowerPainter.Build.PermanentRemains", Severity = IssueSeverity.Info });
+                _status = recoveredOutcome;
+                Mod.Log.Info($"FlowerPainter edit recovery complete: group {groupId}; original content restored.");
+                return;
+            }
+            _warnings.AddRange(warnings);
+            PlanIssue headline = null;
+            foreach (var i in issues) if (i.Severity == IssueSeverity.Warning) { headline = i; break; }
+            _status = new BuildStatus
+            {
+                Phase = BuildPhase.Done,
+                Progress = 1f,
+                GroupId = groupId,
+                MessageKey = headline != null ? headline.Key : "FlowerPainter.Build.Done",
+                MessageArgs = headline != null ? headline.Args : new object[] { dropped },
+                // A successful build never shows red markers (US8).
+                ErrorPositions = new List<float3>(),
+                Warnings = issues,
+                Audit = audit,
+            };
+            Mod.Log.Info($"FlowerPainter build finished: group {groupId}, {_registry.CountMembers(groupId, true)} members, "
+                + $"{issues.Count} notes, {UnityEngine.Time.frameCount - _startFrame} frames.");
+            if (_decalsSeeThrough + _decalsFull > 0)
+            {
+                var whys = new List<string>();
+                foreach (var kv in _decalsFullWhy) whys.Add(kv.Value + " " + kv.Key);
+                Mod.Log.Info($"FlowerPainter decal opacity: used {_decalsSeeThrough} see-through decals, {_decalsFull} at full strength"
+                    + (whys.Count > 0 ? " (" + string.Join(", ", whys) + ")" : "") + ".");
+            }
+        }
+
+        // ───────────────────────── failure / cleanup ─────────────────────────
+
+        private void BeginCleanup(BuildPhase phase, string key, params object[] args)
+        {
+            _cleanupPhase = phase;
+            _cleanupKey = string.IsNullOrEmpty(key) ? "FlowerPainter.Build.Failed" : key;
+            _cleanupArgs = args ?? Array.Empty<object>();
+            Go(Step.Cleanup);
+            Mod.Log.Warn($"FlowerPainter build {phase}: {_cleanupKey}");
+        }
+
+        /// <summary>
+        /// Frame 0: destroy definitions, request Clear (removes our temporaries) unless Apply already
+        /// ran; after Apply, roll back through the regular group removal. Frame 2: restore the tool.
+        /// </summary>
+        private void DoCleanup(int frame)
+        {
+            if (frame == _stepFrame)
+            {
+                DestroyOwnDefinitions();
+                ClearCarrierSubNets();
+                DiscardTerraformBrushes();
+                if (_toolActivated && _toolSystem.activeTool == _tool) _tool.Requested = ApplyMode.Clear;
+                if (_applied && _groupId != 0)
+                {
+                    RemoveUnderConstruction();
+                    _registry.MarkDirty();
+                    _registry.RemoveInternal(_groupId);   // bypasses the "being built" guard on purpose
+                }
+                return;
+            }
+            if (frame - _stepFrame < 2) return;
+            if (_replacementStarted && !_recovering)
+            {
+                bool oldRemoving = _request.ReplaceGroup != 0 && _registry.TryGetRecordEntity(_request.ReplaceGroup, out _);
+                bool newRemoving = _applied && _groupId != 0 && _registry.TryGetRecordEntity(_groupId, out _);
+                bool brushRemoving = _brushRemoval != null && !_brushRemoval.Complete && !_brushRemoval.Failed;
+                if ((oldRemoving || newRemoving || brushRemoving) && frame - _stepFrame <= ReplaceTimeoutFrames) return;
+            }
+            if (!_applied) DeleteRecordAndCarrier();
+            ForceIdle(_cleanupPhase, _cleanupKey, _cleanupArgs);
+        }
+
+        private void ForceIdle(BuildPhase phase, string key, params object[] args)
+        {
+            RestoreTool();
+            var errors = phase == BuildPhase.Failed ? _status.ErrorPositions ?? new List<float3>() : new List<float3>();
+            var issues = ComposeWarnings(_dropped);
+            var outcome = new BuildStatus { Phase = phase, MessageKey = key, MessageArgs = args ?? Array.Empty<object>(), ErrorPositions = errors, Warnings = issues };
+            if (TryRecoverEdit(outcome)) return;
+            ResetTransaction();
+            ClearEditRecovery();
+            _status = new BuildStatus
+            {
+                Phase = phase, Progress = 0f, MessageKey = key, MessageArgs = args ?? Array.Empty<object>(), ErrorPositions = errors,
+                Warnings = issues,
+            };
+        }
+
+        private void SetFailed(string key)
+        {
+            _status = new BuildStatus { Phase = BuildPhase.Failed, MessageKey = key, MessageArgs = Array.Empty<object>(), ErrorPositions = new List<float3>(), Warnings = new List<PlanIssue>() };
+        }
+
+        private void RestoreTool()
+        {
+            if (!_toolActivated) return;
+            _toolActivated = false;
+            try
+            {
+                if (_toolSystem.activeTool == _tool)
+                {
+                    var prev = _previousTool;
+                    _toolSystem.activeTool = prev != null && prev != _tool && prev.World == World ? prev : World.GetOrCreateSystemManaged<DefaultToolSystem>();
+                }
+            }
+            catch (Exception e)
+            {
+                Mod.Log.Warn("FlowerPainter could not restore the previous tool: " + e.Message);
+            }
+            _previousTool = null;
+        }
+
+        private void ResetTransaction()
+        {
+            ReleaseBrushEdit();
+            _step = Step.Idle;
+            _request = null;
+            _work = null;
+            ResetAudit();
+            ResetVerdicts();
+            _applied = false;
+            _groupId = 0;
+            _record = Entity.Null;
+            _carrier = Entity.Null;
+            _emitCursor = 0;
+            _lastMatched = -1;
+            _dropped = 0;
+            _netCharged = 0;
+            _refusedLots = 0;
+            _warnings.Clear();
+            _ownDefinitions.Clear();
+            _itemPrefab.Clear();
+            _itemByKey.Clear();
+            _tagged.Clear();
+            _claimed.Clear();
+            _usedPrefabNames.Clear();
+            _usedPrefabs.Clear();
+            _preexisting.Clear();
+            ResetIndexes();
+            _errorKey = BuildErrorKeys.Other;
+            _errorArgs = Array.Empty<object>();
+            _errorTypeName = "";
+            ResetTerraform();
+            ResetOwner();
+            ResetProtect();
+            ResetZoneBlock();
+            _ownerSuppressed = false;
+            _skipped.Clear();
+            _notedRings.Clear();
+            _dupRetried = false;
+            _instant = false;
+            if (_toolActivated) RestoreTool();
+        }
+
+        private void DestroyForeignDefinitions()
+        {
+            using var defs = _definitionQuery.ToEntityArray(Allocator.Temp);
+            for (int i = 0; i < defs.Length; i++)
+                if (!_ownDefinitions.Contains(defs[i])) EntityManager.AddComponent<Deleted>(defs[i]);
+        }
+
+        private void DestroyOwnDefinitions()
+        {
+            foreach (var d in _ownDefinitions)
+                if (EntityManager.Exists(d) && !EntityManager.HasComponent<Deleted>(d)) EntityManager.AddComponent<Deleted>(d);
+            _ownDefinitions.Clear();
+            // CourseSplitSystem derives extra definitions from ours without any mark (PLT measured
+            // this). While our tool is active every definition is ours, so remove them all.
+            if (_toolActivated && _toolSystem.activeTool == _tool) DestroyForeignDefinitions();
+        }
+    }
+}

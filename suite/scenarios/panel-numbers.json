@@ -1,0 +1,37 @@
+{
+  "set": "panel-numbers",
+  "description": "The numeric controls as they are in the game: every slider now carries a number box beside it. One parking design (set a value through the panel, undo it, build) and the flower pattern editor (its size/rotation/width/offset sliders). The ui shots are the real screen, so the panel and the boxes can be read.",
+  "scenarios": [
+    {
+      "id": "numbers-parking",
+      "site": "flat",
+      "note": "Bucket, parking compact, a ui shot of the Design panel, aisleWidth set to 7 through the panel, undo, build. Read the ui shots: the number box shows the value, the m unit and the lock/reset icons without overlapping the slider.",
+      "steps": [
+        { "do": "camera", "target": "block", "view": "oblique", "shot": "empty", "shotMode": "render" },
+        { "do": "area", "tool": "bucket" },
+        { "do": "type", "layer": "parking", "preset": "compact" },
+        { "do": "shot", "name": "panel-numbers", "shotMode": "ui" },
+        { "do": "value", "path": "0", "id": "aisleWidth", "value": 7 },
+        { "do": "shot", "name": "panel-numbers-value", "shotMode": "ui" },
+        { "do": "undo" },
+        { "do": "shot", "name": "panel-numbers-undo", "shotMode": "ui" },
+        { "do": "build", "via": "panel" },
+        { "do": "camera", "target": "build", "view": "oblique", "shot": "built", "shotMode": "render" }
+      ]
+    },
+    {
+      "id": "numbers-floral",
+      "pace": "settled",
+      "land": { "shape": "rect", "size": [60, 50], "ground": "flat", "roads": "none" },
+      "note": "A 60x50 m flower plot, one ring pattern added, a ui shot of the pattern editor (size, rotation, ribbon width, east/west and north/south are sliders with a number box now), then the pattern scaled by its green handle so the editor still drives the tool.",
+      "steps": [
+        { "do": "area", "tool": "land" },
+        { "do": "type", "layer": "floral", "preset": "pattern-collage" },
+        { "do": "motif", "action": "add", "kind": "ring" },
+        { "do": "shot", "name": "panel-floral-numbers", "shotMode": "ui", "camera": { "target": "area", "view": "top", "distance": 170 } },
+        { "do": "motif", "action": "scale", "index": 0, "factor": 1.6, "verifyUndo": true },
+        { "do": "shot", "name": "panel-floral-scaled", "shotMode": "ui", "camera": { "target": "area", "view": "top", "distance": 170 } }
+      ]
+    }
+  ]
+}

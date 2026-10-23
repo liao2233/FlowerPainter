@@ -1,0 +1,12 @@
+@use "../styles/tokens" as *;
+.hint { font-size: 11rem; line-height: 15rem; color: $c-text-dim; margin-bottom: 7rem; }
+.buttons { display: flex; flex-direction: row; flex-wrap: wrap; margin-bottom: 7rem; }
+.buttons > * { margin-right: 4rem; margin-bottom: 3rem; }
+.patternRow { display: flex; align-items: center; flex-direction: row; margin-bottom: 4rem; }
+.rowHint { flex: 1; color: $c-text-dim; font-size: 11rem; margin-left: 6rem; }
+.detail { padding: 8rem; border: 1rem solid rgba(255,255,255,0.12); border-radius: 5rem; margin-bottom: 8rem; }
+.flower { display: flex; flex-direction: row; align-items: center; width: 100%; padding: 5rem; margin-bottom: 6rem; background-color: rgba(255,255,255,0.08); color: inherit; font-size: 12rem; border-radius: 4rem; }
+.flower span { margin-left: 6rem; }
+.adjustments { display: flex; flex-direction: column; }
+.adjust { display: flex; flex-direction: row; align-items: center; width: 100%; font-size: 11rem; margin-bottom: 5rem; }
+.adjustLabel { width: 90rem; flex-shrink: 0; }

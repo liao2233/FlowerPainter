@@ -1,0 +1,10 @@
+{
+  "FlowerPainter.Issue.CutoutNotZonable": "商店地块没有面向可划分区的道路，已交回公园使用。",
+  "FlowerPainter.Issue.BuildingsKept": "有 {0} 座建筑挡路，建筑保留，不在其地块上建造。",
+  "FlowerPainter.Issue.BuildingsLeftOut": "为避开现有建筑，已略过或缩短 {0} 个部件。",
+  "FlowerPainter.Problem.OnlyBuildings": "涂绘范围内仅有笔刷规则排除的内容（建筑、其他项目、分区、水域）。请换位置涂绘或更改规则。",
+  "FlowerPainter.Hint.BuildingsKept": "选区中的 {0} 座建筑保留，不在其地块上建造。",
+  "FlowerPainter.Settings.PaintAvoidBuildings": "涂绘：避开建筑",
+  "FlowerPainter.Settings.PaintAvoidBuildings.Desc": "普通涂绘会从区域中扣除建筑地块（涂绘时标红）。关闭则采用原行为：轮廓覆盖建筑，但建造仍保留现有建筑。",
+  "FlowerPainter.Why.AreaTooSmall": "需要更大区域（至少 {0} 平方米）。"
+}

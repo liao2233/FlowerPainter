@@ -1,0 +1,118 @@
+// Marker placement (entrances, access points, split lines…): click on the outline to place a
+// marker of the requested kind for one recipe step, right-click near one to remove it, Esc or
+// the main button when done. Markers live in the recipe step (so they are undoable with the
+// design) and are re-projected onto each region's outline by the composer.
+
+using FlowerPainter.Core;
+using FlowerPainter.Core.Tool;
+using Unity.Mathematics;
+
+namespace FlowerPainter.Game.Tool
+{
+    public sealed partial class FlowerPainterToolSystem
+    {
+        private bool _markerHoverValid;
+        private float3 _markerHover;
+        private int _markerHoverSegment;
+        private float _markerHoverT;
+
+        public bool MarkerHoverValid => _markerHoverValid;
+        public float3 MarkerHover => _markerHover;
+
+        /// <summary>UI or primary button: start placing markers of <paramref name="kind"/> for the step at <paramref name="path"/>.</summary>
+        public void StartMarkers(string path, string kind)
+        {
+            if (_shape == null || string.IsNullOrEmpty(kind) || RecipePaths.Resolve(_recipe, path) == null) return;
+            CancelGesture();
+            _markerPath = path;
+            _markerKind = kind;
+            _focus = path;
+            if (_stage != ToolStage.Design && _stage != ToolStage.Review) SetStage(ToolStage.Design);
+            Touch();
+        }
+
+        /// <summary>UI: which marker type the next click places (entrance, entry, exit…). Enters placement for that step.</summary>
+        public void SetMarkerKind(string path, string kind)
+        {
+            if (string.IsNullOrEmpty(kind)) { ExitMarkerMode(); return; }
+            if (_markerKind != null && _markerPath == path) { _markerKind = kind; Touch(); return; }
+            StartMarkers(path, kind);
+        }
+
+        /// <summary>UI: remove one marker by its index in StepView.markerList.</summary>
+        public void RemoveMarker(string path, int index)
+        {
+            EndValuePreview(true);
+            var step = RecipePaths.Resolve(_recipe, path);
+            if (step == null || index < 0 || index >= step.Markers.Count) return;
+            step.Markers.RemoveAt(index);
+            MarkMarkersEdited(path);
+            DesignChanged();
+            Commit("FlowerPainter.Undo.RemoveMarker");
+        }
+
+        public void ExitMarkerMode()
+        {
+            if (_markerKind == null) return;
+            _markerKind = null;
+            _markerPath = null;
+            _markerHoverValid = false;
+            Touch();
+        }
+
+        public void ClearMarkers(string path, string kind)
+        {
+            if (_recipe == null) return;
+            if (_editor.ClearMarkers(_recipe, path, kind))
+            {
+                MarkMarkersEdited(path);
+                DesignChanged();
+                Commit("FlowerPainter.Undo.ClearMarkers");
+            }
+        }
+
+        private void UpdateMarkers()
+        {
+            _markerHoverValid = false;
+            _cursorValid = _in.HasHit;
+            if (!_in.HasHit || _shape == null) return;
+            _cursor = _in.Hit;
+            float radius = HandleRadius(_in.Hit) * 2f;
+            if (MarkerKinds.IsInterior(_markerKind))
+            {
+                _markerHoverValid = FlowerPainter.Core.Geometry.Poly.Contains(_shape.Ring2D(), _in.Hit.xz);
+                _markerHoverSegment = -1;
+                _markerHoverT = 0;
+                _markerHover = _in.Hit;
+            }
+            else if (Composer.ClosestSegment(_shape.Ring, _in.Hit.xz, out int seg, out float t, out float d) && d <= radius)
+            {
+                _markerHoverValid = true;
+                _markerHoverSegment = seg;
+                _markerHoverT = t;
+                _markerHover = math.lerp(_shape.Ring[seg], _shape.Ring[(seg + 1) % _shape.Ring.Length], t);
+            }
+            if (_in.LeftPressed && _markerHoverValid)
+            {
+                var m = new EdgeMarker { Kind = _markerKind, RingSegment = _markerHoverSegment, RingT = _markerHoverT, Position = _markerHover };
+                if (_editor.AddMarker(_recipe, _markerPath, m))
+                {
+                    MarkMarkersEdited(_markerPath);
+                    DesignChanged();
+                    Commit("FlowerPainter.Undo.AddMarker");
+                }
+                return;
+            }
+            if (_in.RightPressed)
+            {
+                // Right-click removes the nearest marker of this step, whatever its kind (one rule: right-click removes).
+                if (_editor.RemoveMarkerNear(_recipe, _markerPath, _in.Hit.xz, radius))
+                {
+                    MarkMarkersEdited(_markerPath);
+                    DesignChanged();
+                    Commit("FlowerPainter.Undo.RemoveMarker");
+                }
+            }
+        }
+    }
+}

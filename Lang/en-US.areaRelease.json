@@ -1,0 +1,10 @@
+{
+  "FlowerPainter.UI.Manage.Dissolve": "Dissolve area",
+  "FlowerPainter.UI.Manage.DissolveTitle": "Dissolve {0}?",
+  "FlowerPainter.UI.Manage.DissolveText": "Keep all roads, plants and facilities. Release this area for new selections. Its pieces can be edited individually, but the group cannot be restored.",
+  "FlowerPainter.UI.Manage.DissolveTip": "Keep the built elements and release the area for new selections.",
+  "FlowerPainter.UI.Rules.Force": "Force selection",
+  "FlowerPainter.UI.Rules.ForceTip": "Ignore all selection stops and select a new area over existing groups. Existing buildings stay protected during construction.",
+  "FlowerPainter.Hint.Dissolved": "Area dissolved. Built elements kept; its footprint is available for new selections.",
+  "FlowerPainter.Problem.DissolveFailed": "This area cannot be dissolved while it is being built or removed."
+}

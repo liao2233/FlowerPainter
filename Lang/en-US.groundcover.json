@@ -1,0 +1,14 @@
+{
+  "FlowerPainter.Category.surface.crop": "farmland surfaces",
+  "FlowerPainter.Category.surface.crop.soil": "tilled soil surfaces",
+  "FlowerPainter.Category.surface.crop.plowed": "ploughed soil surfaces",
+  "FlowerPainter.Category.surface.crop.rows": "crop row surfaces",
+  "FlowerPainter.Category.surface.crop.green": "green crop surfaces",
+  "FlowerPainter.Category.surface.crop.straw": "straw / cereal surfaces",
+  "FlowerPainter.Category.surface.crop.flower": "flowering crop surfaces",
+  "FlowerPainter.Category.surface.crop.lavender": "lavender-coloured crop surfaces",
+  "FlowerPainter.Category.surface.crop.yellow": "yellow crop surfaces",
+  "FlowerPainter.Category.decal.farm": "farm track decals",
+  "FlowerPainter.GroundCover.Issue.Painted": "No farmland surface is installed, so the fields are painted on the terrain instead (permanent).",
+  "FlowerPainter.Common.Issue.ObjectBudget": "This design wanted {0} objects; {2} repetitive props were thinned to stay near {1}. Fields and beds are drawn as ground surfaces instead."
+}

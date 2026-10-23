@@ -1,0 +1,796 @@
+// FlowerPainter — asset catalog (GPL-3.0).
+// Classification adapted from ParkManager's ParkAssetCatalogSystem (tomkpunkt, GPL-3.0),
+// including its trick of reading vanilla park palettes from ParkData prefabs' sub-objects.
+//
+// Phase: UIUpdate. GameSimulation does not tick while paused, and the catalog must be ready in
+// the editor-like pause the player uses to plan. Rescans when the prefab count changes (asset
+// packs/mods load late) and after every game load.
+
+using System;
+using System.Collections.Generic;
+using System.Text;
+using Colossal.Serialization.Entities;
+using Game;
+using Game.Common;
+using Game.Prefabs;
+using Game.UI;
+using FlowerPainter.Core;
+using FlowerPainter.Core.Build;
+using Unity.Collections;
+using Unity.Entities;
+using Unity.Mathematics;
+using UnityEngine.Scripting;
+
+namespace FlowerPainter.Game.Assets
+{
+    public sealed partial class AssetCatalogSystem : GameSystemBase, IAssetCatalog
+    {
+        private const int RecheckFrames = 120;
+
+        private PrefabSystem _prefabs;
+        private EntityQuery _prefabQuery;
+        private int _lastPrefabCount = -1;
+        private int _framesSinceCheck;
+        private bool _scanRequested = true;
+        private bool _ready;
+        private int _version;
+
+        private readonly Dictionary<string, List<CatalogItem>> _byCategory = new Dictionary<string, List<CatalogItem>>(StringComparer.Ordinal);
+        private readonly Dictionary<string, CatalogItem> _byName = new Dictionary<string, CatalogItem>(StringComparer.Ordinal);
+        private readonly Dictionary<string, Entity> _allPrefabsByName = new Dictionary<string, Entity>(StringComparer.Ordinal);
+        private readonly Dictionary<string, Entity> _defaults = new Dictionary<string, Entity>(StringComparer.Ordinal);
+        private Dictionary<string, AssetInfo> _infoMap = new Dictionary<string, AssetInfo>(StringComparer.Ordinal);
+        private static readonly IReadOnlyList<CatalogItem> Empty = Array.Empty<CatalogItem>();
+
+        public bool Ready => _ready;
+        public int Version => _version;
+
+        [Preserve]
+        protected override void OnCreate()
+        {
+            base.OnCreate();
+            _prefabs = World.GetOrCreateSystemManaged<PrefabSystem>();
+            _prefabQuery = GetEntityQuery(new EntityQueryDesc
+            {
+                All = new[] { ComponentType.ReadOnly<PrefabData>() },
+                None = new[] { ComponentType.ReadOnly<Deleted>() },
+            });
+            Services.Assets = this;
+        }
+
+        [Preserve]
+        protected override void OnDestroy()
+        {
+            if (ReferenceEquals(Services.Assets, this)) Services.Assets = null;
+            base.OnDestroy();
+        }
+
+        protected override void OnGameLoadingComplete(Purpose purpose, GameMode mode)
+        {
+            base.OnGameLoadingComplete(purpose, mode);
+            _scanRequested = true;
+            _scanBatch = null;
+        }
+
+        public void RequestRescan() => _scanRequested = true;
+
+        /// <summary>
+        /// (core) Prefab entities FlowerPainter registered itself (decal see-through copies, surface overlay copies, park and parking
+        /// companions, the owner and zone-block lots). They never make the catalog rescan: teardown 09, a full synchronous Scan()
+        /// of every prefab ran within 2 s of every first use of a decal tier (a 0.2-2 s freeze when switching styles or types),
+        /// and its new version rebuilt the ghost a second time. They are never catalogue items either (ResolveName still finds
+        /// them by name through the all-prefabs map; the clone systems resolve them directly).
+        /// </summary>
+        private static int s_ownPrefabs;
+
+        /// <summary>
+        /// PrefabSystem.AddPrefab for one of our own prefabs, counting the prefab entities it really created (PrefabData, not
+        /// Deleted: the same query the rescan check counts), so the next check subtracts them.
+        /// </summary>
+        public static bool AddOwnPrefab(PrefabSystem prefabs, PrefabBase prefab)
+        {
+            EntityQuery q = default;
+            int before = -1;
+            try
+            {
+                q = prefabs.World.EntityManager.CreateEntityQuery(new EntityQueryDesc
+                {
+                    All = new[] { ComponentType.ReadOnly<PrefabData>() },
+                    None = new[] { ComponentType.ReadOnly<Deleted>() },
+                });
+                before = q.CalculateEntityCount();
+            }
+            catch (Exception) { before = -1; }
+            bool ok = prefabs.AddPrefab(prefab);
+            try
+            {
+                if (before >= 0) s_ownPrefabs += math.max(0, q.CalculateEntityCount() - before);
+                if (before >= 0) q.Dispose();
+            }
+            catch (Exception) { }
+            return ok;
+        }
+
+        /// <summary>Our own prefab (registered by FlowerPainter): never a catalogue item.</summary>
+        public static bool IsOwnPrefabName(string name) => name != null && name.StartsWith("FlowerPainter ", StringComparison.Ordinal);
+
+        [Preserve]
+        protected override void OnUpdate()
+        {
+            if (_ready)
+            {
+                try { UpdateIcons(); MaybeWriteDump(false); }
+                catch (Exception e) { Mod.Log.Warn("FlowerPainter icon update failed: " + e.Message); }
+            }
+            if (_scanBatch != null)
+            {
+                try { Scan(); }
+                catch (Exception e) { _scanBatch = null; _scanRequested = true; Mod.Log.Error(e, "FlowerPainter incremental asset scan failed"); }
+                return;
+            }
+            if (!_scanRequested && ++_framesSinceCheck < RecheckFrames) return;
+            _framesSinceCheck = 0;
+            // (core) Our own prefabs (decal and surface copies, companions, lots) never trigger a rescan.
+            int count = _prefabQuery.CalculateEntityCount() - s_ownPrefabs;
+            if (!_scanRequested && count == _lastPrefabCount) return;
+            if (!_scanRequested && _lastPrefabCount >= 0)
+                Mod.Log.Info($"FlowerPainter asset catalog: {count - _lastPrefabCount:+#;-#;0} prefab(s) from the game or other mods since the last scan; rescanning.");
+            _scanRequested = false;
+            _lastPrefabCount = count;
+            try
+            {
+                Scan();
+            }
+            catch (Exception e)
+            {
+                Mod.Log.Error(e, "FlowerPainter asset scan failed; keeping the previous catalog");
+            }
+        }
+
+        // ───────────────────────── IAssetCatalog ─────────────────────────
+
+        public IReadOnlyList<CatalogItem> Items(string category) =>
+            category != null && _byCategory.TryGetValue(category, out var list) ? list : Empty;
+
+        public Entity Resolve(AssetRef asset, string category)
+        {
+            // s14: zone plans name the EU prefab; a city on another theme gets its own (NA …) when it exists.
+            if (category == AssetCategories.Zone) asset = new AssetRef(Core.Layers.Common.ZoneKinds.ForTheme(asset.Id, ThemePrefix()), Fallbacks(asset, asset.Id));
+            var e = ResolveName(asset.Id, category);
+            if (e != Entity.Null) return e;
+            if (asset.Fallbacks != null)
+                foreach (var f in asset.Fallbacks)
+                {
+                    e = ResolveName(f, category);
+                    if (e != Entity.Null) return e;
+                }
+            return DefaultFor(category);
+        }
+
+        private static string[] Fallbacks(AssetRef asset, string original)
+        {
+            var list = new List<string>();
+            if (asset.Fallbacks != null) list.AddRange(asset.Fallbacks);
+            list.Add(original);
+            return list.ToArray();
+        }
+
+        /// <summary>City theme prefix ("EU" / "NA", ThemePrefab.assetPrefix); "" when unknown.</summary>
+        private string ThemePrefix()
+        {
+            try
+            {
+                var config = World.GetExistingSystemManaged<global::Game.City.CityConfigurationSystem>();
+                var theme = config != null ? config.defaultTheme : Entity.Null;
+                if (theme != Entity.Null && _prefabs.TryGetPrefab(theme, out ThemePrefab prefab) && prefab != null) return prefab.assetPrefix ?? "";
+            }
+            catch (Exception) { }
+            return "";
+        }
+
+        public Dictionary<string, AssetInfo> InfoMap() => new Dictionary<string, AssetInfo>(_infoMap, StringComparer.Ordinal);
+
+        // ───────────────────────── automatic assets (US5) ─────────────────────────
+
+        // FEEDBACK-2 #1: automatic picks come ONLY from items tagged "auto:<category>" (AssetHeuristics.
+        // AutoEligible: no stadium seats, signs, advertising, construction props…), vanilla before
+        // modded, and from one vanilla park palette per step (AutoAssets). Explicit picks may use any
+        // item of the category (Items()).
+        private const int AutoPoolSize = 12;
+        private Dictionary<string, List<string>> _autoPools = new Dictionary<string, List<string>>(StringComparer.Ordinal);
+        private Dictionary<string, Dictionary<string, List<string>>> _paletteItems = new Dictionary<string, Dictionary<string, List<string>>>(StringComparer.Ordinal);
+        private List<string> _palettes = new List<string>();
+        private static readonly IReadOnlyList<string> NoNames = Array.Empty<string>();
+
+        public int ResolveAutomatic(ComposedPlan plan)
+        {
+            if (!_ready || plan == null) return 0;
+            try
+            {
+                int resolved = AutoAssets.Resolve(plan, new AutoAssetSource
+                {
+                    Pool = AutomaticPool, Exists = PrefabExists, Palettes = _palettes, PaletteItems = PaletteItems,
+                });
+                // FEEDBACK-4: fit objects with their real collision boxes once per plan, right here, so the
+                // tool's preview/price, the ghost and the build (all call this resolver) see the same objects.
+                if (!plan.Decluttered)
+                {
+                    // s21: decorative decals lie along their host (long axis = planned yaw) whatever pack resolved them.
+                    Core.Decals.DecalFit.Orient(plan, _infoMap);
+                    PrewarmSeeThrough(plan);
+                    var report = Declutter.Run(plan, _infoMap);
+                    if (report.TotalDropped > 0 || report.TotalMoved > 0)
+                        Mod.Log.Info("FlowerPainter declutter: " + report);
+                }
+                return resolved;
+            }
+            catch (Exception e)
+            {
+                Mod.Log.Warn("FlowerPainter could not resolve automatic assets: " + e.Message);
+                return 0;
+            }
+        }
+
+        /// <summary>
+        /// Ordered automatic candidates of a category (eligible items only; vanilla first, then by
+        /// score; fences: network fences first). The first item is the category default.
+        /// </summary>
+        public IReadOnlyList<string> AutomaticPool(string category)
+        {
+            if (category != null && _autoPools.TryGetValue(category, out var list)) return list;
+            // Sub-categories fall back to their parent ("surface.grass" → "surface").
+            int dot = category?.LastIndexOf('.') ?? -1;
+            if (dot > 0 && category.StartsWith("surface", StringComparison.Ordinal)) return AutomaticPool(category.Substring(0, dot));
+            return NoNames;
+        }
+
+        /// <summary>Eligible items of a category seen in a vanilla park palette (best first).</summary>
+        public IReadOnlyList<string> PaletteItems(string palette, string category) =>
+            palette != null && category != null && _paletteItems.TryGetValue(palette, out var byCat) && byCat.TryGetValue(category, out var list)
+                ? list : NoNames;
+
+        /// <summary>Sort key of an automatic candidate: lower tier first, then higher score, then name.</summary>
+        // Ranking lives in Core (AutoPoolRanking) so the curation test replays exactly the game's order.
+        private PoolCandidate Candidate(string category, CatalogItem it) =>
+            new PoolCandidate(it.Id, IsVanilla(it),
+                category == AssetCategories.Fence && EntityManager.HasComponent<NetData>(it.Prefab), it.Info.NetWidth,
+                Math.Max(it.Info.BoundsMax.x - it.Info.BoundsMin.x, it.Info.BoundsMax.z - it.Info.BoundsMin.z));
+
+        private int CompareAuto(string category, CatalogItem a, CatalogItem b) =>
+            AutoPoolRanking.Compare(category, Candidate(category, a), Candidate(category, b));
+
+        private static bool IsVanilla(CatalogItem it) => it.Tags != null && Array.IndexOf(it.Tags, "source:vanilla") >= 0;
+        private static bool IsAutoFor(CatalogItem it, string category) => it.Tags != null && Array.IndexOf(it.Tags, "auto:" + category) >= 0;
+
+        /// <summary>Builds the automatic pools, palette index and defaults from the classified items.</summary>
+        private void BuildAutomatic(Dictionary<string, List<CatalogItem>> byCategory, Dictionary<string, Entity> defaults)
+        {
+            var pools = new Dictionary<string, List<string>>(StringComparer.Ordinal);
+            foreach (var kv in byCategory)
+            {
+                var eligible = new List<CatalogItem>();
+                foreach (var it in kv.Value) if (IsAutoFor(it, kv.Key)) eligible.Add(it);
+                // A category with no eligible item keeps a default (layers may still name it), but no automatic pool.
+                var ranked = eligible.Count > 0 ? eligible : new List<CatalogItem>(kv.Value);
+                ranked.Sort((a, b) => CompareAuto(kv.Key, a, b));
+                if (ranked.Count > 0) defaults[kv.Key] = ranked[0].Prefab;
+                if (eligible.Count == 0) continue;
+                // Vanilla only when vanilla has something: modded items join a pool only if no vanilla exists.
+                var cands = new List<PoolCandidate>(eligible.Count);
+                foreach (var it in eligible) cands.Add(Candidate(kv.Key, it));
+                pools[kv.Key] = AutoPoolRanking.Build(kv.Key, cands, AutoPoolSize);
+            }
+
+            // Palette index: palette → category → eligible items (same ranking).
+            var palettes = new Dictionary<string, Dictionary<string, List<CatalogItem>>>(StringComparer.Ordinal);
+            foreach (var kv in byCategory)
+            {
+                if (!AutoAssets.PaletteCategories.Contains(kv.Key)) continue;
+                foreach (var it in kv.Value)
+                {
+                    if (!IsAutoFor(it, kv.Key) || it.Tags == null) continue;
+                    foreach (var tag in it.Tags)
+                    {
+                        if (!tag.StartsWith("palette:", StringComparison.Ordinal)) continue;
+                        if (!palettes.TryGetValue(tag, out var byCat)) palettes[tag] = byCat = new Dictionary<string, List<CatalogItem>>(StringComparer.Ordinal);
+                        if (!byCat.TryGetValue(kv.Key, out var l)) byCat[kv.Key] = l = new List<CatalogItem>();
+                        l.Add(it);
+                    }
+                }
+            }
+            var paletteItems = new Dictionary<string, Dictionary<string, List<string>>>(StringComparer.Ordinal);
+            var usable = new List<string>();
+            foreach (var kv in palettes)
+            {
+                var byCat = new Dictionary<string, List<string>>(StringComparer.Ordinal);
+                foreach (var c in kv.Value)
+                {
+                    c.Value.Sort((a, b) => CompareAuto(c.Key, a, b));
+                    var names = new List<string>(c.Value.Count);
+                    foreach (var it in c.Value) if (AssetCuration.FitsSize(c.Key, Candidate(c.Key, it).Footprint)) names.Add(it.Id);
+                    byCat[c.Key] = names;
+                }
+                paletteItems[kv.Key] = byCat;
+                // A palette worth dressing a park with: general (not a sports ground / skate park…) and
+                // offering at least two of the everyday categories.
+                int core = 0;
+                foreach (var c in new[] { AssetCategories.Tree, AssetCategories.Bush, AssetCategories.Bench, AssetCategories.Lamp, AssetCategories.Bin })
+                    if (byCat.ContainsKey(c)) core++;
+                if (core >= 2 && AssetHeuristics.IsGeneralParkPalette(kv.Key.Substring("palette:".Length))) usable.Add(kv.Key);
+            }
+            usable.Sort(string.CompareOrdinal);
+
+            _autoPools = pools;
+            _paletteItems = paletteItems;
+            _palettes = usable;
+            LogAutomatic(byCategory);
+        }
+
+        private void LogAutomatic(Dictionary<string, List<CatalogItem>> byCategory)
+        {
+            var sb = new StringBuilder("FlowerPainter automatic pools (eligible/total: first picks):");
+            var keys = new List<string>(byCategory.Keys);
+            keys.Sort(string.CompareOrdinal);
+            foreach (var c in keys)
+            {
+                int eligible = 0;
+                foreach (var it in byCategory[c]) if (IsAutoFor(it, c)) eligible++;
+                sb.Append("\n  ").Append(c).Append(' ').Append(eligible).Append('/').Append(byCategory[c].Count).Append(": ");
+                if (_autoPools.TryGetValue(c, out var pool))
+                    for (int i = 0; i < pool.Count && i < 4; i++) sb.Append(i == 0 ? "" : ", ").Append(pool[i]);
+                else sb.Append("(none — explicit picks only)");
+            }
+            sb.Append("\n  palettes usable for automatic dressing: ").Append(_palettes.Count).Append(" of ").Append(_paletteItems.Count);
+            for (int i = 0; i < _palettes.Count && i < 6; i++) sb.Append(i == 0 ? " (" : ", ").Append(_palettes[i]).Append(i == Math.Min(_palettes.Count, 6) - 1 ? ")" : "");
+            Mod.Log.Info(sb.ToString());
+        }
+
+        // ───────────────────────── extra API for build/groups ─────────────────────────
+
+        /// <summary>True when any loaded prefab has this name (missing-asset detection).</summary>
+        public bool PrefabExists(string name) =>
+            !string.IsNullOrEmpty(name) && _allPrefabsByName.TryGetValue(name, out var e) && Usable(e);
+
+        public bool TryGetItem(string name, out CatalogItem item) => _byName.TryGetValue(name ?? "", out item);
+
+        public string NameOf(Entity prefab)
+        {
+            if (prefab == Entity.Null) return "";
+            try { return _prefabs.TryGetPrefab<PrefabBase>(prefab, out var p) && p != null ? p.name : ""; }
+            catch (Exception) { return ""; }
+        }
+
+        public Entity DefaultFor(string category)
+        {
+            if (category == null) return Entity.Null;
+            if (_defaults.TryGetValue(category, out var e) && Usable(e)) return e;
+            // Sub-categories fall back to their parent ("surface.grass" → "surface").
+            int dot = category.LastIndexOf('.');
+            if (dot > 0 && category.StartsWith("surface", StringComparison.Ordinal))
+                return DefaultFor(category.Substring(0, dot));
+            return Entity.Null;
+        }
+
+        /// <summary>Maximum edge length of a net prefab (0 = unknown). CS2 rejects longer edges.</summary>
+        public float MaxEdgeLength(Entity prefab)
+        {
+            if (prefab == Entity.Null || !EntityManager.HasComponent<NetGeometryData>(prefab)) return 0f;
+            float max = EntityManager.GetComponentData<NetGeometryData>(prefab).m_EdgeLengthRange.max;
+            return math.isfinite(max) && max > 1f ? max : 0f;
+        }
+
+        /// <summary>
+        /// (s28) Asks for the see-through copies of the plan's decorative decals while the player is still looking at the
+        /// preview, so the build (a few seconds later) finds them ready instead of building the originals at full strength.
+        /// </summary>
+        private void PrewarmSeeThrough(ComposedPlan plan)
+        {
+            var clones = World.GetExistingSystemManaged<global::FlowerPainter.Game.Build.DecalOpacitySystem>();
+            if (clones == null || !global::FlowerPainter.Game.Build.DecalOpacitySystem.FeatureEnabled) return;
+            var seen = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var l in plan.Layers)
+            {
+                if (l?.Objects == null) continue;
+                foreach (var o in l.Objects)
+                {
+                    if (o == null || o.Role != ObjectRole.Decal || string.IsNullOrEmpty(o.Asset.Id)) continue;
+                    float opacity = Core.Decals.DecalLook.OpacityOf(o);
+                    if (opacity >= 0.995f || !seen.Add(o.Asset.Id + "|" + Core.Decals.DecalLook.Tier(opacity))) continue;
+                    var e = ResolveName(o.Asset.Id, o.Category);
+                    if (e != Entity.Null) clones.CloneFor(e, opacity, out _);
+                }
+            }
+        }
+
+        private Entity ResolveName(string name, string category)
+        {
+            if (string.IsNullOrEmpty(name)) return Entity.Null;
+            if (_byName.TryGetValue(name, out var item) && Usable(item.Prefab)) return item.Prefab;
+            // Not catalogued (e.g. a prefab a layer names explicitly that our heuristics skip):
+            // still honour it when it exists and is of a usable kind for the category.
+            if (_allPrefabsByName.TryGetValue(name, out var e) && Usable(e) && KindMatches(e, category)) return e;
+            return Entity.Null;
+        }
+
+        private bool KindMatches(Entity e, string category)
+        {
+            if (string.IsNullOrEmpty(category)) return true;
+            if (category.StartsWith("surface", StringComparison.Ordinal) || category.StartsWith("area.", StringComparison.Ordinal))
+                return EntityManager.HasComponent<AreaGeometryData>(e);
+            if (category.StartsWith("net.", StringComparison.Ordinal))
+                return EntityManager.HasComponent<NetData>(e);
+            if (category == AssetCategories.Zone) return EntityManager.HasComponent<ZoneData>(e);
+            if (category == AssetCategories.Fence) return EntityManager.HasComponent<NetData>(e) || EntityManager.HasComponent<ObjectGeometryData>(e);
+            // Objects: must be a real, non-building static object (mesh-less static objects crash).
+            return EntityManager.HasComponent<ObjectGeometryData>(e) && !EntityManager.HasComponent<BuildingData>(e)
+                && !EntityManager.HasComponent<PlaceholderObjectData>(e);
+        }
+
+        private bool Usable(Entity e) => e != Entity.Null && EntityManager.Exists(e) && !EntityManager.HasComponent<Deleted>(e);
+
+        // ───────────────────────── scan ─────────────────────────
+
+        private sealed class ScanBatch
+        {
+            public Entity[] Entities;
+            public int Cursor, Failed;
+            public readonly Dictionary<string, List<CatalogItem>> Categories = new Dictionary<string, List<CatalogItem>>(StringComparer.Ordinal);
+            public readonly Dictionary<string, CatalogItem> Names = new Dictionary<string, CatalogItem>(StringComparer.Ordinal);
+            public readonly Dictionary<string, Entity> AllNames = new Dictionary<string, Entity>(StringComparer.Ordinal);
+            public readonly Dictionary<string, AssetInfo> Info = new Dictionary<string, AssetInfo>(StringComparer.Ordinal);
+            public readonly Dictionary<string, List<string>> Tags = new Dictionary<string, List<string>>(StringComparer.Ordinal);
+            public readonly Dictionary<string, string> Icons = new Dictionary<string, string>(StringComparer.Ordinal);
+        }
+        private ScanBatch _scanBatch;
+
+        private void Scan()
+        {
+            if (_scanBatch == null)
+            {
+                using var snapshot = _prefabQuery.ToEntityArray(Allocator.Temp);
+                _scanBatch = new ScanBatch { Entities = snapshot.ToArray() };
+            }
+            var batch = _scanBatch;
+            var byCategory = batch.Categories; var byName = batch.Names; var allByName = batch.AllNames;
+            var info = batch.Info; var tags = batch.Tags; var iconSources = batch.Icons;
+            var entities = batch.Entities;
+            var budget = System.Diagnostics.Stopwatch.StartNew();
+            int begin = batch.Cursor;
+            for (; batch.Cursor < entities.Length; batch.Cursor++)
+            {
+                if (batch.Cursor - begin >= 16 && budget.Elapsed.TotalMilliseconds >= 4) return;
+                var entity = entities[batch.Cursor];
+                if (!EntityManager.Exists(entity)) continue;
+                // One broken prefab (half-loaded pack, missing DLC reference) must not empty every list (PM).
+                try
+                {
+                    if (!_prefabs.TryGetPrefab<PrefabBase>(entity, out var prefab) || prefab == null || string.IsNullOrWhiteSpace(prefab.name)) continue;
+                    if (!allByName.ContainsKey(prefab.name)) allByName[prefab.name] = entity;
+                    if (IsOwnPrefabName(prefab.name)) continue;   // (core) our copies and lots are not pickable assets
+                    var traits = Traits(entity, prefab);
+                    var categories = AssetHeuristics.Classify(prefab.name, traits);
+                    if (categories.Count == 0) continue;
+                    if (byName.ContainsKey(prefab.name)) continue;   // duplicate names: first wins (saves resolve by name too)
+                    var item = new CatalogItem
+                    {
+                        Id = prefab.name,
+                        DisplayName = DisplayName(prefab),
+                        Icon = ResolveIcon(prefab, entity, (traits & AssetTraits.Surface) != 0, iconSources),
+                        Prefab = entity,
+                        Info = Info(entity, prefab.name),
+                    };
+                    // The icon url names the prefab class for props made from vehicles ("coui://ail/CarPrefab.Tractor01.png").
+                    traits |= AssetHeuristics.TraitsFromIcon(item.Icon);
+                    var t = new List<string>(categories);
+                    t.Add(prefab.isBuiltin ? "source:vanilla" : "source:mod");
+                    // Automatic eligibility per category ("auto" = eligible for at least one).
+                    bool anyAuto = false;
+                    foreach (var c in categories)
+                        if (AssetHeuristics.AutoEligible(c, prefab.name, traits)) { t.Add("auto:" + c); anyAuto = true; }
+                    if (anyAuto) t.Add("auto");
+                    // Decal picker tabs (UI): "theme:leaves", "theme:dirt", … from the themed sub-category.
+                    foreach (var c in categories)
+                        if (c.StartsWith(AssetCategories.Decal + ".", StringComparison.Ordinal)) t.Add("theme:" + c.Substring(AssetCategories.Decal.Length + 1));
+                    tags[prefab.name] = t;
+                    byName[prefab.name] = item;
+                    info[prefab.name] = item.Info;
+                    foreach (var c in categories)
+                    {
+                        if (!byCategory.TryGetValue(c, out var list)) byCategory[c] = list = new List<CatalogItem>();
+                        list.Add(item);
+                    }
+                }
+                catch (Exception e)
+                {
+                    if (batch.Failed++ < 5) Mod.Log.Warn($"FlowerPainter skipped prefab {entity} while scanning assets: {e.Message}");
+                }
+            }
+
+            try { ScanParkPalettes(entities, byName, tags); }
+            catch (Exception e) { Mod.Log.Warn("FlowerPainter could not read vanilla park palettes: " + e.Message); }
+
+            foreach (var kv in byName) kv.Value.Tags = tags.TryGetValue(kv.Key, out var t) ? t.ToArray() : Array.Empty<string>();
+
+            // Defaults = best automatic-eligible item (vanilla first; network fences before prop pieces, PM).
+            var defaults = new Dictionary<string, Entity>(StringComparer.Ordinal);
+            foreach (var kv in byCategory)
+                kv.Value.Sort((a, b) => string.Compare(a.DisplayName, b.DisplayName, StringComparison.CurrentCultureIgnoreCase));
+            BuildAutomatic(byCategory, defaults);
+
+            bool changed = !SameContent(byName);
+            _byCategory.Clear(); foreach (var kv in byCategory) _byCategory[kv.Key] = kv.Value;
+            _byName.Clear(); foreach (var kv in byName) _byName[kv.Key] = kv.Value;
+            _allPrefabsByName.Clear(); foreach (var kv in allByName) _allPrefabsByName[kv.Key] = kv.Value;
+            _defaults.Clear(); foreach (var kv in defaults) _defaults[kv.Key] = kv.Value;
+            _infoMap = info;
+            if (changed || !_ready) _version++;
+            _ready = true;
+            PublishAvailability(tags);
+            QueueIconWork(_byName, iconSources);
+            MaybeWriteDump(true);
+
+            var summary = new StringBuilder();
+            foreach (var kv in _byCategory) summary.Append(kv.Key).Append('=').Append(kv.Value.Count).Append(' ');
+            Mod.Log.Info($"FlowerPainter asset catalog v{_version}: {summary}({batch.Failed} skipped)");
+            _scanBatch = null;
+            // (s26) Which lane roads carry zone blocks (shops must front one that does).
+            {
+                var zb = new System.Text.StringBuilder();
+                foreach (var id in new[] { "Alley", "Pedestrian Street", "Pedestrian Street Small", "Small Road", "Gravel Road" })
+                    if (_infoMap.TryGetValue(id, out var ri))
+                        zb.Append(zb.Length > 0 ? ", " : "").Append(id).Append(ri.ZoneBlocks == 1 ? " yes" : ri.ZoneBlocks == 2 ? " NO" : " ?");
+                if (zb.Length > 0) Mod.Log.Info("FlowerPainter zone blocks by road: " + zb + ".");
+            }
+        }
+
+        /// <summary>
+        /// Tells Core which categories have automatically usable items, so layers report "no … installed"
+        /// (Info) and place nothing instead of planning objects the build would drop. Every declared
+        /// category is published, 0 when empty.
+        /// </summary>
+        private void PublishAvailability(Dictionary<string, List<string>> tags)
+        {
+            var counts = new Dictionary<string, int>(StringComparer.Ordinal);
+            foreach (var f in typeof(AssetCategories).GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static))
+                if (f.IsLiteral && f.GetValue(null) is string c) counts[c] = 0;
+            foreach (var kv in tags)
+                foreach (var tag in kv.Value)
+                    if (tag.StartsWith("auto:", StringComparison.Ordinal))
+                    {
+                        var c = tag.Substring(5);
+                        counts[c] = (counts.TryGetValue(c, out var n) ? n : 0) + 1;
+                    }
+            FlowerPainter.Core.Layers.Common.AssetAvailability.Publish(counts);
+        }
+
+        private int _lastSignature;
+
+        private bool SameContent(Dictionary<string, CatalogItem> byName)
+        {
+            unchecked
+            {
+                int sig = byName.Count;
+                foreach (var kv in byName) sig = sig * 31 + kv.Key.GetHashCode() + kv.Value.Prefab.Index;
+                bool same = sig == _lastSignature && _ready;
+                _lastSignature = sig;
+                return same;
+            }
+        }
+
+        private AssetTraits Traits(Entity e, PrefabBase prefab)
+        {
+            var t = AssetTraits.None;
+            if (EntityManager.HasComponent<PlaceholderObjectData>(e) || EntityManager.HasBuffer<PlaceholderObjectElement>(e)) t |= AssetTraits.Placeholder;
+            if (ImageSystem.GetIcon(prefab) != null) t |= AssetTraits.HasIcon;
+
+            if (EntityManager.HasComponent<ZoneData>(e)) return t | AssetTraits.Zone;
+
+            if (EntityManager.HasComponent<AreaGeometryData>(e))
+            {
+                var type = EntityManager.GetComponentData<AreaGeometryData>(e).m_Type;
+                if (type == global::Game.Areas.AreaType.Surface) t |= AssetTraits.Surface;
+                else if (type == global::Game.Areas.AreaType.Space) t |= AssetTraits.SpaceArea;
+                else if (type == global::Game.Areas.AreaType.Lot) t |= AssetTraits.LotArea;
+                // Surfaces/areas need a valid archetype or the definition is silently dropped.
+                if (EntityManager.HasComponent<AreaData>(e) && !EntityManager.GetComponentData<AreaData>(e).m_Archetype.Valid) t |= AssetTraits.Placeholder;
+                return t;
+            }
+
+            if (EntityManager.HasComponent<NetData>(e))
+            {
+                t |= AssetTraits.Net;
+                if (!EntityManager.HasComponent<NetGeometryData>(e)) t |= AssetTraits.Placeholder;
+                if (EntityManager.HasComponent<FenceData>(e) || EntityManager.HasComponent<NetFenceData>(e)) t |= AssetTraits.NetFence;
+                if (EntityManager.HasComponent<PathwayData>(e)) t |= AssetTraits.Pathway;
+                if (EntityManager.HasComponent<RoadData>(e)) t |= AssetTraits.Road;
+                return t;
+            }
+
+            if (!(prefab is StaticObjectPrefab) || !EntityManager.HasComponent<ObjectGeometryData>(e)) return t;
+            t |= AssetTraits.StaticObject;
+            if (prefab is BuildingPrefab || EntityManager.HasComponent<BuildingData>(e)) t |= AssetTraits.Building;
+            if (prefab is ObjectGeometryPrefab g && g.m_Meshes != null && g.m_Meshes.Length > 0) t |= AssetTraits.HasMesh;
+            if (IsDecalOnly(e))
+            {
+                t |= AssetTraits.DecalMesh;
+                // s23: a decal whose projection mask lacks Terrain (EAI sets DecalProperties.m_LayerMask from the pack's
+                // colossal_DecalLayerMask) never shows on the ground: building dressing, never an automatic ground decal.
+                if (!ProjectsOnTerrain(prefab)) t |= AssetTraits.WallOrHanging;
+            }
+            if (EntityManager.HasComponent<PlantData>(e)) t |= AssetTraits.Plant;
+            if (EntityManager.HasComponent<TreeData>(e)) t |= AssetTraits.Tree;
+            if (EntityManager.HasComponent<StreetLightData>(e)) t |= AssetTraits.StreetLight;
+            if (prefab.TryGet<ObjectSubObjects>(out var subs) && subs?.m_SubObjects != null && subs.m_SubObjects.Length > 0) t |= AssetTraits.HasSubObjects;
+
+            if (prefab.isBuiltin) t |= AssetTraits.Vanilla;
+            // Prefab kind (pool hygiene): building extensions / upgrades, vehicles, citizens' activity props.
+            for (var type = prefab.GetType(); type != null && type != typeof(PrefabBase); type = type.BaseType)
+                t |= AssetHeuristics.TraitsFromTypeName(type.Name);
+            if (EntityManager.HasComponent<BrandObjectData>(e)) t |= AssetTraits.BrandObject;
+            if (EntityManager.HasComponent<PlaceableObjectData>(e))
+            {
+                var flags = EntityManager.GetComponentData<PlaceableObjectData>(e).m_Flags;
+                const global::Game.Objects.PlacementFlags netAttached = global::Game.Objects.PlacementFlags.RoadSide | global::Game.Objects.PlacementFlags.RoadNode
+                    | global::Game.Objects.PlacementFlags.RoadEdge | global::Game.Objects.PlacementFlags.NetObject;
+                const global::Game.Objects.PlacementFlags wall = global::Game.Objects.PlacementFlags.Wall | global::Game.Objects.PlacementFlags.Hanging;
+                const global::Game.Objects.PlacementFlags water = global::Game.Objects.PlacementFlags.Shoreline | global::Game.Objects.PlacementFlags.Floating
+                    | global::Game.Objects.PlacementFlags.Underwater | global::Game.Objects.PlacementFlags.Waterway;
+                if ((flags & netAttached) != 0) t |= AssetTraits.NetAttached;
+                if ((flags & wall) != 0) t |= AssetTraits.WallOrHanging;
+                if ((flags & water) != 0) t |= AssetTraits.WaterPlacement;
+            }
+
+            if (EntityManager.HasBuffer<ActivityLocationElement>(e))
+            {
+                uint sitting = new ActivityMask(ActivityType.BenchSitting).m_Mask;
+                uint exercise = 0;
+                foreach (var a in new[] { ActivityType.PushUps, ActivityType.PullUps, ActivityType.SitUps, ActivityType.JumpingJacks, ActivityType.Squats })
+                    exercise |= new ActivityMask(a).m_Mask;
+                var locations = EntityManager.GetBuffer<ActivityLocationElement>(e, true);
+                for (int i = 0; i < locations.Length; i++)
+                {
+                    if ((locations[i].m_ActivityMask.m_Mask & sitting) != 0) t |= AssetTraits.BenchActivity;
+                    if ((locations[i].m_ActivityMask.m_Mask & exercise) != 0) t |= AssetTraits.ExerciseActivity;
+                }
+            }
+
+            if (EntityManager.HasBuffer<SubLane>(e))
+            {
+                t |= AssetTraits.HasSubLane;
+                var lanes = EntityManager.GetBuffer<SubLane>(e, true);
+                for (int i = 0; i < lanes.Length; i++)
+                {
+                    var lane = lanes[i].m_Prefab;
+                    if (lane != Entity.Null && EntityManager.Exists(lane) && EntityManager.HasComponent<ParkingLaneData>(lane))
+                    { t |= AssetTraits.ParkingLaneSubLane; break; }
+                }
+            }
+            return t;
+        }
+
+        /// <summary>
+        /// A decal object: it has sub meshes and every one is a decal mesh. MeshSystem sets MeshFlags.Decal
+        /// on a RenderPrefab's MeshData when the prefab has DecalProperties (decal material/projector), so
+        /// this is the game's own signal, independent of names.
+        /// </summary>
+        private static bool ProjectsOnTerrain(PrefabBase prefab)
+        {
+            if (!(prefab is ObjectGeometryPrefab g) || g.m_Meshes == null) return true;
+            foreach (var m in g.m_Meshes)
+            {
+                if (!(m?.m_Mesh is RenderPrefab r)) continue;
+                var dp = r.GetComponent<DecalProperties>();
+                if (dp != null && (dp.m_LayerMask & global::Game.Rendering.DecalLayers.Terrain) != 0) return true;
+                if (dp == null) return true;
+            }
+            return false;
+        }
+
+        private bool IsDecalOnly(Entity e)
+        {
+            if (!EntityManager.HasBuffer<SubMesh>(e)) return false;
+            var meshes = EntityManager.GetBuffer<SubMesh>(e, true);
+            if (meshes.Length == 0) return false;
+            for (int i = 0; i < meshes.Length; i++)
+            {
+                var m = meshes[i].m_SubMesh;
+                if (m == Entity.Null || !EntityManager.HasComponent<MeshData>(m)) return false;
+                if ((EntityManager.GetComponentData<MeshData>(m).m_State & MeshFlags.Decal) == 0) return false;
+            }
+            return true;
+        }
+
+        private AssetInfo Info(Entity e, string name)
+        {
+            var info = new AssetInfo { Id = name };
+            if (EntityManager.HasComponent<ObjectGeometryData>(e))
+            {
+                var g = EntityManager.GetComponentData<ObjectGeometryData>(e);
+                info.BoundsMin = g.m_Bounds.min;
+                info.BoundsMax = g.m_Bounds.max;
+            }
+            if (EntityManager.HasComponent<PlaceableObjectData>(e))
+                info.Cost = EntityManager.GetComponentData<PlaceableObjectData>(e).m_ConstructionCost;
+            if (EntityManager.HasComponent<NetGeometryData>(e))
+                info.NetWidth = EntityManager.GetComponentData<NetGeometryData>(e).m_DefaultWidth;
+            // (s26) Does the road carry zone blocks (BlockSystem.CreateBlocks needs RoadData.m_ZoneBlockPrefab)?
+            if (EntityManager.HasComponent<global::Game.Prefabs.RoadData>(e))
+                info.ZoneBlocks = EntityManager.GetComponentData<global::Game.Prefabs.RoadData>(e).m_ZoneBlockPrefab != Entity.Null ? (byte)1 : (byte)2;
+            if (EntityManager.HasComponent<PlaceableNetData>(e))
+            {
+                // Nets are charged per rounded 8 m cell, max(1, round(len/8)) (NetUtils.GetConstructionCost); the UI's
+                // "per km" figure is cost × 125. AssetInfo wants per metre.
+                var p = EntityManager.GetComponentData<PlaceableNetData>(e);
+                info.Cost = p.m_DefaultConstructionCost / 8f;
+                info.Upkeep = p.m_DefaultUpkeepCost / 8f;
+            }
+            return info;
+        }
+
+        private static string DisplayName(PrefabBase prefab)
+        {
+            try
+            {
+                var dict = global::Game.SceneFlow.GameManager.instance?.localizationManager?.activeDictionary;
+                if (dict != null && dict.TryGetValue("Assets.NAME[" + prefab.name + "]", out var value) && !string.IsNullOrWhiteSpace(value))
+                    return value;
+            }
+            catch (Exception) { }
+            return prefab.name;
+        }
+
+        /// <summary>
+        /// Walks the managed sub-objects of every ParkData prefab (vanilla parks) and tags each
+        /// catalogued asset found there with "palette:&lt;park name&gt;". Layers use these to dress a
+        /// park in a consistent vanilla style.
+        /// </summary>
+        private void ScanParkPalettes(Entity[] prefabs, Dictionary<string, CatalogItem> byName, Dictionary<string, List<string>> tags)
+        {
+            int palettes = 0;
+            for (int i = 0; i < prefabs.Length; i++)
+            {
+                var entity = prefabs[i];
+                if (!EntityManager.HasComponent<ParkData>(entity) || !_prefabs.TryGetPrefab<PrefabBase>(entity, out var park) || park == null) continue;
+                var tag = AssetHeuristics.PaletteTag(park.name);
+                var visited = new HashSet<Entity>();
+                int found = 0;
+                CollectSubObjects(park, tag, visited, 0, byName, tags, ref found);
+                if (found > 0) palettes++;
+            }
+            Mod.Log.Info($"FlowerPainter discovered {palettes} vanilla park palettes.");
+        }
+
+        private void CollectSubObjects(PrefabBase parent, string tag, HashSet<Entity> visited, int depth,
+            Dictionary<string, CatalogItem> byName, Dictionary<string, List<string>> tags, ref int found)
+        {
+            if (parent == null || depth > 8 || !parent.TryGet<ObjectSubObjects>(out var component) || component?.m_SubObjects == null) return;
+            foreach (var sub in component.m_SubObjects)
+            {
+                var child = sub?.m_Object;
+                // GetEntity throws for prefabs the game never registered (content not installed).
+                if (child == null || !_prefabs.TryGetEntity(child, out var childEntity)) continue;
+                CollectPaletteObject(childEntity, tag, visited, depth + 1, byName, tags, ref found);
+            }
+        }
+
+        private void CollectPaletteObject(Entity entity, string tag, HashSet<Entity> visited, int depth,
+            Dictionary<string, CatalogItem> byName, Dictionary<string, List<string>> tags, ref int found)
+        {
+            if (entity == Entity.Null || depth > 8 || !visited.Add(entity) || !EntityManager.Exists(entity)) return;
+            if (EntityManager.HasBuffer<PlaceholderObjectElement>(entity))
+            {
+                var variants = EntityManager.GetBuffer<PlaceholderObjectElement>(entity, true);
+                var copy = new List<Entity>(variants.Length);
+                for (int i = 0; i < variants.Length; i++) copy.Add(variants[i].m_Object);
+                foreach (var v in copy) CollectPaletteObject(v, tag, visited, depth + 1, byName, tags, ref found);
+            }
+            if (!_prefabs.TryGetPrefab<PrefabBase>(entity, out var prefab) || prefab == null) return;
+            if (byName.ContainsKey(prefab.name) && tags.TryGetValue(prefab.name, out var list) && !list.Contains(tag))
+            {
+                list.Add(tag);
+                found++;
+            }
+            CollectSubObjects(prefab, tag, visited, depth, byName, tags, ref found);
+        }
+    }
+}

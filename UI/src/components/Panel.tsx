@@ -1,0 +1,985 @@
+import { FlowerDesignStage } from "../stages/FlowerDesignStage";
+// The FlowerPainter panel: docked on the RIGHT, tall (below the top bar → above the bottom toolbar),
+// draggable by its header (position remembered; double-click the header to dock it again).
+//   header  — drag grip, name, undo/redo, collapse, close
+//   stages  — [1 Area] → [2 Design] → [3 Review] (click any reachable stage to go back)
+//   body    — the current stage, scrolls inside the panel (each region behind its own ErrorBoundary)
+//   footer  — what you get / why you can't continue yet + the primary button (always the next step, Enter)
+//   hints   — shortcut strip from state.hints
+// While drawing, C# may collapse it to a slim header + primary button (state.panelCollapsed); it then
+// shows an obvious "Show options" button.
+import { Legend } from "./Legend";
+import { LeftOut } from "./LeftOut";
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import classNames from "classnames";
+import { PROTOCOL, Stage, StepView, Summary, ToolState } from "../contract";
+import { act, useCatalog, useDesign, useManaged, useSummary, useToolState } from "../lib/bindings";
+import { area as fmtArea, compactMoney, formatValue } from "../lib/format";
+import { useT } from "../lib/l10n";
+import { ErrorBoundary } from "../lib/errorBoundary";
+import { useRtl } from "../lib/rtl";
+import { Tip, TipDirection, TipDirectionContext } from "../lib/tips";
+import { statIcon } from "../lib/icons";
+import { walk } from "../lib/schema";
+import { requestReveal } from "../lib/reveal";
+import { AreaStage, modeAvailability, modeOptions, toolOf } from "../stages/AreaStage";
+import { DesignStage, markerLabel } from "../stages/DesignStage";
+import { BuildingStage, ReviewStage } from "../stages/ReviewStage";
+import { ManageStage } from "../stages/ManageStage";
+import { Btn, Check, Icon, Keys, Segmented } from "./common";
+import { layoutFor, MAX_SHARE, MIN_REM, NARROW_REM, PanelLayoutContext, WIDE_DEFAULT_REM, WIDE_SCREEN_PX } from "../lib/layout";
+import { AssetPickerCard, PickerContext, PickerRequest } from "./picker";
+import s from "./panel.module.scss";
+
+const STAGES: { id: Stage; key: string; en: string }[] = [
+    { id: "area", key: "FlowerPainter.UI.Stage.Area", en: "Area" },
+    { id: "design", key: "FlowerPainter.UI.Stage.Design", en: "Design" },
+    { id: "review", key: "FlowerPainter.UI.Stage.Review", en: "Review" },
+];
+
+// ───────────── position (dock / drag) and width (resize) ─────────────
+
+const POS_KEY = "flowerpainter.panelPos.v2";
+const WIDTH_KEY = "flowerpainter.panelWidth.v1";
+const HEIGHT_KEY = "flowerpainter.panelHeight.v1";
+/** Smallest panel height in rem (header + a few rows). */
+const MIN_HEIGHT_REM = 200;
+/** Docked insets in rem (keep in sync with .wrap): below the top bar, above the bottom toolbar. */
+const DOCK_TOP = 64;
+const DOCK_BOTTOM = 112;
+
+/** Floating position as fractions of the viewport (survives resolution / UI-scale changes). */
+type Pos = { fx: number; fy: number } | null;
+
+function loadPos(): Pos {
+    try {
+        const raw = window.localStorage?.getItem(POS_KEY);
+        if (!raw) return null;
+        const v = JSON.parse(raw);
+        return v && typeof v.fx === "number" && typeof v.fy === "number" ? { fx: v.fx, fy: v.fy } : null;
+    } catch {
+        return null;
+    }
+}
+
+function savePos(p: Pos) {
+    try {
+        if (p) window.localStorage?.setItem(POS_KEY, JSON.stringify(p));
+        else window.localStorage?.removeItem(POS_KEY);
+    } catch {
+        /* storage unavailable: the position is simply not remembered */
+    }
+}
+
+/** The player's chosen width in rem, or null (= the default for this screen). */
+function loadWidth(): number | null {
+    try {
+        const raw = window.localStorage?.getItem(WIDTH_KEY);
+        const v = raw ? Number(raw) : NaN;
+        return isFinite(v) && v > 0 ? v : null;
+    } catch {
+        return null;
+    }
+}
+
+function saveWidth(w: number | null) {
+    try {
+        if (w) window.localStorage?.setItem(WIDTH_KEY, String(Math.round(w)));
+        else window.localStorage?.removeItem(WIDTH_KEY);
+    } catch {
+        /* not remembered */
+    }
+}
+
+/** The player's chosen height in rem, or null (= docked height: top bar to bottom toolbar). */
+function loadHeight(): number | null {
+    try {
+        const raw = window.localStorage?.getItem(HEIGHT_KEY);
+        const v = raw ? Number(raw) : NaN;
+        return isFinite(v) && v > 0 ? v : null;
+    } catch {
+        return null;
+    }
+}
+
+function saveHeight(h: number | null) {
+    try {
+        if (h) window.localStorage?.setItem(HEIGHT_KEY, String(Math.round(h)));
+        else window.localStorage?.removeItem(HEIGHT_KEY);
+    } catch {
+        /* not remembered */
+    }
+}
+
+/** Default width: wider on big screens (≥ 1600 px), the classic 400rem otherwise. */
+const defaultWidth = () => (window.innerWidth >= WIDE_SCREEN_PX ? WIDE_DEFAULT_REM : NARROW_REM);
+
+function isInsideButton(el: HTMLElement | null, stop: HTMLElement | null) {
+    for (let e = el; e && e !== stop; e = e.parentElement) if (e.tagName === "BUTTON" || e.tagName === "INPUT") return true;
+    return false;
+}
+
+/**
+ * Pixels per rem as the panel is really drawn (rendered width / width in rem), measured after every render. The root
+ * font size is only the fallback: in the game it does not match the UI scale, which made the width follow the mouse at
+ * the wrong speed and let the height grow past the screen.
+ */
+let measuredRemPx = 0;
+function remPx() {
+    if (measuredRemPx > 0) return measuredRemPx;
+    const fs = parseFloat(getComputedStyle(document.documentElement).fontSize);
+    return fs > 0 ? fs : window.innerHeight / 1080;
+}
+
+function usePanelPosition() {
+    const [pos, setPos] = useState<Pos>(loadPos);
+    const [drag, setDrag] = useState<{ x: number; y: number } | null>(null);
+    const [chosen, setChosen] = useState<number | null>(loadWidth);
+    const [resizing, setResizing] = useState<number | null>(null);
+    const [chosenH, setChosenH] = useState<number | null>(loadHeight);
+    const [resizingH, setResizingH] = useState<number | null>(null);
+    const [, bump] = useState(0);
+    const wrapRef = useRef<HTMLDivElement | null>(null);
+
+    useEffect(() => {
+        const onResize = () => bump((n) => n + 1);
+        window.addEventListener("resize", onResize);
+        return () => window.removeEventListener("resize", onResize);
+    }, []);
+
+    /** Width limits in rem: at least MIN_REM, at most MAX_SHARE of the screen. */
+    const maxWidth = () => Math.max(MIN_REM, Math.floor((window.innerWidth * MAX_SHARE) / remPx()));
+    const clampWidth = (w: number) => Math.max(MIN_REM, Math.min(maxWidth(), Math.round(w)));
+    const width = clampWidth(resizing ?? chosen ?? defaultWidth());
+
+    // The real pixels per rem, from the panel as drawn: mouse moves (pixels) and sizes (rem) use the same scale.
+    useLayoutEffect(() => {
+        const w = wrapRef.current?.getBoundingClientRect().width ?? 0;
+        if (w > 0 && width > 0) measuredRemPx = w / width;
+    });
+
+    /** Height in rem: the chosen one (or the docked height), never taller than the screen. */
+    const dockedHeight = () => Math.max(MIN_HEIGHT_REM, window.innerHeight / remPx() - (DOCK_TOP + DOCK_BOTTOM));
+    const maxHeight = () => Math.max(MIN_HEIGHT_REM, Math.floor((window.innerHeight - 16) / remPx()));
+    const clampHeight = (h: number) => Math.max(MIN_HEIGHT_REM, Math.min(maxHeight(), Math.round(h)));
+    const height = clampHeight(resizingH ?? chosenH ?? dockedHeight());
+
+    /** Clamped pixel position: the whole panel stays on screen; moving never changes its height. */
+    const clamp = (x: number, y: number, w = width, h = height) => {
+        const r = remPx();
+        return {
+            x: Math.max(0, Math.min(window.innerWidth - w * r, x)),
+            y: Math.max(0, Math.min(window.innerHeight - h * r - 8, y)),
+        };
+    };
+
+    const onHeaderMouseDown = (e: React.MouseEvent<HTMLElement>) => {
+        if (e.button !== 0 || isInsideButton(e.target as HTMLElement, e.currentTarget)) return;
+        const rect = wrapRef.current?.getBoundingClientRect();
+        if (!rect) return;
+        e.preventDefault();
+        const sx = e.clientX,
+            sy = e.clientY;
+        let moved = false;
+        const move = (ev: MouseEvent) => {
+            const dx = ev.clientX - sx,
+                dy = ev.clientY - sy;
+            if (!moved && Math.abs(dx) + Math.abs(dy) < 4) return;
+            moved = true;
+            setDrag(clamp(rect.left + dx, rect.top + dy));
+        };
+        const up = (ev: MouseEvent) => {
+            window.removeEventListener("mousemove", move);
+            window.removeEventListener("mouseup", up);
+            if (!moved) return;
+            const c = clamp(rect.left + ev.clientX - sx, rect.top + ev.clientY - sy);
+            const p = { fx: c.x / window.innerWidth, fy: c.y / window.innerHeight };
+            savePos(p);
+            setPos(p);
+            setDrag(null);
+        };
+        window.addEventListener("mousemove", move);
+        window.addEventListener("mouseup", up);
+    };
+
+    /** Drag the left edge: the right edge stays put (docked: the screen edge), the width follows. */
+    const onResizeMouseDown = (e: React.MouseEvent<HTMLElement>) => {
+        if (e.button !== 0) return;
+        const rect = wrapRef.current?.getBoundingClientRect();
+        if (!rect) return;
+        e.preventDefault();
+        e.stopPropagation();
+        const r = remPx();
+        const sx = e.clientX;
+        const start = width;
+        const floating = !!pos;
+        const at = (ev: MouseEvent) => clampWidth(start + (sx - ev.clientX) / r);
+        const place = (w: number) => (floating ? clamp(rect.right - w * r, rect.top, w) : null);
+        const move = (ev: MouseEvent) => {
+            const w = at(ev);
+            setResizing(w);
+            const c = place(w);
+            if (c) setDrag(c);
+        };
+        const up = (ev: MouseEvent) => {
+            window.removeEventListener("mousemove", move);
+            window.removeEventListener("mouseup", up);
+            const w = at(ev);
+            saveWidth(w);
+            setChosen(w);
+            setResizing(null);
+            const c = place(w);
+            if (c) {
+                const p = { fx: c.x / window.innerWidth, fy: c.y / window.innerHeight };
+                savePos(p);
+                setPos(p);
+                setDrag(null);
+            }
+        };
+        window.addEventListener("mousemove", move);
+        window.addEventListener("mouseup", up);
+    };
+
+    /** Drag the bottom edge: the top stays put, the height follows. */
+    const onResizeHeightMouseDown = (e: React.MouseEvent<HTMLElement>) => {
+        if (e.button !== 0) return;
+        const rect = wrapRef.current?.getBoundingClientRect();
+        if (!rect) return;
+        e.preventDefault();
+        e.stopPropagation();
+        const r = remPx();
+        const sy = e.clientY;
+        const start = rect.height / r;
+        const limit = (window.innerHeight - rect.top - 8) / r;
+        const at = (ev: MouseEvent) => Math.max(MIN_HEIGHT_REM, Math.min(limit, Math.round(start + (ev.clientY - sy) / r)));
+        const move = (ev: MouseEvent) => setResizingH(at(ev));
+        const up = (ev: MouseEvent) => {
+            window.removeEventListener("mousemove", move);
+            window.removeEventListener("mouseup", up);
+            const h = at(ev);
+            saveHeight(h);
+            setChosenH(h);
+            setResizingH(null);
+        };
+        window.addEventListener("mousemove", move);
+        window.addEventListener("mouseup", up);
+    };
+
+    /** Double-click the bottom edge: back to the full docked height. */
+    const resetHeight = () => {
+        saveHeight(null);
+        setChosenH(null);
+    };
+
+    /** Double-click the edge: back to the default width for this screen. */
+    const resetWidth = () => {
+        saveWidth(null);
+        setChosen(null);
+    };
+
+    const reset = () => {
+        savePos(null);
+        setPos(null);
+        setDrag(null);
+    };
+
+    const r = remPx();
+    let style: React.CSSProperties = { width: width + "rem" };
+    let centerX = window.innerWidth; // docked right
+    // Docked with a chosen height: the top stays under the top bar, the bottom ends where the player dragged it.
+    if (chosenH !== null || resizingH !== null) style = { ...style, bottom: "auto", height: height + "rem" };
+    if (drag || pos) {
+        const c = drag ?? clamp((pos as { fx: number }).fx * window.innerWidth, (pos as { fy: number }).fy * window.innerHeight);
+        // Floating: its own height (chosen, or the docked height); moving never changes it.
+        style = { ...style, left: c.x + "px", top: c.y + "px", right: "auto", bottom: "auto", height: height + "rem" };
+        centerX = c.x + (width * r) / 2;
+    }
+    const side: TipDirection = centerX > window.innerWidth / 2 ? "left" : "right";
+    return {
+        wrapRef,
+        style,
+        floating: !!(drag || pos),
+        dragging: !!drag && resizing === null,
+        resizing: resizing !== null,
+        resizingHeight: resizingH !== null,
+        onResizeHeightMouseDown,
+        resetHeight,
+        onHeaderMouseDown,
+        onResizeMouseDown,
+        resetWidth,
+        reset,
+        side,
+        width,
+    };
+}
+
+// ───────────── pieces ─────────────
+
+const StageBar = ({ state }: { state: ToolState }) => {
+    const { t } = useT();
+    const currentIndex = STAGES.findIndex((x) => x.id === (state.stage === "building" ? "review" : state.stage));
+    const locked = state.stage === "building";
+    return (
+        <div className={s.stageBar} data-testid="stage-bar">
+            {STAGES.map((st, i) => {
+                const current = i === currentIndex;
+                const done = currentIndex > i;
+                const reachable = !locked && !current && state.reachable.includes(st.id);
+                return (
+                    <button
+                        key={st.id}
+                        type="button"
+                        data-testid={`stagebar-${st.id}`}
+                        data-state={current ? "current" : reachable ? "reachable" : "locked"}
+                        className={classNames(s.stageItem, {
+                            [s.stageCurrent]: current,
+                            [s.stageReachable]: reachable,
+                            [s.stageLocked]: !current && !reachable,
+                        })}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            if (reachable) act.goToStage(st.id);
+                        }}
+                    >
+                        <div className={classNames(s.stageNum, { [s.stageNumDone]: done })}>{done ? <Icon name="check" size={10} tint="dark" /> : i + 1}</div>
+                        <div className={s.stageLabel}>{t(st.key, st.en)}</div>
+                    </button>
+                );
+            })}
+        </div>
+    );
+};
+
+const cap = (x: string) => (x ? x.charAt(0).toUpperCase() + x.slice(1) : x);
+
+const UndoRedo = ({ state }: { state: ToolState }) => {
+    const { t, tl } = useT();
+    const undo = state.undoLabel ? tl(state.undoLabel) : "";
+    const redo = state.redoLabel ? tl(state.redoLabel) : "";
+    return (
+        <div className={s.undoRedo}>
+            <Btn
+                icon="undo"
+                iconSize={14}
+                disabled={!state.canUndo}
+                testId="undo"
+                title={undo ? t("FlowerPainter.UI.UndoWhat", "Undo: {0}", [cap(undo)]) : t("FlowerPainter.UI.Undo", "Undo")}
+                description={<Keys keys={["Ctrl", "Z"]} />}
+                onClick={act.undo}
+            />
+            <Btn
+                icon="redo"
+                iconSize={14}
+                disabled={!state.canRedo}
+                testId="redo"
+                title={redo ? t("FlowerPainter.UI.RedoWhat", "Redo: {0}", [cap(redo)]) : t("FlowerPainter.UI.Redo", "Redo")}
+                description={<Keys keys={["Ctrl", "Y"]} />}
+                onClick={act.redo}
+            />
+        </div>
+    );
+};
+
+/** The preview mode in effect: C#'s choice, else Real on Review and Sketch before it. */
+export function effectivePreviewMode(state: ToolState): "sketch" | "ghost" {
+    if (state.previewMode === "sketch" || state.previewMode === "ghost") return state.previewMode;
+    return state.stage === "review" || state.stage === "building" ? "ghost" : "sketch";
+}
+
+/** Sketch | Real: fast overlay or the real translucent models + textures (spinner while the ghost rebuilds). */
+const PreviewToggle = ({ state }: { state: ToolState }) => {
+    const { t } = useT();
+    const mode = effectivePreviewMode(state);
+    const pending = mode === "ghost" && !!state.ghostPending && (state.planning || state.primary.action !== "startPlanning");
+    const opts: { value: "sketch" | "ghost"; icon: string; label: string; title: string; tip: string }[] = [
+        {
+            value: "sketch",
+            icon: "sketch",
+            label: t("FlowerPainter.UI.Preview.Sketch", "Sketch"),
+            title: t("FlowerPainter.UI.Preview.SketchTitle", "Sketch preview"),
+            tip: t("FlowerPainter.UI.Preview.SketchTip", "Fast outlines and dots. Best while drawing and trying things."),
+        },
+        {
+            value: "ghost",
+            icon: "cube",
+            label: t("FlowerPainter.UI.Preview.Real", "Real"),
+            title: t("FlowerPainter.UI.Preview.RealTitle", "Real preview"),
+            tip: t("FlowerPainter.UI.Preview.RealTip", "See-through game models and textures, exactly what will be built."),
+        },
+    ];
+    return (
+        <div className={s.previewToggle} data-testid="preview-mode" data-mode={mode} data-pending={pending ? "true" : "false"}>
+            {opts.map((o) => {
+                const on = o.value === mode;
+                return (
+                    <Tip key={o.value} title={o.title} description={o.tip}>
+                        <button
+                            type="button"
+                            data-testid={`preview-mode-${o.value}`}
+                            aria-pressed={on ? "true" : "false"}
+                            className={classNames(s.pvBtn, { [s.pvOn]: on })}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                if (!on) act.setPreviewMode(o.value);
+                            }}
+                        >
+                            {o.value === "ghost" && pending ? (
+                                <div className={s.spinner} data-testid="ghost-pending" />
+                            ) : (
+                                <Icon name={o.icon} size={13} tint={on ? "light" : "dim"} />
+                            )}
+                            <div className={s.pvLabel}>{o.label}</div>
+                        </button>
+                    </Tip>
+                );
+            })}
+        </div>
+    );
+};
+
+function quickStats(summary: Summary) {
+    return summary.stats.filter((x) => x.unit === "count" && x.value > 0).slice(0, 1);
+}
+
+/** First enabled step that still lacks its required markers (entrances), or null. */
+export function missingMarkers(root: StepView | null): StepView | null {
+    let miss: StepView | null = null;
+    walk(root, (st) => {
+        if (miss || !st.enabled) return;
+        const need = st.markersRequired ?? 0;
+        if (need <= 0) return;
+        const have = st.markerList && st.markerList.length ? st.markerList.length : st.markers.reduce((n, m) => n + m.count, 0);
+        if (have < need) miss = st;
+    });
+    return miss;
+}
+
+/** A step that still needs entrances: pressing the disabled primary starts placing one there. */
+type EntranceLead = { path: string; kind: string; viaPrimary: boolean };
+
+function leadToEntrances(state: ToolState, lead: EntranceLead) {
+    if (lead.viaPrimary) act.primary(); // C# (and the mock) start placement on that step, back in Design
+    else {
+        if (state.stage !== "design") act.goToStage("design");
+        if (lead.kind) {
+            act.startMarkers(lead.path, lead.kind);
+            act.setMarkerKind(lead.path, lead.kind);
+        }
+    }
+    requestReveal("entrances:" + lead.path);
+}
+
+/** Permanent changes require explicit consent before Build. */
+type AckChip = { on: boolean; set: (v: boolean) => void };
+
+const Footer = ({
+    state, summary, blockedReason, lead, compact, ack,
+}: { state: ToolState; summary: Summary; blockedReason: string | null; lead?: EntranceLead | null; compact?: boolean; ack?: AckChip | null }) => {
+    const { t, tl } = useT();
+    const p = state.primary;
+    const enabled = p.enabled && !blockedReason;
+    const reason = blockedReason ?? (p.reason ? tl(p.reason) : "");
+    const pending = summary.stale || state.planning;
+    const ghostBusy = !summary.stale && !!state.ghostPending && effectivePreviewMode(state) === "ghost";
+    const busy = (state.planning || ghostBusy) && (state.stage === "design" || state.stage === "review");
+    const showNumbers = state.stage === "design" && summary.ready && !compact;
+    // Planning can take a moment: a clear spinner + label (not just a dot), stale numbers dimmed beside it.
+    const progress = state.planning && typeof state.planningProgress === "number" ? Math.max(0, Math.min(1, state.planningProgress)) : null;
+    const busyChip = busy ? (
+        <div className={s.busy} data-testid="busy">
+            <div className={s.spinner} />
+            <div className={s.busyText}>
+                {pending
+                    ? progress != null
+                        ? t("FlowerPainter.UI.PlanningPct", "Planning… {0}%", [Math.round(progress * 100)])
+                        : t("FlowerPainter.UI.Planning", "Planning…")
+                    : t("FlowerPainter.UI.PreviewUpdating", "Updating preview…")}
+            </div>
+            {pending && progress != null ? (
+                <div className={s.busyTrack}>
+                    <div className={s.busyFill} data-testid="busy-bar" style={{ width: Math.round(progress * 100) + "%" }} />
+                </div>
+            ) : null}
+        </div>
+    ) : null;
+    const label = tl(p.label, t("FlowerPainter.UI.Primary.Next", "Next"));
+    const needsPlan = p.action === "startPlanning" && !state.planning && !ghostBusy;
+    const planNote = needsPlan ? (summary.ready
+        ? t("FlowerPainter.UI.Plan.Changed", "Design changed. Start planning to update the map and estimate.")
+        : t("FlowerPainter.UI.Plan.First", "Start planning to preview this design on the map.")) : "";
+    // s42: a blocked button says what blocks it ("Add an entrance to build"), short enough for one line.
+    const shownLabel = !enabled && reason && reason.length <= 34 ? reason : label;
+    const showReason = !enabled && !!reason && reason !== shownLabel;
+    const button = (
+        <button
+            type="button"
+            data-testid="primary"
+            data-action={p.action}
+            aria-disabled={enabled ? "false" : "true"}
+            aria-describedby={showReason ? "flowerpainter-primary-reason" : undefined}
+            className={classNames(s.primary, { [s.primaryOff]: !enabled, [s.primaryLead]: !enabled && !!lead, [s.primaryCancel]: p.action === "cancelBuild" })}
+            onClick={(e) => {
+                e.stopPropagation();
+                if (enabled) act.primary();
+                else if (lead && !state.markerMode) leadToEntrances(state, lead);
+            }}
+        >
+            <div className={s.primaryLabel} data-testid={!enabled && reason ? "primary-reason" : undefined}>
+                {shownLabel}
+            </div>
+            {enabled && p.action !== "cancelBuild" ? <div className={s.enterKey}>{t("FlowerPainter.UI.Key.Enter", "Enter")}</div> : null}
+        </button>
+    );
+    let info: React.ReactNode = null;
+    if (showNumbers) {
+        info = (
+            <div className={s.quickWrap}>
+            {busyChip}
+            <div className={classNames(s.quick, { [s.quickStale]: pending })} data-testid="quick-numbers" data-stale={pending ? "true" : "false"}>
+                {busy ? null : (
+                    <div className={s.quickItem}>
+                        <Icon name="area" size={12} tint="dim" />
+                        <div className={s.quickText}>{fmtArea(state.area.areaM2)}</div>
+                    </div>
+                )}
+                {quickStats(summary).map((st) => (
+                    <div key={st.key} className={s.quickItem}>
+                        <Icon name={statIcon(st.key)} size={12} tint="dim" />
+                        <div className={s.quickText}>{formatValue(st.value, "count") + " " + t(st.key, "").toLowerCase()}</div>
+                    </div>
+                ))}
+                <div className={classNames(s.quickItem, { [s.quickBad]: !summary.canAfford })}>
+                    <Icon name="cost" size={12} tint={summary.canAfford ? "dim" : "danger"} />
+                    <div className={s.quickText}>{compactMoney(summary.cost)}</div>
+                </div>
+                <div className={s.quickItem}>
+                    <Icon name="upkeep" size={12} tint="dim" />
+                    <div className={s.quickText}>{compactMoney(summary.upkeep) + t("FlowerPainter.UI.PerMonth", "/mo")}</div>
+                </div>
+            </div>
+            </div>
+        );
+    } else if (busyChip && !compact) {
+        info = busyChip;
+    }
+    // s42: the Area stage has its own one-line summary; the footer only says what blocks the button.
+    return (
+        <div className={classNames(s.footer, { [s.footerCompact]: compact })}>
+            {planNote && !compact ? (
+                <div className={s.planNotice} data-testid="planning-needed" role="status">
+                    <Icon name="info" size={12} tint="accent" />
+                    <div className={s.noticeText}>{planNote}</div>
+                </div>
+            ) : null}
+            {info ? <div className={s.footInfo}>{info}</div> : null}
+            {showReason ? (
+                <div className={s.blockedNotice} id="flowerpainter-primary-reason" data-testid="primary-explanation">
+                    <Icon name="warning" size={12} tint="warn" />
+                    <div className={s.noticeText}>{reason}</div>
+                </div>
+            ) : null}
+            {ack ? (
+                <div className={s.ackChip}>
+                    <Check testId="ack-permanent" checked={ack.on} onChange={ack.set} label={
+                        <div className={s.ackText}>
+                            <div>{t("FlowerPainter.UI.Review.AllowPermanent", "Allow permanent changes")}</div>
+                            <div className={s.ackDetail}>{t("FlowerPainter.UI.Review.PermanentStays", "Removing this build will not undo the changes shown above.")}</div>
+                        </div>
+                    } />
+                </div>
+            ) : null}
+            <div className={s.primaryRow}>
+                {!enabled && reason ? (
+                    <Tip title={label} description={reason}>
+                        {button}
+                    </Tip>
+                ) : (
+                    button
+                )}
+            </div>
+        </div>
+    );
+};
+
+/**
+ * One line of shortcut hints: the first (most relevant) up to three that fit whole — hints that would
+ * be cut are dropped rather than clipped (measured after layout, works in Gameface too).
+ */
+const Hints = ({ state }: { state: ToolState }) => {
+    const { tl } = useT();
+    const ref = useRef<HTMLDivElement | null>(null);
+    const list = state.hints.slice(0, 3);
+    const sig = list.map((h) => h.text.key + (h.keys ?? []).join("+")).join("|");
+    const [fit, setFit] = useState(3);
+    useEffect(() => setFit(3), [sig]);
+    useLayoutEffect(() => {
+        const el = ref.current;
+        if (el && fit > 1 && el.scrollWidth > el.clientWidth + 1) setFit(fit - 1);
+    });
+    if (!list.length) return null;
+    const shown = list.slice(0, fit);
+    return (
+        <div className={s.hints} data-testid="hints" ref={ref}>
+            {shown.map((h, i) => (
+                <div key={i} className={classNames(s.hint, { [s.hintOnly]: shown.length === 1 })}>
+                    {h.keys && h.keys.length ? <Keys keys={h.keys} /> : null}
+                    <div className={s.hintText}>{tl(h.text)}</div>
+                </div>
+            ))}
+        </div>
+    );
+};
+
+/**
+ * (s15) The game reloads FlowerPainter.mjs from disk but loads the DLL only at start: after an update the panel can
+ * talk to an older (or newer) DLL until the game restarts. Then buttons for new things do nothing — say so.
+ */
+const VersionNotice = ({ state }: { state: ToolState }) => {
+    const { t } = useT();
+    if (!state.open || state.protocol === PROTOCOL) return null;
+    return (
+        <div className={s.versionNotice} data-testid="version-notice" data-protocol={state.protocol ?? "none"}>
+            <Icon name="info" size={12} tint="warn" />
+            <div className={s.versionText}>{t("FlowerPainter.UI.Version.Mismatch", "Restart the game: FlowerPainter's files were updated while it was running.")}</div>
+        </div>
+    );
+};
+
+const MarkerBanner = ({ state, root }: { state: ToolState; root: StepView | null }) => {
+    const { t, tl } = useT();
+    if (!state.markerMode) return null;
+    const mm = state.markerMode;
+    let kindLabel = tl(mm.label, mm.kind);
+    walk(root, (st) => {
+        if (st.path !== mm.stepPath) return;
+        const k = st.markerKinds?.find((x) => x.kind === mm.kind);
+        if (k) kindLabel = markerLabel(t, k);
+    });
+    return (
+        <div className={s.banner} data-testid="marker-banner">
+            <Icon name="marker" size={14} tint="warn" />
+            <div className={s.bannerText}>
+                <div className={s.bannerTitle}>{t("FlowerPainter.UI.Markers.BannerTitle", "Placing: {0}", [kindLabel])}</div>
+                <div className={s.bannerSub}>
+                    {state.markerMode?.kind === "floralPoint"
+                        ? t("FlowerPainter.Floral.UI.PointBanner", "Click inside the area in order · right-click removes")
+                        : t("FlowerPainter.UI.Markers.BannerHint", "Click the outline by a road · right-click removes")}
+                </div>
+            </div>
+            <Btn variant="accent" label={t("FlowerPainter.UI.Done", "Done")} onClick={act.endMarkers} testId="marker-done" />
+        </div>
+    );
+};
+
+// ───────────── panel ─────────────
+
+export const FlowerPainterPanel = () => {
+    const state = useToolState();
+    const catalog = useCatalog();
+    const design = useDesign();
+    const summary = useSummary();
+    const managed = useManaged();
+    const rtl = useRtl();
+    const { t, tl } = useT();
+    const [picker, setPicker] = useState<PickerRequest | null>(null);
+    // Each open is a fresh card (its hover preview ends when it is replaced).
+    const pickerSerial = useRef(0);
+    const [ack, setAck] = useState(false);
+    const permKey = useMemo(() => JSON.stringify(summary.permanent), [summary.permanent]);
+    const position = usePanelPosition();
+    const layout = useMemo(() => layoutFor(position.width), [position.width]);
+
+    useEffect(() => setAck(false), [permKey, state.stage === "review"]);
+    useEffect(() => { if (typeof summary.permanentAcknowledged === "boolean") setAck(summary.permanentAcknowledged); }, [summary.permanentAcknowledged]);
+    useEffect(() => {
+        if (!state.open || state.stage !== "design" || state.panelCollapsed) setPicker(null);
+    }, [state.open, state.stage, state.panelCollapsed]);
+
+    // Entering entrance placement while entrances are missing (button, or Enter in the game) brings the
+    // Entrances section into view, open and flashing (FEEDBACK-4b).
+    const placingPath = state.markerMode?.stepPath ?? "";
+    const missingPath = state.open && state.stage === "design" ? missingMarkers(design.root)?.path ?? "" : "";
+    useEffect(() => {
+        if (placingPath && placingPath === missingPath) requestReveal("entrances:" + placingPath);
+        // only when placement starts, not on every marker added
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [placingPath]);
+
+    const closePicker = useCallback(() => setPicker(null), []);
+    const pickerCtx = useMemo(() => ({ open: (r: PickerRequest) => {
+                pickerSerial.current++;
+                setPicker(r);
+            }, close: closePicker, current: picker }), [picker, closePicker]);
+
+    if (!state.open) return null;
+
+    // s33: ground paint alone (permanentNeedsAck false) is information, not a gate.
+    const ackShown =
+        state.stage === "review" &&
+        summary.permanent.length > 0 &&
+        summary.permanentNeedsAck !== false &&
+        (state.primary.action === "build" || state.primary.action === "finishEdit");
+    const needsAck = ackShown && !ack;
+    const setAckBoth = (v: boolean) => {
+        setAck(v);
+        act.acknowledgePermanent(v);
+    };
+
+    const missing = state.stage === "design" || state.stage === "review" ? missingMarkers(design.root) : null;
+    const gated = state.primary.action === "toReview" || state.primary.action === "build" || state.primary.action === "finishEdit";
+    // Who to lead to when the player presses the (disabled) button while entrances are missing.
+    const pr = state.primary;
+    const lead: EntranceLead | null =
+        pr.action === "placeMarkers" && !pr.enabled && pr.stepPath
+            ? { path: pr.stepPath, kind: pr.markerKind ?? "", viaPrimary: true }
+            : missing && gated
+              ? { path: missing.path, kind: missing.markerKinds?.[0]?.kind ?? missing.markers[0]?.kind ?? "", viaPrimary: false }
+              : null;
+    let blockedReason: string | null = null;
+    if (missing && gated) {
+        const need = missing.markersRequired ?? 1;
+        blockedReason =
+            need > 1
+                ? t("FlowerPainter.UI.Markers.NeedNBuild", "Add {0} entrances to build", [need])
+                : t("FlowerPainter.UI.Markers.NeedOneBuild", "Add an entrance to build");
+    } else if (needsAck) {
+        blockedReason = t("FlowerPainter.UI.Review.AckFirst", "Confirm permanent changes to build");
+    }
+
+    const leftOut = (state.stage === "area" || state.stage === "review") ? <LeftOut audit={summary.audit} /> : null;
+    let body: React.ReactNode = null;
+    switch (state.stage) {
+        case "area":
+            body = <>{leftOut}<AreaStage state={state} /></>;
+            break;
+        case "design":
+            body = <FlowerDesignStage catalog={catalog} design={design} state={state} />;
+            break;
+        case "review":
+            body = (
+<ReviewStage catalog={catalog} state={state} summary={summary} />
+            );
+            break;
+        case "building":
+            body = <BuildingStage state={state} />;
+            break;
+        case "manage":
+            body = <ManageStage group={managed} />;
+            break;
+    }
+
+    const collapsed = state.panelCollapsed;
+    const showPreviewToggle = state.stage === "design" || state.stage === "review";
+    // Header tips open UPWARDS (over the game's top bar), so they never sit on the stage bar below.
+    const header = (
+        <TipDirectionContext.Provider value="up">
+            <div
+                className={classNames(s.header, { [s.headerDragging]: position.dragging })}
+                data-testid="panel-header"
+                onMouseDown={position.onHeaderMouseDown}
+                onDoubleClick={(e) => {
+                    if (!isInsideButton(e.target as HTMLElement, e.currentTarget)) position.reset();
+                }}
+            >
+                <Tip
+                    title={t("FlowerPainter.UI.Move", "Move the panel")}
+                    description={t("FlowerPainter.UI.MoveTip", "Drag to move. Double-click to dock.")}
+                >
+                    <div className={s.grip} data-testid="panel-grip">
+                        <Icon name="grip" size={12} tint="dim" />
+                    </div>
+                </Tip>
+                <Tip title={t("FlowerPainter.Name", "FlowerPainter")}>
+                    <div className={s.logo}>
+                        <Icon name="logo" size={16} tint="accent" />
+                    </div>
+                </Tip>
+                {/* Design / Review show the preview toggle in the title's place (the logo names the tool). */}
+                {showPreviewToggle ? (
+                    <PreviewToggle state={state} />
+                ) : (
+                    <div className={s.title}>
+                        {state.stage === "manage" ? t("FlowerPainter.UI.Manage.Title", "Built with FlowerPainter") : t("FlowerPainter.Name", "FlowerPainter")}
+                    </div>
+                )}
+                {state.editingGroup != null ? <div className={s.editingPill}>{t("FlowerPainter.UI.Editing", "Editing")}</div> : null}
+                {state.planning && !showPreviewToggle ? (
+                    <Tip title={t("FlowerPainter.UI.Planning", "Planning…")}>
+                        <div className={classNames(s.spinner, s.headSpinner)} data-testid="planning" />
+                    </Tip>
+                ) : null}
+                <div className={s.flex} />
+                {state.stage === "manage" ? null : <UndoRedo state={state} />}
+                {state.anarchy?.available ? (
+                    <Btn
+                        icon="anarchy"
+                        iconSize={14}
+                        selected={state.anarchy.enabled}
+                        title={t("FlowerPainter.UI.Anarchy", "Anarchy")}
+                        description={t("FlowerPainter.UI.AnarchyTip", "Ignore collisions (Anarchy mod).")}
+                        onClick={() => act.setAnarchy(!state.anarchy?.enabled)}
+                        testId="anarchy"
+                    />
+                ) : null}
+                <div className={s.headSep} />
+                {collapsed ? null : (
+                    <Btn
+                        icon="collapse"
+                        iconSize={14}
+                        title={t("FlowerPainter.UI.Collapse", "Minimize")}
+                                                onClick={() => act.setPanelCollapsed(true)}
+                        testId="collapse"
+                    />
+                )}
+                <Btn
+                    icon="close"
+                    iconSize={14}
+                    title={t("FlowerPainter.UI.Close", "Close")}
+                    description={<Keys keys={["Esc"]} />}
+                    onClick={act.close}
+                    testId="close"
+                />
+            </div>
+        </TipDirectionContext.Provider>
+    );
+
+    return (
+        <PickerContext.Provider value={pickerCtx}>
+            <TipDirectionContext.Provider value={position.side}>
+                <PanelLayoutContext.Provider value={layout}>
+                <div className={classNames(s.dock, { [s.rtl]: rtl })} data-testid="flowerpainter-dock">
+                    {picker ? <div className={s.backdrop} data-testid="picker-backdrop" onMouseDown={closePicker} /> : null}
+                    <div
+                        ref={position.wrapRef}
+                        className={classNames(s.wrap, { [s.wrapCollapsed]: collapsed })}
+                        style={position.style}
+                        data-testid="flowerpainter-wrap"
+                        data-docked={position.floating ? "false" : "true"}
+                        data-width={position.width}
+                        data-cols={layout.wide ? "2" : "1"}
+                    >
+                        {collapsed ? null : (
+                            <Tip
+                                title={t("FlowerPainter.UI.Resize", "Resize the panel")}
+                                description={t("FlowerPainter.UI.ResizeTip", "Drag to make it wider or narrower. Double-click for the default width.")}
+                            >
+                                <div
+                                    className={classNames(s.resize, { [s.resizeActive]: position.resizing })}
+                                    data-testid="panel-resize"
+                                    onMouseDown={position.onResizeMouseDown}
+                                    onDoubleClick={(e) => {
+                                        e.stopPropagation();
+                                        position.resetWidth();
+                                    }}
+                                />
+                            </Tip>
+                        )}
+                        {collapsed ? null : (
+                            <Tip
+                                title={t("FlowerPainter.UI.ResizeHeight", "Resize the height")}
+                                description={t("FlowerPainter.UI.ResizeHeightTip", "Drag to make it taller or shorter. Double-click for full height.")}
+                            >
+                                <div
+                                    className={classNames(s.resizeBottom, { [s.resizeActive]: position.resizingHeight })}
+                                    data-testid="panel-resize-height"
+                                    onMouseDown={position.onResizeHeightMouseDown}
+                                    onDoubleClick={(e) => {
+                                        e.stopPropagation();
+                                        position.resetHeight();
+                                    }}
+                                />
+                            </Tip>
+                        )}
+                        <div className={classNames(s.panel, { [s.panelCompact]: collapsed })} data-testid="flowerpainter-panel" data-stage={state.stage}>
+                            <div className={s.panelTint}>
+                                {header}
+                                {collapsed ? (
+                                    <ErrorBoundary name="compact">
+                                        <div className={s.compact} data-testid="panel-compact">
+                                            <div className={s.compactRow}>
+                                                {state.stage === "area" ? (
+                                                    <Segmented
+                                                        iconOnly
+                                                        value={toolOf(state.areaMode)}
+                                                        onChange={(v) => {
+                                                            const m = v === "paint" ? (state.brush.rules?.anything ? "paint" : "blockPaint") : v;
+                                                            if (modeAvailability(state, m, t, tl).enabled) act.setAreaMode(m as any);
+                                                        }}
+                                                        options={modeOptions(t).map((o) => {
+                                                            const av = modeAvailability(state, o.value, t, tl);
+                                                            return av.enabled ? o : { ...o, description: av.reason + " — " + o.description };
+                                                        })}
+                                                        testId="area-mode-compact"
+                                                    />
+                                                ) : (
+                                                    <div className={s.compactStage}>{t(STAGES.find((x) => x.id === state.stage)?.key ?? "", "")}</div>
+                                                )}
+                                                <div className={s.flex} />
+                                                <Btn
+                                                    variant="solid"
+                                                    icon="expand"
+                                                    iconSize={14}
+                                                    label={t("FlowerPainter.UI.Expand", "Options")}
+                                                    onClick={() => act.setPanelCollapsed(false)}
+                                                    testId="expand"
+                                                />
+                                            </div>
+                                            <Footer state={state} summary={summary} blockedReason={blockedReason} lead={lead} compact />
+                                        </div>
+                                    </ErrorBoundary>
+                                ) : (
+                                    <>
+                                        {state.stage === "manage" ? null : (
+                                            <ErrorBoundary name="stagebar">
+                                                <StageBar state={state} />
+                                            </ErrorBoundary>
+                                        )}
+                                        <VersionNotice state={state} />
+                                        <MarkerBanner state={state} root={design.root} />
+                                        <div className={s.bodyWrap} data-testid="panel-body">
+                                            <div className={s.body} key={state.stage}>
+                                                <ErrorBoundary name={"stage-" + state.stage}>{body}</ErrorBoundary>
+                                            </div>
+                                        </div>
+                                        <ErrorBoundary name="footer">
+                                            <Footer state={state} summary={summary} blockedReason={blockedReason} lead={lead} ack={ackShown ? { on: ack, set: setAckBoth } : null} />
+                                        </ErrorBoundary>
+                                        <Hints state={state} />
+                                    </>
+                                )}
+                            </div>
+                        </div>
+                        {!picker && !collapsed ? (
+                            <ErrorBoundary name="legend">
+                                <Legend state={state} summary={summary} side={position.side === "left" ? "left" : "right"} />
+                            </ErrorBoundary>
+                        ) : null}
+                        {picker ? (
+                            <div className={classNames(s.flyout, position.side === "left" ? s.flyoutLeft : s.flyoutRight)} data-testid="picker-flyout">
+                                <ErrorBoundary name="picker">
+                                    <AssetPickerCard key={pickerSerial.current} req={picker} onClose={closePicker} />
+                                </ErrorBoundary>
+                            </div>
+                        ) : null}
+                    </div>
+                </div>
+                </PanelLayoutContext.Provider>
+            </TipDirectionContext.Provider>
+        </PickerContext.Provider>
+    );
+};
+
+export const FlowerPainterRoot = () => (
+    <ErrorBoundary name="panel" fallback={(e, reset) => <PanelCrash error={e} reset={reset} />}>
+        <FlowerPainterPanel />
+    </ErrorBoundary>
+);
+
+const PanelCrash = ({ error, reset }: { error: unknown; reset: () => void }) => (
+    <div className={s.dock}>
+        <div className={s.crash} onClick={reset} data-pm-crash="true">
+            <strong>FlowerPainter</strong> — the panel hit an error and was stopped so the rest of the game UI keeps working. Click to try again.
+            <div className={s.crashDetail}>{error instanceof Error ? `${error.name}: ${error.message}` : String(error)}</div>
+        </div>
+    </div>
+);

@@ -1,0 +1,6 @@
+{
+  "FlowerPainter.Name": "FlowerPainter",
+  "FlowerPainter.Issue.RecipeTooDeep": "This design has too many nested layers.",
+  "FlowerPainter.Issue.UnknownLayer": "Unknown layer \"{0}\" — is a mod missing?",
+  "FlowerPainter.Issue.LayerFailed": "{0} could not be planned: {1}"
+}

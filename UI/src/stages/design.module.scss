@@ -1,0 +1,501 @@
+@use "../styles/tokens" as *;
+
+// s42 Design stage: picker + editing bar (browser.module.scss), then Entrances, Shape and Extras as dense,
+// aligned one-line rows with hairline dividers. Gameface: flexbox + margins only.
+
+.stage {
+    @include col;
+}
+
+.flex {
+    flex: 1 1 auto;
+}
+
+.placesEmpty {
+    padding: 6rem 8rem;
+    border-radius: $radius;
+    @include border(1rem, $c-line-strong);
+    border-top-style: dashed;
+    border-right-style: dashed;
+    border-bottom-style: dashed;
+    border-left-style: dashed;
+    font-size: $fs-s;
+    color: $c-text-dim;
+    @include ellipsis;
+}
+
+.emptyNote {
+    padding: 10rem 0;
+    font-size: $fs;
+    color: $c-text-dim;
+    text-align: center;
+}
+
+.options {
+    @include col;
+}
+
+// ── section heading: "SHAPE  how it's built ─────" ──
+.heading {
+    @include row;
+    min-width: 0;
+    height: 20rem;
+    margin: 8rem 0 3rem 0;
+}
+
+.headingTitle {
+    flex-shrink: 0;
+    font-size: 11rem;
+    font-weight: bold;
+    letter-spacing: 0.6rem;
+    text-transform: uppercase;
+    color: #ffffff;
+}
+
+.headingCount {
+    flex-shrink: 0;
+    margin-left: 5rem;
+    padding: 0 4rem;
+    border-radius: 6rem;
+    background-color: rgba(143, 209, 255, 0.2);
+    font-size: 10rem;
+    color: #dff1ff;
+}
+
+.headingSub {
+    flex-shrink: 0;
+    margin-left: 6rem;
+    font-size: 11rem;
+    color: $c-text-faint;
+    white-space: nowrap;
+}
+
+.headingRule {
+    flex: 1 1 auto;
+    height: 1rem;
+    margin-left: 8rem;
+    margin-right: 4rem;
+    background-color: $c-line;
+}
+
+// ── one step ──
+.step {
+    @include col;
+    min-width: 0;
+}
+
+.stepChild {
+    margin-top: 8rem;
+    padding-left: 6rem;
+    border-left-width: 1rem;
+    border-left-style: solid;
+    border-left-color: $c-line-strong;
+}
+
+.stepOff {
+    opacity: 0.6;
+}
+
+.stepHead {
+    @include row;
+    position: relative;
+    min-width: 0;
+    height: 26rem;
+    padding: 0 0 0 8rem;
+    border-radius: $radius;
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.stepBar {
+    position: absolute;
+    left: 0;
+    top: 5rem;
+    width: 3rem;
+    height: 16rem;
+}
+
+.stepName {
+    flex: 1 1 auto;
+    margin-left: 6rem;
+    font-size: $fs;
+    font-weight: bold;
+    color: #ffffff;
+    @include ellipsis;
+}
+
+.stepSwitch {
+    @include row;
+    flex-shrink: 0;
+    margin-right: 4rem;
+}
+
+.stepBody {
+    @include col;
+    min-width: 0;
+}
+
+.nextStep {
+    @include row;
+    min-width: 0;
+    height: 22rem;
+    margin-top: 6rem;
+    padding: 0 6rem;
+    border-radius: $radius;
+    background-color: rgba(143, 209, 255, 0.12);
+    overflow: hidden;
+}
+
+.nextStepText {
+    flex: 1 1 auto;
+    margin-left: 6rem;
+    font-size: $fs-s;
+    color: #dff1ff;
+    @include ellipsis;
+}
+
+.shape {
+    @include col;
+    min-width: 0;
+}
+
+// ── entrances: one compact block ──
+.entrances {
+    @include col;
+    min-width: 0;
+    margin-top: 6rem;
+    padding: 0 4rem 0 6rem;
+    border-radius: $radius;
+    background-color: rgba(255, 255, 255, 0.04);
+    @include border(1rem, $c-line);
+}
+
+.entrancesMissing {
+    background-color: rgba(255, 181, 71, 0.08);
+    @include border-color(rgba(255, 181, 71, 0.45));
+}
+
+.entrancesFlash {
+    @include border-color($c-warning);
+    background-color: rgba(255, 181, 71, 0.18);
+}
+
+.entrHead {
+    @include row;
+    flex-wrap: wrap;
+    min-width: 0;
+    min-height: 30rem;
+    padding: 3rem 0;
+    box-sizing: border-box;
+}
+
+.entrTitle {
+    margin-left: 5rem;
+    font-size: $fs;
+    color: #ffffff;
+    white-space: nowrap;
+}
+
+.entrCount {
+    margin-left: 6rem;
+    font-size: $fs-s;
+    color: $c-text-faint;
+}
+
+.required {
+    @include row;
+    flex-shrink: 0;
+    margin-left: 8rem;
+}
+
+.requiredText {
+    margin-left: 4rem;
+    font-size: $fs-s;
+    font-weight: bold;
+    color: #ffd79a;
+    white-space: nowrap;
+}
+
+// the typed buttons follow the title on one line when they fit, else take the next line (never squeezed)
+.kindRow {
+    @include row;
+    flex: 0 1 auto;
+    flex-wrap: wrap;
+    min-width: 0;
+    max-width: 100%;
+    margin-left: auto;
+}
+
+.kindBtn {
+    @include row;
+    @include button-reset;
+    flex-shrink: 0;
+    height: 22rem;
+    margin-left: 3rem;
+    margin-bottom: 3rem;
+    padding: 0 6rem 0 4rem;
+    border-radius: $radius-s;
+    background-color: rgba(255, 255, 255, 0.07);
+    @include border(1rem, rgba(255, 255, 255, 0.1));
+    transition-property: background-color;
+    transition-duration: $t-fast;
+    &:hover {
+        background-color: rgba(255, 255, 255, 0.14);
+    }
+}
+
+.kindBtnOn {
+    background-color: #ffb547;
+    @include border-color(#ffb547);
+    &:hover {
+        background-color: #ffc56d;
+    }
+    .kindLabel {
+        color: #0b1d26;
+        font-weight: bold;
+    }
+}
+
+.kindLabel {
+    margin-left: 3rem;
+    font-size: $fs-s;
+    color: var(--menuText1Normal);
+    white-space: nowrap;
+}
+
+.markerList {
+    @include row;
+    flex-wrap: wrap;
+    min-width: 0;
+    padding-bottom: 4rem;
+}
+
+.markerItem {
+    @include row;
+    flex-shrink: 0;
+    height: 20rem;
+    margin: 0 4rem 2rem 0;
+    padding: 0 0 0 5rem;
+    border-radius: $radius-s;
+    background-color: rgba(0, 0, 0, 0.2);
+}
+
+.markerName {
+    margin-left: 4rem;
+    margin-right: 2rem;
+    font-size: $fs-s;
+    color: var(--menuText1Normal);
+    white-space: nowrap;
+}
+
+.markerBtn {
+    width: 18rem;
+    height: 18rem;
+}
+
+// ── extras ──
+.extras {
+    @include col;
+    min-width: 0;
+}
+
+.featureGrid {
+    @include col;
+    min-width: 0;
+}
+
+.extraRow {
+    @include row;
+    min-width: 0;
+    margin-left: -2rem;
+    margin-right: -2rem;
+}
+
+.feature {
+    @include col;
+    box-sizing: border-box;
+    min-width: 0;
+    padding: 1rem 2rem;
+}
+
+.featureHead {
+    @include row;
+    min-width: 0;
+    height: 26rem;
+    padding: 0 3rem 0 5rem;
+    border-radius: $radius-s;
+    background-color: rgba(255, 255, 255, 0.025);
+    @include border(1rem, rgba(255, 255, 255, 0.05));
+    &:hover {
+        background-color: $c-surface;
+    }
+}
+
+.featureOn .featureHead {
+    background-color: rgba(255, 255, 255, 0.06);
+    @include border-color(rgba(255, 255, 255, 0.1));
+}
+
+.featureOpen .featureHead {
+    background-color: rgba(143, 209, 255, 0.12);
+    @include border-color(rgba(143, 209, 255, 0.45));
+}
+
+.featureFold {
+    @include row;
+    @include button-reset;
+    flex: 1 1 auto;
+    min-width: 0;
+    height: 24rem;
+    padding: 0;
+    text-align: left;
+    overflow: hidden;
+}
+
+.chevSpace {
+    flex-shrink: 0;
+    width: 10rem;
+    height: 10rem;
+}
+
+.extraTile {
+    @include row;
+    flex-shrink: 0;
+    margin-left: 4rem;
+}
+
+.extraTileOff {
+    opacity: 0.45;
+}
+
+.featureName {
+    flex: 0 1 auto;
+    min-width: 0;
+    margin-left: 6rem;
+    margin-right: 6rem;
+    font-size: $fs;
+    color: $c-text-dim;
+    @include ellipsis;
+}
+
+.featureOn .featureName {
+    color: #ffffff;
+}
+
+.featureSummary {
+    flex: 1 1 auto;
+    min-width: 0;
+    margin-right: 5rem;
+    font-size: 11rem;
+    color: $c-text-faint;
+    text-align: right;
+    @include ellipsis;
+}
+
+.fitTag {
+    flex-shrink: 0;
+    margin-left: auto;
+    margin-right: 5rem;
+    padding: 0 4rem;
+    border-radius: $radius-s;
+    font-size: 11rem;
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+.fitTagReduced {
+    color: $c-warning;
+    background-color: rgba(255, 181, 71, 0.14);
+}
+
+.fitTagFailed {
+    color: $c-danger;
+    background-color: rgba(255, 107, 91, 0.14);
+}
+
+.fitIcon {
+    width: 0;
+    height: 0;
+}
+
+.fitStale {
+    opacity: 0.5;
+}
+
+.featureSwitch {
+    @include row;
+    flex-shrink: 0;
+}
+
+.featureBody {
+    @include col;
+    min-width: 0;
+    margin: 2rem 0 4rem 0;
+    padding: 4rem 6rem 4rem 8rem;
+    border-radius: $radius-s;
+    background-color: rgba(0, 0, 0, 0.16);
+    border-left-width: 2rem;
+    border-left-style: solid;
+    border-left-color: rgba(143, 209, 255, 0.55);
+}
+
+.bodyTitle {
+    margin-bottom: 2rem;
+    font-size: 11rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    color: $c-text-faint;
+}
+
+.moreRow {
+    @include row;
+    @include button-reset;
+    min-width: 0;
+    height: 22rem;
+    margin-top: 1rem;
+    padding: 0 6rem;
+    border-radius: $radius-s;
+    &:hover {
+        background-color: $c-surface;
+    }
+}
+
+.moreText {
+    margin-left: 5rem;
+    font-size: $fs-s;
+    color: $c-text-dim;
+}
+
+// "2 didn't fit" in the Extras heading.
+.misfit {
+    @include row;
+    flex-shrink: 0;
+    height: 18rem;
+    padding: 0 6rem 0 4rem;
+    border-radius: $radius-s;
+    background-color: rgba(0, 0, 0, 0.25);
+}
+
+.misfitText {
+    margin-left: 4rem;
+    font-size: 11rem;
+    white-space: nowrap;
+}
+
+.misfitFailed .misfitText {
+    color: $c-danger;
+}
+
+.misfitReduced .misfitText {
+    color: $c-warning;
+}
+
+// s15 — an extra that does not fit this area: listed, greyed, its switch takes no clicks (reason in the tooltip).
+.featureBlocked {
+    opacity: 0.5;
+}
+
+.featureSwitchOff {
+    @include row;
+    flex-shrink: 0;
+    pointer-events: none;
+}

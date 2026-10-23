@@ -1,0 +1,172 @@
+{
+  "scenarios": [
+    {
+      "id": "release-park",
+      "land": {
+        "size": [
+          220,
+          180
+        ],
+        "roads": "none"
+      },
+      "steps": [
+        {
+          "do": "area",
+          "tool": "points",
+          "rect": [
+            120,
+            100
+          ]
+        },
+        {
+          "do": "type",
+          "layer": "park",
+          "preset": "natural"
+        },
+        {
+          "do": "entrances"
+        },
+        {
+          "do": "preview",
+          "shot": "plan"
+        },
+        {
+          "do": "build"
+        },
+        {
+          "do": "camera",
+          "target": "build",
+          "view": "oblique",
+          "shot": "before",
+          "shotMode": "render"
+        },
+        {
+          "do": "releaseSelection"
+        },
+        {
+          "do": "camera",
+          "target": "build",
+          "view": "oblique",
+          "shot": "released",
+          "shotMode": "render"
+        },
+        {
+          "do": "terrain",
+          "shot": "terrain"
+        }
+      ]
+    },
+    {
+      "id": "release-floral",
+      "land": {
+        "size": [
+          220,
+          180
+        ],
+        "roads": "none"
+      },
+      "steps": [
+        {
+          "do": "area",
+          "tool": "points",
+          "rect": [
+            120,
+            100
+          ]
+        },
+        {
+          "do": "type",
+          "layer": "floral",
+          "preset": "arc-and-wave"
+        },
+        {
+          "do": "entrances"
+        },
+        {
+          "do": "preview",
+          "shot": "plan"
+        },
+        {
+          "do": "build"
+        },
+        {
+          "do": "camera",
+          "target": "build",
+          "view": "oblique",
+          "shot": "before",
+          "shotMode": "render"
+        },
+        {
+          "do": "releaseSelection"
+        },
+        {
+          "do": "camera",
+          "target": "build",
+          "view": "oblique",
+          "shot": "released",
+          "shotMode": "render"
+        },
+        {
+          "do": "terrain",
+          "shot": "terrain"
+        }
+      ]
+    },
+    {
+      "id": "release-parking",
+      "land": {
+        "size": [
+          220,
+          180
+        ],
+        "roads": "around"
+      },
+      "steps": [
+        {
+          "do": "area",
+          "tool": "points",
+          "rect": [
+            120,
+            100
+          ]
+        },
+        {
+          "do": "type",
+          "layer": "parking",
+          "preset": "standard"
+        },
+        {
+          "do": "entrances"
+        },
+        {
+          "do": "preview",
+          "shot": "plan"
+        },
+        {
+          "do": "build"
+        },
+        {
+          "do": "camera",
+          "target": "build",
+          "view": "oblique",
+          "shot": "before",
+          "shotMode": "render"
+        },
+        {
+          "do": "releaseSelection"
+        },
+        {
+          "do": "camera",
+          "target": "build",
+          "view": "oblique",
+          "shot": "released",
+          "shotMode": "render"
+        },
+        {
+          "do": "terrain",
+          "shot": "terrain"
+        }
+      ]
+    }
+  ]
+}

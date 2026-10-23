@@ -1,0 +1,22 @@
+{
+  "_comment": "English for keys the UI resolves itself but that are not literal t() calls (region tags, control groups). Keys C# sends (FlowerPainter.Primary/Reason/Hint/Undo/Problem/Permanent.*) live in Lang/en-US.tool.json, owned by the tool workstream.",
+  "FlowerPainter.UI.Markers.BannerFor": "Placing {0} — click on the outline. Right-click one to remove it.",
+  "FlowerPainter.UI.Literal": "{0}",
+  "FlowerPainter.UI.Feature.NoRoom": "No room for it in this area.",
+  "FlowerPainter.UI.Feature.SomeMissing": "Fits in {0} of {1} places.",
+  "FlowerPainter.UI.Mock.Timeout": "Planning took too long and was stopped.",
+  "FlowerPainter.UI.Tag.block": "block",
+  "FlowerPainter.UI.Tag.part": "part",
+  "FlowerPainter.UI.Tag.green": "lawn",
+  "FlowerPainter.UI.Tag.paved": "paved area",
+  "FlowerPainter.UI.Tag.edge": "edge",
+  "FlowerPainter.UI.Tag.core": "centre",
+  "FlowerPainter.UI.Tag.lot": "lot",
+  "FlowerPainter.UI.Group.paths": "Paths",
+  "FlowerPainter.UI.Group.planting": "Planting",
+  "FlowerPainter.UI.Group.water": "Water",
+  "FlowerPainter.UI.Group.edge": "Edge",
+  "FlowerPainter.UI.Group.layout": "Layout",
+  "FlowerPainter.UI.Group.extras": "Extras",
+  "FlowerPainter.UI.Why.NotInLayout": "Not used by this layout"
+}

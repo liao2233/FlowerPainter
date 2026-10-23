@@ -1,0 +1,6 @@
+{
+  "FlowerPainter.Problem.NeedFourPoints": "Place four corners to complete the rectangle.",
+  "FlowerPainter.Undo.Rectangle": "Toggle strict rectangle",
+  "FlowerPainter.Hint.RectangleDraw": "Click four corners: first edge, width, then the aligned fourth corner.",
+  "FlowerPainter.Hint.RectangleResize": "Drag a corner or an edge to resize the rectangle."
+}

@@ -1,0 +1,805 @@
+// s42 — "pick what to make" + "what you are editing" (docs/proposals/s42.md).
+//   Picker: one bordered panel, three numbered rows of equal-height chips: 1 Category · 2 Type · 3 Style.
+//     Each chip = coloured icon tile (category colour; types and styles inherit it) + name + small count. Categories
+//     show the most used ones and an "N more" chip; styles end with the player's own (gold star) and a dashed
+//     "+ New" (save the current settings as a new style). The search icon in the header filters all three rows.
+//   Editing bar: "EDITING · ● unsaved changes", the breadcrumb [Category] › [Type] › [Style] and an icon toolbar:
+//     undo changes (back to the style) · shuffle · save as new · save (overwrite) · more (rename, delete, reset, export).
+// Styles are the engine's presets (selectPreset / savePreset / savePresetAs …); categories come from the central shelf
+// (Recipes/shelf/<category>.json, Core/Tool/Shelf.cs): the game sends each type's category (RecipeInfo.category), what the
+// shelf hides (RecipeInfo.shelved, PresetView.shelved) and the categories in order (Catalog.categories).
+import React, { KeyboardEvent, useEffect, useRef, useState } from "react";
+import classNames from "classnames";
+import { ActivePreset, Catalog, DesignState, LayerType, PresetView, RecipeInfo, StepView } from "../contract";
+import { act } from "../lib/bindings";
+import { humanize, TFunc, useT } from "../lib/l10n";
+import { Tip } from "../lib/tips";
+import { useOpen } from "../lib/collapse";
+import { categoryColor, categoryIcon, CUSTOM_COLOR, styleIcon, typeIcon } from "../lib/palette";
+import { Btn, Icon } from "../components/common";
+import { Confirm } from "../components/dialog";
+import s from "./browser.module.scss";
+
+// ───────────── types & groups ─────────────
+
+/**
+ * A recipe is a "mix" when its id names more than one layer ("roads-with-parks", "split-park-plaza",
+ * "park-with-playground"); a single layer or a variant of one ("parking", "parking-green") is a type.
+ */
+export function isMix(catalog: Catalog, r: RecipeInfo) {
+    if (r.custom) return true;
+    const ids = new Set(catalog.layers.map((l) => l.id.toLowerCase()));
+    const named = r.id
+        .toLowerCase()
+        .split(/[-_+|]+/)
+        .filter((tok) => ids.has(tok) || (tok.endsWith("s") && ids.has(tok.slice(0, -1))));
+    return named.length > 1;
+}
+
+/**
+ * Types: recipes that ARE a single fill type (id equals a visible fill layer's id). Mixes and player
+ * recipes are shelved in the UI. Falls back to the id heuristic when no recipe matches a layer id.
+ */
+export function makeRecipes(catalog: Catalog): RecipeInfo[] {
+    const fills = new Set(catalog.layers.filter((l) => l.kind === "fill" && !l.hidden).map((l) => l.id.toLowerCase()));
+    const singles = catalog.recipes.filter((r) => !r.custom && fills.has(r.id.toLowerCase()));
+    const types = singles.length ? singles : catalog.recipes.filter((r) => !isMix(catalog, r));
+    // (core) The central shelf hides whole categories (industry, transport) and single types (RecipeInfo.shelved).
+    return types.filter((r) => !r.shelved);
+}
+
+export type MakeGroup = { id: string; key: string; en: string };
+const OTHER_GROUP: MakeGroup = { id: "other", key: "FlowerPainter.UI.MakeGroup.Other", en: "Other" };
+
+/**
+ * The categories of the Make row, in the shelf's order (Recipes/shelf/<category>.json: "fewer, better", user 2026-10-15),
+ * hidden ones left out, "Other" last. Without shelf data every type group is its own category, in first-seen order.
+ */
+export function makeGroups(catalog: Catalog): MakeGroup[] {
+    const shelf = (catalog.categories ?? []).filter((c) => !c.hidden).slice().sort((a, b) => a.order - b.order);
+    if (shelf.length) return [...shelf.map((c) => ({ id: c.id, key: c.name, en: c.en })), OTHER_GROUP];
+    const seen: string[] = [];
+    for (const r of catalog.recipes) {
+        const g = recipeGroup(r);
+        if (g !== "other" && !seen.includes(g)) seen.push(g);
+    }
+    return [...seen.map((g) => ({ id: g, key: "FlowerPainter.UI.MakeGroup." + g.charAt(0).toUpperCase() + g.slice(1), en: humanize(g) })), OTHER_GROUP];
+}
+
+/** Category of a recipe: the shelf's (RecipeInfo.category), else the group its type declares, else guessed from the id. */
+export function recipeGroup(r: RecipeInfo): string {
+    return r.category || r.group || makeGroupOf(r.id);
+}
+
+/** Fallback group of a type id that declares none ("parking" before "park", "market square" before parks). */
+export function makeGroupOf(id: string): string {
+    const x = id.toLowerCase();
+    if (/mall|retail|commercial|shopping/.test(x)) return "commercial";
+    if (/parking|car-?park|garage|lot/.test(x)) return "parking";
+    if (/road|street|avenue|grid/.test(x)) return "roads";
+    if (/plaza|square|market|piazza|amphi|festival|fair/.test(x)) return "squares";
+    if (/park|garden|camp|reserve|nature|forest|picnic|arboret|cemetery|green|playground|sport|golf|beach|lido|promenade|allotment|meadow|zoo|dog|botanic|skate/.test(x)) return "parks";
+    return "other";
+}
+
+function typeLayer(catalog: Catalog, r: RecipeInfo): LayerType | undefined {
+    const id = r.id.toLowerCase();
+    return catalog.layers.find((l) => l.id.toLowerCase() === id);
+}
+
+export const presetName = (t: TFunc, p: PresetView) => (p.custom ? p.name : t(p.name, humanize(p.name || p.id)));
+const recipeName = (t: TFunc, r: RecipeInfo) => (r.custom ? r.name : t(r.name, humanize(r.name || r.id)));
+const groupName = (t: TFunc, catalog: Catalog, id: string) => {
+    const shelf = (catalog.categories ?? []).find((c) => c.id === id);
+    if (shelf) return t(shelf.name, shelf.en);
+    const g = makeGroups(catalog).find((x) => x.id === id) ?? OTHER_GROUP;
+    return t(g.key, g.en);
+};
+const DEFAULT_ID = "";
+
+/** "Park · Formal garden". */
+export function makeSummary(t: TFunc, catalog: Catalog, design: DesignState): string {
+    const r = catalog.recipes.find((x) => x.id === design.recipeId);
+    if (!r) return "";
+    const ap = design.activePreset;
+    const layer = typeLayer(catalog, r);
+    const p = ap && ap.id && layer ? layer.presets.find((x) => x.id === ap.id) : undefined;
+    return p ? recipeName(t, r) + " · " + presetName(t, p) : recipeName(t, r);
+}
+
+// ───────────── remembered choices ─────────────
+
+const CATEGORY_KEY = "flowerpainter.browserCategory.v2";
+const USE_KEY = "flowerpainter.categoryUse.v1";
+
+function load<T>(key: string, fallback: T): T {
+    try {
+        const raw = window.localStorage?.getItem(key);
+        return raw ? (JSON.parse(raw) as T) : fallback;
+    } catch {
+        return fallback;
+    }
+}
+
+function save(key: string, v: unknown) {
+    try {
+        window.localStorage?.setItem(key, JSON.stringify(v));
+    } catch {
+        /* not remembered */
+    }
+}
+
+/** Counts a type pick for its category ("most used" categories come first). */
+function countUse(group: string) {
+    const use = load<Record<string, number>>(USE_KEY, {});
+    use[group] = (use[group] ?? 0) + 1;
+    save(USE_KEY, use);
+}
+
+/** Categories shown before "N more". */
+const SHOWN_CATEGORIES = 7;
+
+// ───────────── chips ─────────────
+
+/** Coloured icon tile with a dark glyph (category colour; types and styles inherit it). */
+export const Tile = ({ icon, color, size = 16 }: { icon: string; color: string; size?: number }) => (
+    <div className={s.tile} style={{ backgroundColor: color, width: size + "rem", height: size + "rem" }}>
+        <Icon name={icon} size={Math.round(size * 0.7)} tint="dark" />
+    </div>
+);
+
+type ChipProps = {
+    testId: string;
+    nav: string;
+    icon: string;
+    color: string;
+    name: string;
+    count?: number;
+    on?: boolean;
+    title?: string;
+    description?: string;
+    dashed?: boolean;
+    badge?: React.ReactNode;
+    extra?: Record<string, string>;
+    onClick: () => void;
+};
+
+const Chip = ({ testId, nav, icon, color, name, count, on, title, description, dashed, badge, extra, onClick }: ChipProps) => (
+    <Tip title={title ?? name} description={description}>
+        <button
+            type="button"
+            data-nav={nav}
+            data-testid={testId}
+            aria-pressed={on ? "true" : "false"}
+            className={classNames(s.chip, { [s.chipOn]: on, [s.chipDashed]: dashed })}
+            onClick={(e) => {
+                e.stopPropagation();
+                onClick();
+            }}
+            {...extra}
+        >
+            {dashed ? <Icon name={icon} size={12} tint="dim" /> : <Tile icon={icon} color={color} />}
+            <div className={s.chipName} data-ellipsis>
+                {name}
+            </div>
+            {count !== undefined ? <div className={s.chipCount}>{count}</div> : null}
+            {badge}
+        </button>
+    </Tip>
+);
+
+const RowLabel = ({ n, label }: { n: number; label: string }) => (
+    <div className={s.rowLabel}>
+        <div className={s.rowNum}>{n}</div>
+        <div className={s.rowLabelText}>{label}</div>
+    </div>
+);
+
+// ───────────── picker ─────────────
+
+/**
+ * 1 Category · 2 Type · 3 Style. Search (header icon) filters the rows: categories with a hit, the matching
+ * types of every category, the matching styles of every type. Arrow keys walk the chips, Enter in the search box
+ * picks the first hit, Esc clears it.
+ */
+export const TypeBrowser = ({ catalog, design, onNew }: { catalog: Catalog; design: DesignState; onNew: () => void }) => {
+    const { t } = useT();
+    const [open, setOpen] = useOpen("design:make", true);
+    const [query, setQuery] = useState("");
+    const [searching, setSearching] = useState(false);
+    const [moreCats, setMoreCats] = useOpen("design:moreCategories", false);
+    const list = makeRecipes(catalog);
+    // A shelved type picked on purpose (the game runner by id, editing an old build) still shows its styles while it is current.
+    const selectedRecipe = list.find((r) => r.id === design.recipeId) ?? catalog.recipes.find((r) => r.id === design.recipeId && !r.custom && !!r.shelved);
+    const selectedGroup = selectedRecipe ? recipeGroup(selectedRecipe) : "";
+    const [chosen, setChosen] = useState<string | null>(() => load<string | null>(CATEGORY_KEY, null));
+    const root = useRef<HTMLDivElement>(null);
+    const q = query.trim().toLowerCase();
+    const has = (text: string) => text.toLowerCase().includes(q);
+
+    const cats = makeGroups(catalog).map((g, order) => ({ id: g.id, title: t(g.key, g.en), order, types: list.filter((r) => recipeGroup(r) === g.id) }))
+        .filter((c) => c.types.length);   // the shelf's order (Recipes/shelf/*.json), "Other" last
+    const exists = (id: string | null) => !!id && cats.some((c) => c.id === id);
+    const category = exists(chosen) ? chosen! : exists(selectedGroup) ? selectedGroup : cats[0]?.id ?? "";
+    const setCategory = (c: string) => {
+        save(CATEGORY_KEY, c);
+        setChosen(c);
+    };
+    // The selected type changed from elsewhere (undo, a search hit, a preset of another type): show its category.
+    const lastRecipe = useRef(design.recipeId);
+    useEffect(() => {
+        if (lastRecipe.current === design.recipeId) return;
+        lastRecipe.current = design.recipeId;
+        if (selectedGroup && selectedGroup !== chosen) setCategory(selectedGroup);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [design.recipeId]);
+    // A shelved last pick (e.g. Quarry, used before industry was hidden) is switched to the first type shown by the game when
+    // it restores the last type (FlowerPainterToolSystem.EnsureInitialized), so a hidden type picked on purpose stays.
+
+    // search hits
+    type Hit = { r: RecipeInfo; layer: LayerType; p: PresetView };
+    const typeHits: RecipeInfo[] = [];
+    const styleHits: Hit[] = [];
+    const catHits = new Set<string>();
+    if (q) {
+        for (const c of cats) {
+            const catHit = has(c.title);
+            for (const r of c.types) {
+                const layer = typeLayer(catalog, r);
+                const ps = layer ? layer.presets.filter((p) => !p.shelved && has(presetName(t, p))) : [];
+                if (layer) for (const p of ps) styleHits.push({ r, layer, p });
+                if (catHit || has(recipeName(t, r)) || ps.length) {
+                    typeHits.push(r);
+                    catHits.add(c.id);
+                }
+            }
+        }
+    }
+
+    // categories: the most used first; the current one and the selected type's always visible
+    // All categories, always (user: not cluttered enough to need "N more").
+    const visibleCats = q ? cats.filter((c) => catHits.has(c.id)) : cats;
+    const hiddenCats = 0;
+    const types = q ? typeHits : cats.find((c) => c.id === category)?.types ?? [];
+    const firstHit = styleHits.length ? { recipe: styleHits[0].r.id, layer: styleHits[0].layer.id, preset: styleHits[0].p.id } : typeHits.length ? { recipe: typeHits[0].id, layer: typeHits[0].id, preset: null } : null;
+
+    const ap = design.activePreset;
+    const selLayer = selectedRecipe ? typeLayer(catalog, selectedRecipe) : undefined;
+    const activeId = selLayer && ap && ap.layer.toLowerCase() === selLayer.id.toLowerCase() ? ap.id : null;
+    const modified = !!ap?.modified;
+
+    const pickType = (r: RecipeInfo) => {
+        if (r.id === design.recipeId) return;
+        countUse(recipeGroup(r));
+        act.selectRecipe(r.id);
+    };
+    const pickStyle = (r: RecipeInfo, layer: LayerType, p: PresetView | null) => {
+        const active = r.id === design.recipeId && activeId === (p ? p.id : DEFAULT_ID);
+        if (active && !modified) return;
+        if (r.id !== design.recipeId) countUse(recipeGroup(r));
+        if (p) act.selectPreset(layer.id, p.id);
+        else act.selectRecipe(r.id);
+    };
+
+    const chips = () => Array.from(root.current?.querySelectorAll<HTMLElement>("[data-nav]") ?? []);
+    /** Arrow keys walk the chips: ←/→ previous / next, ↑/↓ the nearest chip in the row above / below. */
+    const onKey = (e: KeyboardEvent<HTMLDivElement>) => {
+        const all = chips();
+        const i = all.indexOf(document.activeElement as HTMLElement);
+        let next: HTMLElement | undefined;
+        if (e.key === "ArrowRight") next = all[i < 0 ? 0 : Math.min(all.length - 1, i + 1)];
+        else if (e.key === "ArrowLeft") next = i <= 0 ? undefined : all[i - 1];
+        else if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+            const down = e.key === "ArrowDown";
+            if (i < 0) next = all[0];
+            else {
+                const r = all[i].getBoundingClientRect();
+                const cx = r.left + r.width / 2,
+                    cy = r.top + r.height / 2;
+                let best: { el: HTMLElement; dy: number; dx: number } | null = null;
+                for (const el of all) {
+                    const b = el.getBoundingClientRect();
+                    const dy = (b.top + b.height / 2 - cy) * (down ? 1 : -1);
+                    if (dy < 4) continue;
+                    const dx = Math.abs(b.left + b.width / 2 - cx);
+                    if (!best || dy < best.dy - 4 || (Math.abs(dy - best.dy) <= 4 && dx < best.dx)) best = { el, dy, dx };
+                }
+                next = best?.el ?? (down ? undefined : root.current?.querySelector<HTMLElement>("input") ?? undefined);
+            }
+        } else if (e.key === "Home") next = all[0];
+        else if (e.key === "End") next = all[all.length - 1];
+        else if (e.key === "Enter") {
+            // Enter activates the focused chip (native click); keep it from reaching the tool's Enter = primary.
+            e.stopPropagation();
+            return;
+        } else return;
+        e.preventDefault();
+        e.stopPropagation();
+        next?.focus();
+    };
+
+    const closeSearch = () => {
+        setQuery("");
+        setSearching(false);
+    };
+
+    const head = (
+        <div className={s.head}>
+            <button
+                type="button"
+                className={s.headToggle}
+                data-testid="make-toggle"
+                aria-expanded={open ? "true" : "false"}
+                onClick={(e) => {
+                    e.stopPropagation();
+                    setOpen(!open);
+                }}
+            >
+                <Icon name={open ? "chevronDown" : "chevronRight"} size={11} tint="dim" />
+                <div className={s.headTitle}>{t("FlowerPainter.UI.Make.Title", "Pick what to make")}</div>
+            </button>
+            {searching && open ? (
+                <div className={s.search}>
+                    <input
+                        className={s.searchInput}
+                        data-testid="browser-search"
+                        autoFocus
+                        value={query}
+                        placeholder={t("FlowerPainter.UI.Browser.SearchShort", "Search")}
+                        onChange={(e) => setQuery(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === "Escape") {
+                                closeSearch();
+                                e.preventDefault();
+                            } else if (e.key === "Enter") {
+                                if (firstHit && firstHit.preset) act.selectPreset(firstHit.layer, firstHit.preset);
+                                else if (firstHit && firstHit.recipe !== design.recipeId) act.selectRecipe(firstHit.recipe);
+                                e.preventDefault();
+                            } else if (e.key === "ArrowDown") {
+                                chips()[0]?.focus();
+                                e.preventDefault();
+                            }
+                            e.stopPropagation();
+                        }}
+                    />
+                    <Btn icon="close" iconSize={10} className={s.clear} title={t("FlowerPainter.UI.Browser.Clear", "Clear")} onClick={closeSearch} testId="browser-clear" />
+                </div>
+            ) : (
+                <div className={s.flex} />
+            )}
+            {open ? (
+                <Btn
+                    icon="search"
+                    iconSize={12}
+                    className={s.headBtn}
+                    selected={searching}
+                    title={t("FlowerPainter.UI.Browser.Search", "Search types and styles")}
+                    onClick={() => (searching ? closeSearch() : setSearching(true))}
+                    testId="browser-search-toggle"
+                />
+            ) : null}
+        </div>
+    );
+
+    const color = (r: RecipeInfo) => categoryColor(recipeGroup(r));
+    const tIcon = (r: RecipeInfo) => typeIcon(r.id, recipeGroup(r));
+    const styleChip = (r: RecipeInfo, layer: LayerType, p: PresetView | null, inSearch: boolean) => {
+        const name = p ? presetName(t, p) : t("FlowerPainter.UI.Preset.Default", "Default");
+        const id = p ? p.id : DEFAULT_ID;
+        const active = r.id === design.recipeId && activeId === id;
+        return (
+            <Chip
+                key={layer.id + "/" + id}
+                testId={p ? `preset-${p.id}` : "preset-default"}
+                nav="preset"
+                icon={p?.custom ? "star" : inSearch ? tIcon(r) : p ? styleIcon(p.id, name, tIcon(r)) : tIcon(r)}
+                color={p?.custom ? CUSTOM_COLOR : color(r)}
+                name={name}
+                on={active}
+                title={inSearch ? recipeName(t, r) + " · " + name : name}
+                description={
+                    p?.custom
+                        ? p.basedOn
+                            ? t("FlowerPainter.UI.Preset.BasedOn", "Your style, based on {0}", [humanize(p.basedOn)])
+                            : t("FlowerPainter.UI.Preset.Yours", "Your style")
+                        : p?.overridden
+                          ? t("FlowerPainter.UI.Preset.EditedTip", "You saved over this style.")
+                          : undefined
+                }
+                extra={{ "data-layer": layer.id }}
+                badge={
+                    <>
+                        {p?.overridden ? <div className={s.edited} data-testid={`preset-edited-${p.id}`} /> : null}
+                        {active && modified ? <div className={s.dot} /> : null}
+                    </>
+                }
+                onClick={() => pickStyle(r, layer, p)}
+            />
+        );
+    };
+
+    return (
+        <div className={s.picker} data-testid="make" data-open={open ? "true" : "false"}>
+            {head}
+            {open ? (
+                <div className={s.browser} data-testid="type-browser" ref={root} onKeyDown={onKey}>
+                    {q && !typeHits.length && !styleHits.length ? (
+                        <div className={s.empty} data-testid="browser-empty">
+                            {t("FlowerPainter.UI.Browser.None", "Nothing matches “{0}”", [query.trim()])}
+                        </div>
+                    ) : (
+                        <>
+                            <div className={s.row}>
+                                <RowLabel n={1} label={t("FlowerPainter.UI.Make.Category", "Category")} />
+                                <div className={s.chips} data-testid="make-groups">
+                                    {visibleCats.map((c) => (
+                                        <Chip
+                                            key={c.id}
+                                            testId={`make-group-${c.id}`}
+                                            nav="cat"
+                                            icon={categoryIcon(c.id)}
+                                            color={categoryColor(c.id)}
+                                            name={c.title}
+                                            count={q ? c.types.filter((r) => typeHits.includes(r)).length : c.types.length}
+                                            on={!q && c.id === category}
+                                            extra={{ "data-has-selected": c.id === selectedGroup ? "true" : "false" }}
+                                            badge={c.id === selectedGroup && c.id !== category && !q ? <div className={s.mark} /> : null}
+                                            onClick={() => {
+                                                setCategory(c.id);
+                                                if (q) closeSearch();
+                                                // Switching category picks its first type, so the Style row follows at once.
+                                                else if (c.id !== selectedGroup && c.types.length) pickType(c.types[0]);
+                                            }}
+                                        />
+                                    ))}
+                                    {hiddenCats > 0 && moreCats ? (
+                                        <button
+                                            type="button"
+                                            data-nav="cat"
+                                            data-testid="make-groups-more"
+                                            className={classNames(s.chip, s.chipMore)}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setMoreCats(!moreCats);
+                                            }}
+                                        >
+                                            <div className={s.chipName}>
+                                                {moreCats ? t("FlowerPainter.UI.Make.Fewer", "Fewer") : t("FlowerPainter.UI.Make.MoreN", "{0} more", [hiddenCats])}
+                                            </div>
+                                            <Icon name={moreCats ? "chevronLeft" : "chevronRight"} size={10} tint="dim" />
+                                        </button>
+                                    ) : null}
+                                </div>
+                            </div>
+                            <div className={s.rule} />
+                            <div className={s.row}>
+                                <RowLabel n={2} label={t("FlowerPainter.UI.Make.Type", "Type")} />
+                                <div className={s.chips} data-testid="recipes" data-grouped="true">
+                                    {types.map((r) => {
+                                        const layer = typeLayer(catalog, r);
+                                        const desc = r.description ? t(r.description, "") : "";
+                                        return (
+                                            <Chip
+                                                key={r.id}
+                                                testId={`recipe-${r.id}`}
+                                                nav="type"
+                                                icon={tIcon(r)}
+                                                color={color(r)}
+                                                name={recipeName(t, r)}
+                                                count={layer ? layer.presets.length : undefined}
+                                                on={r.id === design.recipeId}
+                                                description={desc || undefined}
+                                                onClick={() => pickType(r)}
+                                            />
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                            <div className={s.rule} />
+                            <div className={s.row}>
+                                <RowLabel n={3} label={t("FlowerPainter.UI.Make.Style", "Style")} />
+                                {q ? (
+                                    <div className={s.chips} data-testid="preset-hits">
+                                        {styleHits.map((h) => styleChip(h.r, h.layer, h.p, true))}
+                                    </div>
+                                ) : selectedRecipe && selLayer ? (
+                                    <div className={s.chips} data-testid={`presets-${selectedRecipe.id}`}>
+                                        {styleChip(selectedRecipe, selLayer, null, false)}
+                                        {selLayer.presets.filter((p) => !p.custom && (!p.shelved || p.id === activeId)).map((p) => styleChip(selectedRecipe, selLayer, p, false))}
+                                        {selLayer.presets.filter((p) => p.custom).map((p) => styleChip(selectedRecipe, selLayer, p, false))}
+                                        <Chip
+                                            testId="preset-new"
+                                            nav="preset"
+                                            icon="plus"
+                                            color=""
+                                            dashed
+                                            name={t("FlowerPainter.UI.Preset.New", "New")}
+                                            title={t("FlowerPainter.UI.Preset.SaveAsTip", "Save these settings as a new style")}
+                                            onClick={onNew}
+                                        />
+                                    </div>
+                                ) : (
+                                    <div className={s.chips} />
+                                )}
+                            </div>
+                        </>
+                    )}
+                </div>
+            ) : null}
+        </div>
+    );
+};
+
+// ───────────── editing bar ─────────────
+
+export type BarMode = "idle" | "saveAs" | "rename" | "menu";
+
+const NameField = ({ initial, onSave, onCancel, testId }: { initial: string; onSave: (name: string) => void; onCancel: () => void; testId: string }) => {
+    const { t } = useT();
+    const [value, setValue] = useState(initial);
+    const ok = value.trim().length > 0;
+    return (
+        <div className={s.nameForm} data-testid={testId}>
+            <input
+                className={s.nameInput}
+                data-testid="preset-name-input"
+                autoFocus
+                value={value}
+                maxLength={48}
+                placeholder={t("FlowerPainter.UI.Preset.NamePlaceholder", "Style name")}
+                onChange={(e) => setValue(e.target.value)}
+                onKeyDown={(e) => {
+                    e.stopPropagation();
+                    if (e.key === "Enter" && ok) onSave(value.trim());
+                    if (e.key === "Escape") onCancel();
+                }}
+            />
+            <Btn variant="accent" label={t("FlowerPainter.UI.Save", "Save")} disabled={!ok} onClick={() => onSave(value.trim())} testId="preset-name-save" />
+            <Btn icon="close" iconSize={12} title={t("FlowerPainter.UI.Cancel", "Cancel")} onClick={onCancel} testId="preset-name-cancel" />
+        </div>
+    );
+};
+
+const MenuItem = ({ icon, label, onClick, testId, danger }: { icon: string; label: string; onClick: () => void; testId: string; danger?: boolean }) => (
+    <button
+        type="button"
+        data-testid={testId}
+        className={classNames(s.menuItem, { [s.menuDanger]: danger })}
+        onClick={(e) => {
+            e.stopPropagation();
+            onClick();
+        }}
+    >
+        <Icon name={icon} size={12} tint={danger ? "danger" : "dim"} />
+        <div className={s.menuText}>{label}</div>
+    </button>
+);
+
+const Crumb = ({ icon, color, name, on, testId }: { icon: string; color: string; name: string; on?: boolean; testId?: string }) => (
+    <Tip title={name}>
+        <div className={classNames(s.crumb, { [s.crumbOn]: on })}>
+            <Tile icon={icon} color={color} size={14} />
+            <div className={s.crumbName} data-testid={testId} data-ellipsis>
+                {name}
+            </div>
+        </div>
+    </Tip>
+);
+
+/**
+ * What is being edited: [Category] › [Type] › [Style] and the style's actions. Save overwrites the player's style
+ * or saves over a built-in (shown "edited", resettable); + saves a new one (★).
+ */
+export const PresetBar = ({
+    catalog, design, step, mode, setMode,
+}: { catalog: Catalog; design: DesignState; step: StepView; mode: BarMode; setMode: (m: BarMode) => void }) => {
+    const { t } = useT();
+    const [confirm, setConfirm] = useState<"delete" | "reset" | null>(null);
+    const [exported, setExported] = useState(false);
+    const ap: ActivePreset | undefined = design.activePreset;
+    const layer = catalog.layers.find((l) => l.id === step.layer);
+    const recipe = catalog.recipes.find((r) => r.id === design.recipeId);
+    if (!ap || !layer) return null;
+    const p = ap.id ? layer.presets.find((x) => x.id === ap.id) ?? null : null;
+    const name = p ? presetName(t, p) : t("FlowerPainter.UI.Preset.Default", "Default");
+    const group = recipe ? recipeGroup(recipe) : "other";
+    const tIcon = typeIcon(layer.id, group);
+    const canSave = ap.modified && ap.canSave && !!p;
+    const close = () => setMode("idle");
+    const saveWhy = !p
+        ? t("FlowerPainter.UI.Preset.SaveDefaultNo", "Default can't be changed. Save as a new style.")
+        : !ap.modified
+          ? t("FlowerPainter.UI.Preset.NothingToSave", "No changes to save")
+          : !ap.canSave
+            ? t("FlowerPainter.UI.Preset.CantSave", "This style can't be saved over")
+            : p.custom
+              ? t("FlowerPainter.UI.Preset.SaveTip", "Save changes to this style")
+              : t("FlowerPainter.UI.Preset.SaveBuiltIn", "Save over this style (reset any time)");
+    const revert = () => {
+        if (!ap.modified) return;
+        if (p) act.selectPreset(layer.id, p.id);
+        else if (recipe) act.selectRecipe(recipe.id);
+    };
+
+    const dialog = confirm ? (
+        <Confirm
+            title={confirm === "delete" ? t("FlowerPainter.UI.Preset.DeleteTitle", "Delete “{0}”?", [name]) : t("FlowerPainter.UI.Preset.ResetTitle", "Reset “{0}”?", [name])}
+            message={
+                confirm === "delete"
+                    ? t("FlowerPainter.UI.Preset.DeleteText", "Your style is removed. Builds stay as they are.")
+                    : t("FlowerPainter.UI.Preset.ResetText", "Your changes to this style are dropped.")
+            }
+            confirm={confirm === "delete" ? t("FlowerPainter.UI.Delete", "Delete") : t("FlowerPainter.UI.Preset.Reset", "Reset")}
+            danger
+            onConfirm={() => {
+                setConfirm(null);
+                act.deletePreset(layer.id, ap.id);
+            }}
+            onCancel={() => setConfirm(null)}
+        />
+    ) : null;
+
+    return (
+        <div
+            className={classNames(s.bar, { [s.barModified]: ap.modified })}
+            data-testid="preset-bar"
+            data-modified={ap.modified ? "true" : "false"}
+            onKeyDown={(e) => {
+                // Enter on a focused bar button presses that button, not the tool's primary action.
+                if (e.key === "Enter") e.stopPropagation();
+            }}
+        >
+            <div className={s.barHead}>
+                <div className={s.barTitle}>{t("FlowerPainter.UI.Editing", "Editing")}</div>
+                {ap.modified ? (
+                    <div className={s.modified} data-testid="preset-modified">
+                        <div className={s.modDot} />
+                        <div className={s.modText}>{t("FlowerPainter.UI.Preset.Unsaved", "unsaved changes")}</div>
+                    </div>
+                ) : p?.overridden ? (
+                    <div className={s.barNote}>{t("FlowerPainter.UI.Preset.Edited", "edited")}</div>
+                ) : null}
+            </div>
+            {mode === "saveAs" ? (
+                <NameField
+                    testId="preset-save-as-form"
+                    initial={p ? t("FlowerPainter.UI.Preset.CopyName", "{0} (mine)", [name]) : ""}
+                    onSave={(n) => {
+                        act.savePresetAs(step.path, n);
+                        close();
+                    }}
+                    onCancel={close}
+                />
+            ) : mode === "rename" && p ? (
+                <NameField
+                    testId="preset-rename-form"
+                    initial={p.name}
+                    onSave={(n) => {
+                        act.renamePreset(layer.id, p.id, n);
+                        close();
+                    }}
+                    onCancel={close}
+                />
+            ) : (
+                <div className={s.barRow}>
+                    <div className={s.crumbs}>
+                        <Crumb icon={categoryIcon(group)} color={categoryColor(group)} name={groupName(t, catalog, group)} />
+                        <Icon name="chevronRight" size={10} tint="dim" className={s.sep} />
+                        <Crumb icon={tIcon} color={categoryColor(group)} name={recipe ? recipeName(t, recipe) : humanize(layer.id)} />
+                        <Icon name="chevronRight" size={10} tint="dim" className={s.sep} />
+                        <Crumb
+                            icon={p?.custom ? "star" : p ? styleIcon(p.id, name, tIcon) : tIcon}
+                            color={p?.custom ? CUSTOM_COLOR : categoryColor(group)}
+                            name={name}
+                            on
+                            testId="preset-bar-name"
+                        />
+                    </div>
+                    <div className={s.tools}>
+                        <Btn
+                            icon="undo"
+                            iconSize={13}
+                            className={s.tool}
+                            disabled={!ap.modified}
+                            title={t("FlowerPainter.UI.Preset.Revert", "Undo changes")}
+                            description={ap.modified ? t("FlowerPainter.UI.Preset.RevertTip", "Back to “{0}” as saved", [name]) : t("FlowerPainter.UI.Preset.NoChanges", "No changes")}
+                            onClick={revert}
+                            testId="preset-revert"
+                        />
+                        <Btn
+                            icon="shuffle"
+                            iconSize={13}
+                            className={s.tool}
+                            title={step.layer === "floral" ? t("FlowerPainter.Floral.UI.Reroll", "New layout") : t("FlowerPainter.UI.Randomize", "Shuffle")}
+                            label={step.layer === "floral" ? t("FlowerPainter.Floral.UI.Reroll", "New layout") : undefined}
+                            description={step.layer === "floral" ? t("FlowerPainter.Floral.UI.RerollTip", "Regenerate the pattern and colour arrangement.") : t("FlowerPainter.UI.RandomizeTip", "New variation. Locked values stay.")}
+                            onClick={() => act.randomize(step.path)}
+                            testId="randomize"
+                        />
+                        <Btn
+                            icon="plus"
+                            iconSize={13}
+                            className={s.tool}
+                            title={t("FlowerPainter.UI.Preset.SaveAs", "Save as new style")}
+                            onClick={() => setMode("saveAs")}
+                            testId="preset-save-as"
+                        />
+                        <Btn
+                            icon="save"
+                            iconSize={13}
+                            variant={canSave ? "accent" : "ghost"}
+                            className={classNames(s.tool, { [s.toolPrimary]: canSave })}
+                            disabled={!canSave}
+                            title={t("FlowerPainter.UI.Save", "Save")}
+                            description={saveWhy}
+                            onClick={() => act.savePreset(step.path, ap.id)}
+                            testId="preset-save"
+                        />
+                        <Btn
+                            icon="more"
+                            iconSize={13}
+                            className={s.tool}
+                            selected={mode === "menu"}
+                            title={t("FlowerPainter.UI.Preset.More", "More")}
+                            onClick={() => setMode(mode === "menu" ? "idle" : "menu")}
+                            testId="preset-more"
+                        />
+                    </div>
+                </div>
+            )}
+            {mode === "menu" ? (
+                <div className={s.menu} data-testid="preset-menu">
+                    {p?.custom ? (
+                        <>
+                            <MenuItem icon="edit" label={t("FlowerPainter.UI.Preset.Rename", "Rename")} onClick={() => setMode("rename")} testId="preset-rename" />
+                            <MenuItem
+                                icon="trash"
+                                danger
+                                label={t("FlowerPainter.UI.Delete", "Delete")}
+                                onClick={() => {
+                                    close();
+                                    setConfirm("delete");
+                                }}
+                                testId="preset-delete"
+                            />
+                        </>
+                    ) : null}
+                    {p?.overridden ? (
+                        <MenuItem
+                            icon="reset"
+                            label={t("FlowerPainter.UI.Preset.ResetDefault", "Reset to shipped")}
+                            onClick={() => {
+                                close();
+                                setConfirm("reset");
+                            }}
+                            testId="preset-reset"
+                        />
+                    ) : null}
+                    <MenuItem
+                        icon="save"
+                        label={t("FlowerPainter.UI.Preset.Export", "Export styles")}
+                        onClick={() => {
+                            act.exportPresets();
+                            setExported(true);
+                            close();
+                        }}
+                        testId="preset-export"
+                    />
+                </div>
+            ) : null}
+            {exported && design.presetsFile ? (
+                <div className={s.exported} data-testid="presets-file">
+                    <div className={s.exportedHead}>
+                        <Icon name="info" size={12} tint="accent" />
+                        <div className={s.exportedNote}>{t("FlowerPainter.UI.Preset.ExportNote", "Saved. Send this file to share your styles.")}</div>
+                        <Btn icon="close" iconSize={11} title={t("FlowerPainter.UI.Close", "Close")} onClick={() => setExported(false)} testId="presets-file-close" />
+                    </div>
+                    <div className={s.path} data-testid="presets-file-path">
+                        {design.presetsFile}
+                    </div>
+                </div>
+            ) : null}
+            {dialog}
+        </div>
+    );
+};

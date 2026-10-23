@@ -1,0 +1,10 @@
+{
+  "FlowerPainter.UI.Manage.Dissolve": "解散区域",
+  "FlowerPainter.UI.Manage.DissolveTitle": "解散“{0}”？",
+  "FlowerPainter.UI.Manage.DissolveText": "保留道路、花草和设施，解除片区归属，使原来的片区范围不再阻挡选区。之后可单独修改各个物件，无法恢复原来的整组管理。",
+  "FlowerPainter.UI.Manage.DissolveTip": "保留已建内容，释放片区范围，允许重新选区。",
+  "FlowerPainter.UI.Rules.Force": "强制选区",
+  "FlowerPainter.UI.Rules.ForceTip": "忽略所有选区障碍，可直接在已建片区上创建新选区。实际建设仍保护已有建筑。",
+  "FlowerPainter.Hint.Dissolved": "片区已解散，已建内容保留，原片区范围不再阻挡选区。",
+  "FlowerPainter.Problem.DissolveFailed": "片区正在建设或删除，暂时无法解散。"
+}

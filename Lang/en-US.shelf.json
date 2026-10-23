@@ -1,0 +1,12 @@
+{
+  "FlowerPainter.UI.MakeGroup.Roads": "Roads",
+  "FlowerPainter.UI.MakeGroup.Parking": "Parking",
+  "FlowerPainter.UI.MakeGroup.Parks": "Parks",
+  "FlowerPainter.UI.MakeGroup.Beach": "Beach",
+  "FlowerPainter.UI.MakeGroup.Commercial": "Shops & squares",
+  "FlowerPainter.UI.MakeGroup.Nature": "Nature",
+  "FlowerPainter.UI.MakeGroup.Farms": "Farms",
+  "FlowerPainter.UI.MakeGroup.Sports": "Sports",
+  "FlowerPainter.UI.MakeGroup.Industry": "Industry",
+  "FlowerPainter.UI.MakeGroup.Transport": "Transport"
+}

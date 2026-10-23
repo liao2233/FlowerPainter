@@ -1,0 +1,20 @@
+bin/
+obj/
+.dotnet-home/
+UI/node_modules/
+UI/build/
+UI/mock/dist/
+UI/test-results/
+UI/playwright-report/
+*.user
+.vs/
+Tests/**/bin/
+Tests/**/obj/
+
+# Gallery renders (regenerate: dotnet run -c Release --project Tests/Placemaker.Gallery -- --out docs/gallery)
+docs/gallery/*/
+docs/gallery/index.html
+docs/showcase/
+docs/gallery-*/
+.forensics/
+.build*.log

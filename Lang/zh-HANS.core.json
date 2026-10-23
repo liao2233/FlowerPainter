@@ -1,0 +1,6 @@
+{
+  "FlowerPainter.Name": "FlowerPainter 花卉",
+  "FlowerPainter.Issue.RecipeTooDeep": "此设计的嵌套图层过多。",
+  "FlowerPainter.Issue.UnknownLayer": "未知图层“{0}”，是否缺少某个 Mod？",
+  "FlowerPainter.Issue.LayerFailed": "无法规划{0}：{1}"
+}

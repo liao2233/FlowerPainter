@@ -1,0 +1,30 @@
+{
+  "scenarios": [
+    {
+      "id": "collage-editor",
+      "pace": "settled",
+      "land": { "shape": "rect", "size": [60, 50], "ground": "flat", "roads": "none" },
+      "steps": [
+        { "do": "area", "tool": "land" },
+        { "do": "type", "layer": "floral", "preset": "pattern-collage" },
+        { "do": "motif", "action": "add", "kind": "ring" },
+        { "do": "motif", "action": "flower", "index": 0, "asset": "VFP PoppyBushWild" },
+        { "do": "motif", "action": "add", "kind": "wave" },
+        { "do": "motif", "action": "flower", "index": 1, "asset": "VFP BluebellWild" },
+        { "do": "motif", "action": "scale", "index": 0, "factor": 2.1, "verifyUndo": true },
+        { "do": "motif", "action": "move", "index": 0, "by": [-39, 4], "verifyUndo": true },
+        { "do": "motif", "action": "scale", "index": 1, "factor": 1.9, "verifyUndo": true },
+        { "do": "motif", "action": "rotate", "index": 1, "degrees": -25, "verifyUndo": true },
+        { "do": "motif", "action": "move", "index": 1, "by": [5, -6], "verifyUndo": true },
+        { "do": "shot", "name": "patterns-before-fill", "shotMode": "ui", "camera": { "target": "area", "view": "top", "distance": 170 } },
+        { "do": "motif", "action": "fill" },
+        { "do": "randomize" },
+        { "do": "shot", "name": "patterns-with-fill", "shotMode": "ui", "camera": { "target": "area", "view": "top", "distance": 170 } },
+        { "do": "preview", "shot": "collage-plan", "shotMode": "overlay", "camera": { "target": "area", "view": "top" } },
+        { "do": "build" },
+        { "do": "camera", "target": "build", "view": "top", "shot": "collage-built", "shotMode": "render" },
+        { "do": "terrain", "name": "collage-terrain" }
+      ]
+    }
+  ]
+}

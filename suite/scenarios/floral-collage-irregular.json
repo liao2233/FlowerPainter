@@ -1,0 +1,19 @@
+{
+  "scenarios": [{
+    "id": "clipped-irregular",
+    "pace": "settled",
+    "land": { "shape": "l", "size": [60,50], "ground": "flat", "roads": "none" },
+    "steps": [
+      { "do": "area", "tool": "land" },
+      { "do": "type", "layer": "floral", "preset": "crossing-arcs" },
+      { "do": "motif", "action": "fill" },
+      { "do": "motif", "action": "select", "index": 0 },
+      { "do": "shot", "name": "three-patterns-before-fill", "shotMode": "overlay", "camera": { "target": "area", "view": "top", "distance": 200 } },
+      { "do": "motif", "action": "fill" },
+      { "do": "preview", "shot": "irregular-plan", "shotMode": "overlay", "camera": { "target": "area", "view": "top" } },
+      { "do": "build" },
+      { "do": "camera", "target": "build", "view": "top", "shot": "irregular-built", "shotMode": "render" },
+      { "do": "terrain", "name": "irregular-terrain" }
+    ]
+  }]
+}

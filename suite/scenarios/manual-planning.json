@@ -1,0 +1,110 @@
+{
+  "scenarios": [
+    {
+      "id": "manual-park",
+      "land": {
+        "size": [
+          200,
+          180
+        ],
+        "roads": "around"
+      },
+      "steps": [
+        {
+          "do": "area",
+          "tool": "bucket"
+        },
+        {
+          "do": "type",
+          "layer": "park",
+          "preset": "natural"
+        },
+        {
+          "do": "entrances"
+        },
+        {
+          "do": "manualPlanning"
+        },
+        {
+          "do": "randomize",
+          "path": "0"
+        },
+        {
+          "do": "manualPlanning"
+        },
+        {
+          "do": "preview",
+          "shot": "plan"
+        },
+        {
+          "do": "build"
+        },
+        {
+          "do": "camera",
+          "target": "build",
+          "view": "oblique",
+          "shot": "built",
+          "shotMode": "render"
+        },
+        {
+          "do": "terrain"
+        }
+      ]
+    },
+    {
+      "id": "manual-parking",
+      "land": {
+        "size": [
+          200,
+          180
+        ],
+        "roads": "around"
+      },
+      "steps": [
+        {
+          "do": "area",
+          "tool": "bucket"
+        },
+        {
+          "do": "type",
+          "layer": "parking",
+          "preset": "standard"
+        },
+        {
+          "do": "manualPlanning",
+          "missing": true
+        },
+        {
+          "do": "entrances"
+        },
+        {
+          "do": "manualPlanning"
+        },
+        {
+          "do": "randomize",
+          "path": "0"
+        },
+        {
+          "do": "manualPlanning"
+        },
+        {
+          "do": "preview",
+          "shot": "plan"
+        },
+        {
+          "do": "build"
+        },
+        {
+          "do": "camera",
+          "target": "build",
+          "view": "oblique",
+          "shot": "built",
+          "shotMode": "render"
+        },
+        {
+          "do": "terrain"
+        }
+      ]
+    }
+  ]
+}

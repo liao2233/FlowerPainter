@@ -1,0 +1,14 @@
+{
+  "FlowerPainter.Category.surface.crop": "农田表面",
+  "FlowerPainter.Category.surface.crop.soil": "耕作土壤表面",
+  "FlowerPainter.Category.surface.crop.plowed": "翻耕土壤表面",
+  "FlowerPainter.Category.surface.crop.rows": "作物行表面",
+  "FlowerPainter.Category.surface.crop.green": "绿色作物表面",
+  "FlowerPainter.Category.surface.crop.straw": "稻草／谷物表面",
+  "FlowerPainter.Category.surface.crop.flower": "开花作物表面",
+  "FlowerPainter.Category.surface.crop.lavender": "薰衣草色作物表面",
+  "FlowerPainter.Category.surface.crop.yellow": "黄色作物表面",
+  "FlowerPainter.Category.decal.farm": "田间路贴花",
+  "FlowerPainter.GroundCover.Issue.Painted": "未安装农田表面资产，已改为在地形上涂绘田地（永久）。",
+  "FlowerPainter.Common.Issue.ObjectBudget": "此设计原需 {0} 个物件；已减少 {2} 个重复道具，使总数接近 {1}。田地和花坛改用地表绘制。"
+}

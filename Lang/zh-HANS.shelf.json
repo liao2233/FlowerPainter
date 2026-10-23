@@ -1,0 +1,12 @@
+{
+  "FlowerPainter.UI.MakeGroup.Roads": "道路",
+  "FlowerPainter.UI.MakeGroup.Parking": "停车",
+  "FlowerPainter.UI.MakeGroup.Parks": "公园",
+  "FlowerPainter.UI.MakeGroup.Beach": "海滩",
+  "FlowerPainter.UI.MakeGroup.Commercial": "商店与广场",
+  "FlowerPainter.UI.MakeGroup.Nature": "自然",
+  "FlowerPainter.UI.MakeGroup.Farms": "农场",
+  "FlowerPainter.UI.MakeGroup.Sports": "体育",
+  "FlowerPainter.UI.MakeGroup.Industry": "工业",
+  "FlowerPainter.UI.MakeGroup.Transport": "交通"
+}

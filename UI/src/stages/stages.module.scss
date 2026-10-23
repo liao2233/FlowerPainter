@@ -1,0 +1,580 @@
+@use "../styles/tokens" as *;
+
+.stage {
+    @include col;
+    min-width: 0;
+}
+
+.flex {
+    flex: 1 1 auto;
+}
+
+.emptyNote {
+    padding: 10rem 0;
+    font-size: $fs;
+    color: $c-text-dim;
+    text-align: center;
+}
+
+@keyframes pmShimmer {
+    0% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.45;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+.shimmer {
+    animation-name: pmShimmer;
+    animation-duration: 1.2s;
+    animation-iteration-count: infinite;
+}
+
+// ── area ──
+.readout {
+    @include row;
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.readoutBig {
+    margin-left: 5rem;
+    font-size: $fs;
+    font-weight: bold;
+    color: #ffffff;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.readoutDim {
+    flex: 1 1 auto;
+    margin-left: 8rem;
+    font-size: $fs-s;
+    color: $c-text-dim;
+    @include ellipsis;
+}
+
+.readoutHint {
+    flex: 1 1 auto;
+    font-size: $fs-s;
+    color: $c-text-dim;
+    @include ellipsis;
+}
+
+.problem {
+    flex: 1 1 auto;
+    margin-left: 5rem;
+    font-size: $fs-s;
+    color: #ffd59a;
+    @include ellipsis;
+}
+
+.brushRow {
+    @include row;
+    min-width: 0;
+    min-height: $row-h;
+}
+
+.brushLabel {
+    width: 70rem;
+    font-size: $fs;
+    color: $c-text-dim;
+    flex-shrink: 0;
+    @include ellipsis;
+}
+
+.first {
+    margin-top: 0;
+}
+
+// ── area modes: one row of four ──
+.modes {
+    @include row(stretch);
+    min-width: 0;
+}
+
+.modeCell {
+    @include row(stretch);
+    flex: 1 1 0;
+    min-width: 0;
+    margin-right: 3rem;
+}
+
+.mode {
+    @include row;
+    @include button-reset;
+    flex: 1 1 auto;
+    justify-content: center;
+    min-width: 0;
+    height: 28rem;
+    padding: 0 4rem;
+    border-radius: $radius;
+    background-color: rgba(255, 255, 255, 0.06);
+    @include border(1rem, rgba(255, 255, 255, 0.08));
+    overflow: hidden;
+    transition-property: background-color;
+    transition-duration: $t-fast;
+    &:hover {
+        background-color: rgba(255, 255, 255, 0.11);
+    }
+}
+
+.modeOn {
+    background-color: var(--accentColorNormal);
+    @include border-color(var(--accentColorNormal));
+    .modeName {
+        color: #0b1d26;
+    }
+    &:hover {
+        background-color: var(--accentColorLight);
+    }
+}
+
+.modeName {
+    margin-left: 5rem;
+    font-size: $fs;
+    font-weight: bold;
+    color: #ffffff;
+    @include ellipsis;
+}
+
+.areaStats {
+    @include row(stretch);
+    min-width: 0;
+    margin-bottom: 4rem;
+}
+
+.areaStat {
+    @include col;
+    flex: 1 1 0;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.areaStatValue {
+    font-size: $fs + 2rem;
+    font-weight: bold;
+    color: #ffffff;
+    @include ellipsis;
+}
+
+.areaStatLabel {
+    font-size: 11rem;
+    color: $c-text-faint;
+    @include ellipsis;
+}
+
+.areaFoot {
+    @include row;
+    min-width: 0;
+}
+
+.areaHint {
+    flex: 1 1 auto;
+    margin-left: 6rem;
+    font-size: $fs-s;
+    color: $c-text-dim;
+    @include ellipsis;
+}
+
+// ── review breakdown ──
+.treeBar {
+    width: 3rem;
+    height: 14rem;
+    margin-right: 5rem;
+    border-radius: 2rem;
+    flex-shrink: 0;
+}
+
+// ── rename ──
+.saveRow {
+    @include row;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.textInput {
+    flex: 1 1 auto;
+    min-width: 0;
+    height: 24rem;
+    padding: 0 8rem;
+    margin-right: 4rem;
+    border-radius: $radius;
+    background-color: $c-shade;
+    @include border(1rem, $c-line-strong);
+    font-size: $fs;
+    font-family: var(--fontFamily);
+    color: #ffffff;
+    outline-width: 0;
+}
+
+// ── review ──
+.bigRow {
+    @include row(stretch);
+    min-width: 0;
+    padding: 6rem 8rem;
+    border-radius: $radius;
+    background-color: rgba(0, 0, 0, 0.2);
+    @include border(1rem, $c-line);
+}
+
+.big {
+    @include col;
+    flex: 1 1 0;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.bigSep {
+    width: 1rem;
+    margin: 2rem 10rem;
+    background-color: $c-line-strong;
+}
+
+.bigLabel {
+    font-size: 11rem;
+    color: $c-text-dim;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    @include ellipsis;
+}
+
+.bigValue {
+    margin-top: 1rem;
+    font-size: $fs + 4rem;
+    font-weight: bold;
+    color: #ffffff;
+    @include ellipsis;
+}
+
+.bad {
+    color: $c-danger;
+}
+
+.stats {
+    @include row;
+    flex-wrap: wrap;
+    min-width: 0;
+    margin-top: 6rem;
+}
+
+.stat {
+    @include row;
+    min-width: 0;
+    height: 22rem;
+    padding: 0 7rem 0 5rem;
+    margin: 0 3rem 3rem 0;
+    border-radius: $radius;
+    background-color: $c-surface;
+    overflow: hidden;
+}
+
+.statIcon {
+    color: $c-text-dim;
+}
+
+.statValue {
+    margin-left: 4rem;
+    font-size: $fs;
+    font-weight: bold;
+    color: #ffffff;
+    white-space: nowrap;
+}
+
+.statLabel {
+    margin-left: 4rem;
+    font-size: $fs-s;
+    color: $c-text-dim;
+    @include ellipsis;
+}
+
+.callout {
+    @include row(flex-start);
+    min-width: 0;
+    margin-top: 6rem;
+    padding: 5rem 8rem;
+    border-radius: $radius;
+}
+
+.calloutBad {
+    background-color: rgba(255, 107, 91, 0.12);
+}
+
+.calloutWarn {
+    background-color: rgba(255, 181, 71, 0.1);
+    @include border(1rem, rgba(255, 181, 71, 0.3));
+}
+
+/* s33: an information line (ground paint is permanent), no tick. */
+.calloutInfo {
+    background-color: rgba(255, 255, 255, 0.04);
+    align-items: center;
+}
+
+
+.calloutBody {
+    @include col;
+    margin-left: 6rem;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.calloutTitle {
+    font-size: $fs;
+    font-weight: bold;
+    color: #ffd59a;
+    margin-bottom: 2rem;
+    @include ellipsis;
+}
+
+.calloutText {
+    margin-bottom: 4rem;
+    font-size: $fs-s;
+    color: var(--menuText1Normal);
+    line-height: 1.3;
+}
+
+.callout > .calloutText {
+    flex: 1 1 auto;
+    min-width: 0;
+    margin-left: 6rem;
+    margin-bottom: 0;
+}
+
+.issues {
+    @include col;
+    min-width: 0;
+    margin-top: 3rem;
+    margin-bottom: 4rem;
+}
+
+.issue {
+    @include row;
+    min-width: 0;
+    height: 22rem;
+    padding: 0 2rem 0 5rem;
+    margin-bottom: 2rem;
+    border-radius: $radius;
+    background-color: $c-surface;
+    border-left-width: 3rem;
+    border-left-style: solid;
+    border-left-color: $c-info;
+}
+
+.issue_error {
+    border-left-color: $c-danger;
+    background-color: rgba(255, 107, 91, 0.08);
+}
+
+.issue_warning {
+    border-left-color: $c-warning;
+}
+
+// One line, never wrapping (wrapped lines overlapped in Gameface): the tooltip has the full text.
+.issueText {
+    flex: 1 1 auto;
+    min-width: 0;
+    margin-left: 5rem;
+    font-size: $fs-s;
+    @include ellipsis;
+}
+
+.issueBtn {
+    width: 20rem;
+    height: 20rem;
+    flex-shrink: 0;
+}
+
+.issuesMore {
+    @include button-reset;
+    align-self: flex-start;
+    height: 18rem;
+    padding: 0 6rem;
+    font-size: $fs-s;
+    color: var(--accentColorNormal);
+    &:hover {
+        color: #ffffff;
+    }
+}
+
+.calloutLine {
+    margin-bottom: 3rem;
+    font-size: $fs-s;
+    color: var(--menuText1Normal);
+    @include ellipsis;
+}
+
+.breakRow {
+    @include row;
+    min-width: 0;
+    height: 22rem;
+}
+
+.breakName {
+    margin-left: 5rem;
+    font-size: $fs;
+    @include ellipsis;
+    flex: 0 1 auto;
+}
+
+.breakRegion {
+    color: $c-text-dim;
+}
+
+.breakStats {
+    flex: 1 1 auto;
+    margin-left: 8rem;
+    font-size: $fs-s;
+    color: $c-text-dim;
+    @include ellipsis;
+}
+
+.breakCost {
+    margin-left: 8rem;
+    font-size: $fs;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.allGood {
+    @include row;
+    min-width: 0;
+    padding: 4rem 0;
+}
+
+.allGoodText {
+    flex: 1 1 auto;
+    margin-left: 5rem;
+    font-size: $fs-s;
+    color: #b8f2c8;
+    @include ellipsis;
+}
+
+// ── building ──
+.buildHead {
+    @include row;
+    min-width: 0;
+    margin-bottom: 6rem;
+}
+
+.buildTitle {
+    margin-left: 6rem;
+    font-size: $fs;
+    font-weight: bold;
+    @include ellipsis;
+}
+
+.buildPct {
+    font-size: $fs;
+    color: #ffffff;
+    flex-shrink: 0;
+}
+
+.progress {
+    @include row;
+    height: 6rem;
+    border-radius: 3rem;
+    background-color: rgba(255, 255, 255, 0.1);
+    overflow: hidden;
+}
+
+.progressFill {
+    height: 6rem;
+    border-radius: 3rem;
+    background-color: var(--accentColorNormal);
+    transition-property: width;
+    transition-duration: 0.25s;
+}
+
+.buildHint {
+    margin-top: 6rem;
+    font-size: $fs-s;
+    color: $c-text-dim;
+    @include ellipsis;
+}
+
+// ── manage ──
+.manageHead {
+    @include row;
+    min-width: 0;
+    min-height: 28rem;
+}
+
+.manageName {
+    flex: 0 1 auto;
+    margin-left: 6rem;
+    font-size: $fs + 3rem;
+    font-weight: bold;
+    color: #ffffff;
+    @include ellipsis;
+}
+
+.manageKind {
+    flex: 1 1 auto;
+    margin-left: 6rem;
+    font-size: $fs-s;
+    color: $c-text-dim;
+    @include ellipsis;
+}
+
+.manageUpkeep {
+    @include row;
+    min-width: 0;
+    margin: 4rem 0 6rem 0;
+}
+
+.manageUpkeepValue {
+    margin-left: 8rem;
+    font-size: $fs;
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+.manageActions {
+    @include row;
+    min-width: 0;
+    padding-top: 6rem;
+    border-top-width: 1rem;
+    border-top-style: solid;
+    border-top-color: $c-line;
+    > button,
+    > div {
+        margin-right: 4rem;
+    }
+}
+
+// Block paint brush rules: one row of small icon toggles.
+.ruleIcons {
+    @include row;
+    flex: 1 1 auto;
+    min-width: 0;
+    justify-content: space-between;
+}
+
+// s15 — disabled with reason: shown, greyed, not clickable; the reason is in the tooltip.
+.modeOff {
+    opacity: 0.4;
+    &:hover {
+        background-color: rgba(255, 255, 255, 0.06);
+    }
+}
+
+.rowOff {
+    opacity: 0.45;
+}
+
+.offInner {
+    @include col;
+    pointer-events: none;
+}
+
+.fillCell {
+    @include col;
+    flex: 1 1 auto;
+    min-width: 0;
+}
