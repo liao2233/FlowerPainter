@@ -35,8 +35,7 @@ export const FloralPatternEditor = ({ step, state }: { step: StepView; state: To
         act.selectFloralPattern(step.path, focus >= next.length ? next.length - 1 : focus);
     };
     const add = (kind: string) => {
-        const palette = Array.isArray(step.values.flowerPalette) ? step.values.flowerPalette : [];
-        const next = [...motifs, { id: Date.now().toString(36), kind, x: 0, z: 0, size: 40, angle: 0, width: 4, points: kind === "curve" ? [[-0.5,0],[0,-0.25],[0.5,0.25]] : [], flower: String(palette[motifs.length % Math.max(1, palette.length)] ?? "") }];
+        const next = [...motifs, { id: Date.now().toString(36), kind, x: 0, z: 0, size: 40, angle: 0, width: 4, points: kind === "curve" ? [[-0.5,0],[0,-0.25],[0.5,0.25]] : [], flower: "" }];
         commit(next, next.length - 1);
     };
     const change = (patch: Partial<Motif>) => commit(motifs.map((m, i) => i === active ? { ...m, ...patch } : m));
@@ -74,7 +73,7 @@ export const FloralPatternEditor = ({ step, state }: { step: StepView; state: To
             {motifs.map((m, i) => (
                 <div className={s.patternRow} key={m.id + i}>
                     <Btn label={`${i + 1} · ${kindName(m.kind)}`} selected={i === active} onClick={() => act.selectFloralPattern(step.path, i)} testId={`motif-select-${i}`} />
-                    <span className={s.rowHint}>{Math.round(m.size)}m · {Math.round(m.angle)}°</span>
+                    <span className={s.rowHint}>{flowers?.find(f => f.id === m.flower)?.name || m.flower || t("FlowerPainter.Floral.UI.AutoFlower", "From curve flowers")} · {Math.round(m.size)}m</span>
                     <Btn icon="plus" title={t("FlowerPainter.Floral.UI.Duplicate", "Duplicate")} onClick={() => commit([...motifs, { ...m, id: Date.now().toString(36), x: m.x + 3, z: m.z + 3 }], motifs.length)} disabled={motifs.length >= 32} testId={`motif-copy-${i}`} />
                     <Btn icon="close" title={t("FlowerPainter.Floral.UI.Remove", "Remove pattern")} onClick={() => commit(motifs.filter((_, n) => n !== i), -1)} testId={`motif-remove-${i}`} />
                 </div>
@@ -84,7 +83,7 @@ export const FloralPatternEditor = ({ step, state }: { step: StepView; state: To
                     <div className={s.hint}>{t("FlowerPainter.Floral.UI.DragHint", "Drag the centre to move, green to resize, orange to rotate, and the lower handle for width. Curve nodes can be dragged; right-click a node to remove it.")}</div>
                     <button type="button" className={s.flower} onClick={chooseFlower} data-testid="motif-flower">
                         {item ? <Thumb item={item} size={24} /> : null}
-                        <span>{t("FlowerPainter.Floral.UI.MotifFlower", "Pattern flower")}: {item?.name ?? (selected.flower || t("FlowerPainter.Floral.UI.AutoFlower", "Automatic from palette"))}</span>
+                        <span>{t("FlowerPainter.Floral.UI.MotifFlower", "Pattern flower")}: {item?.name ?? (selected.flower || t("FlowerPainter.Floral.UI.AutoFlower", "From curve flowers"))}</span>
                     </button>
                     {selected.kind === "curve" ? <div className={s.buttons}><Btn label={t("FlowerPainter.Floral.UI.DrawCurve","Draw a new curve")} onClick={() => { change({points:[]}); act.selectFloralPattern(step.path,active+1000); }} testId="motif-draw-curve" /><Btn label={t("FlowerPainter.Floral.UI.AddNode","Add curve node")} onClick={() => change({points:[...selected.points,selected.points.length ? [selected.points[selected.points.length-1][0]+0.2,selected.points[selected.points.length-1][1]] : [0,0]]})} disabled={selected.points.length >= 64} testId="motif-add-node" /></div> : null}<div className={s.adjustments}>
                         {adjust("size", t("FlowerPainter.Floral.UI.Size", "Size"))}

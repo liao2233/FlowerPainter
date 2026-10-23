@@ -153,6 +153,8 @@ namespace FlowerPainter.Core.Layers.Types.Floral
             int colors = kits.Length;
             bool collage = ctx.S("shape") == "collage";
             var motifs = collage ? FloralMotif.Read(ctx.L("motifs")) : new List<FloralMotif>();
+            var curvePalette = ctx.L("curvePalette");
+            if (curvePalette.Length == 0) curvePalette = FloralAssets.CurveDefaults(ctx.Site);
             var origin = FloralMotif.Origin(ctx.LayerRegion);
             bool fillGaps = !collage || ctx.B("fillGaps");
             var fills = collage ? FloralFill.Read(ctx.L("fills")) : new List<FloralFill>();
@@ -164,6 +166,7 @@ namespace FlowerPainter.Core.Layers.Types.Floral
                 foreach (var id in kits[i]) radius = math.max(radius, FlowerRadius(ctx.Site, id) * scale);
             foreach (var motif in motifs)
                 if (!string.IsNullOrEmpty(motif.Flower)) radius = math.max(radius, FlowerRadius(ctx.Site, motif.Flower) * scale);
+            if (motifs.Count > 0) foreach (var id in curvePalette) radius = math.max(radius, FlowerRadius(ctx.Site, id) * scale);
             // A triangular lattice covers the ground at radius pitch / sqrt(3). Allow a little
             // extra foliage overlap without piling several clusters onto the same patch.
             // Spacing now changes density; enlarge the flowers to keep wider settings filled.
@@ -211,6 +214,7 @@ namespace FlowerPainter.Core.Layers.Types.Floral
                     : Hashing.Mix(ctx.Seed, (uint)(flowers + bushes + 1));
                 var asset = selectedMotif < 0 && fill?.Style == "single" && !string.IsNullOrEmpty(fill.Flower) ? new AssetRef(fill.Flower, "Flowerbed01") : selectedMotif >= 0 && !string.IsNullOrEmpty(motifs[selectedMotif].Flower)
                     ? new AssetRef(motifs[selectedMotif].Flower, "Flowerbed01")
+                    : selectedMotif >= 0 ? new AssetRef(curvePalette[selectedMotif % curvePalette.Length], "Flowerbed01")
                     : AssetMix.Pick(bush ? shrubs : kits[slot], v, bush ? "GreenBushWildChild01" : "Flowerbed01");
                 // Normalize selected asset sizes so a smaller species does not open holes in its colour block.
                 float assetRadius = FlowerRadius(ctx.Site, asset.Id);

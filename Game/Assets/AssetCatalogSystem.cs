@@ -466,7 +466,7 @@ namespace FlowerPainter.Game.Assets
                 {
                     if (!_prefabs.TryGetPrefab<PrefabBase>(entity, out var prefab) || prefab == null || string.IsNullOrWhiteSpace(prefab.name)) continue;
                     if (!allByName.ContainsKey(prefab.name)) allByName[prefab.name] = entity;
-                    if (IsOwnPrefabName(prefab.name)) continue;   // (core) our copies and lots are not pickable assets
+                    if (IsOwnPrefabName(prefab.name) && !prefab.name.StartsWith(FlowerColorPrefabSystem.Prefix, StringComparison.Ordinal)) continue;
                     var traits = Traits(entity, prefab);
                     var categories = AssetHeuristics.Classify(prefab.name, traits);
                     if (categories.Count == 0) continue;

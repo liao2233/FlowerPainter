@@ -1,0 +1,212 @@
+{
+  "set": "curve-flower-colors",
+  "scenarios": [
+    {
+      "id": "curve-white-colour-fill",
+      "land": {
+        "size": [
+          140,
+          100
+        ],
+        "roads": "none"
+      },
+      "steps": [
+        {
+          "do": "area",
+          "tool": "points"
+        },
+        {
+          "do": "type",
+          "layer": "floral",
+          "preset": "pattern-collage"
+        },
+        {
+          "do": "pickAssets",
+          "id": "curvePalette",
+          "assets": [
+            "FlowerPainter Flower White Flowerbed01"
+          ]
+        },
+        {
+          "do": "motif",
+          "action": "add",
+          "kind": "curve"
+        },
+        {
+          "do": "motif",
+          "action": "draw",
+          "index": 0,
+          "points": [
+            [
+              -65,
+              -15
+            ],
+            [
+              -25,
+              20
+            ],
+            [
+              20,
+              -20
+            ],
+            [
+              65,
+              15
+            ]
+          ]
+        },
+        {
+          "do": "motif",
+          "action": "width",
+          "index": 0,
+          "factor": 2
+        },
+        {
+          "do": "motif",
+          "action": "flower",
+          "index": 0,
+          "asset": "FlowerPainter Flower White Flowerbed01"
+        },
+        {
+          "do": "pickAssets",
+          "id": "flowerPalette",
+          "assets": [
+            "FlowerPainter Flower Red Flowerbed01",
+            "FlowerPainter Flower Orange Flowerbed01",
+            "FlowerPainter Flower Yellow Flowerbed01",
+            "FlowerPainter Flower Pink Flowerbed01",
+            "FlowerPainter Flower Magenta Flowerbed01",
+            "FlowerPainter Flower Purple Flowerbed01",
+            "FlowerPainter Flower Blue Flowerbed01"
+          ]
+        },
+        {
+          "do": "motif",
+          "action": "fill"
+        },
+        {
+          "do": "shot",
+          "name": "independent-curve-flowers",
+          "shotMode": "ui",
+          "camera": {
+            "target": "area",
+            "view": "top",
+            "distance": 180
+          }
+        },
+        {
+          "do": "preview"
+        },
+        {
+          "do": "build"
+        },
+        {
+          "do": "camera",
+          "target": "build",
+          "view": "top",
+          "distance": 180,
+          "shot": "coloured-props-built",
+          "shotMode": "render"
+        }
+      ]
+    },
+    {
+      "id": "colour-props-model-1",
+      "land": {
+        "size": [
+          80,
+          70
+        ],
+        "roads": "none"
+      },
+      "steps": [
+        {
+          "do": "area",
+          "tool": "points"
+        },
+        {
+          "do": "type",
+          "layer": "floral",
+          "preset": "flow-carpet"
+        },
+        {
+          "do": "pickAssets",
+          "id": "flowerPalette",
+          "assets": [
+            "FlowerPainter Flower Red Flowerbed01",
+            "FlowerPainter Flower Orange Flowerbed01",
+            "FlowerPainter Flower Yellow Flowerbed01",
+            "FlowerPainter Flower Pink Flowerbed01",
+            "FlowerPainter Flower Magenta Flowerbed01",
+            "FlowerPainter Flower Purple Flowerbed01",
+            "FlowerPainter Flower Blue Flowerbed01",
+            "FlowerPainter Flower White Flowerbed01"
+          ]
+        },
+        {
+          "do": "preview"
+        },
+        {
+          "do": "build"
+        },
+        {
+          "do": "camera",
+          "target": "build",
+          "view": "top",
+          "distance": 120,
+          "shot": "eight-colours",
+          "shotMode": "render"
+        }
+      ]
+    },
+    {
+      "id": "colour-props-model-2",
+      "land": {
+        "size": [
+          80,
+          70
+        ],
+        "roads": "none"
+      },
+      "steps": [
+        {
+          "do": "area",
+          "tool": "points"
+        },
+        {
+          "do": "type",
+          "layer": "floral",
+          "preset": "flow-carpet"
+        },
+        {
+          "do": "pickAssets",
+          "id": "flowerPalette",
+          "assets": [
+            "FlowerPainter Flower Red Flowerbed02",
+            "FlowerPainter Flower Orange Flowerbed02",
+            "FlowerPainter Flower Yellow Flowerbed02",
+            "FlowerPainter Flower Pink Flowerbed02",
+            "FlowerPainter Flower Magenta Flowerbed02",
+            "FlowerPainter Flower Purple Flowerbed02",
+            "FlowerPainter Flower Blue Flowerbed02",
+            "FlowerPainter Flower White Flowerbed02"
+          ]
+        },
+        {
+          "do": "preview"
+        },
+        {
+          "do": "build"
+        },
+        {
+          "do": "camera",
+          "target": "build",
+          "view": "top",
+          "distance": 120,
+          "shot": "eight-colours",
+          "shotMode": "render"
+        }
+      ]
+    }
+  ]
+}

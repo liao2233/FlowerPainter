@@ -28,6 +28,10 @@ export const FlowerDesignStage = ({ catalog, design, state }: {catalog: Catalog;
             </div>
             <div className={s.hint}>{t("FlowerPainter.UI.Flowers.Preview","Real flowers update after edits. Only the part inside your frame is planted.")}</div>
         </Section>
+        {compose ? <Section title={t("FlowerPainter.UI.Flowers.CurveMaterials", "Curve flowers")} testId="curve-materials">
+            <div className={s.hint}>{t("FlowerPainter.UI.Flowers.CurveMaterialsTip", "Curves use their own flowers, independently of the fill. Select a pattern to override its flower.")}</div>
+            <ControlList step={step} layer={layer} state={state} flat only={["curvePalette"]} />
+        </Section> : null}
         {!compose ? <Section title={t("FlowerPainter.UI.Flowers.CarpetPattern","Fill pattern")}><div className={s.buttons}>
             {["flow","islands"].map(k=><Btn key={k} selected={step.values.shape===k} label={labels[k]} onClick={()=>act.setValue(step.path,"shape",k)} testId={`carpet-${k}`} />)}
         </div></Section> : <FloralPatternEditor step={step} state={state} />}
@@ -39,7 +43,7 @@ export const FlowerDesignStage = ({ catalog, design, state }: {catalog: Catalog;
             <Btn label={t("FlowerPainter.UI.Flowers.StopRegion","Finish filling")} onClick={()=>act.selectFloralPattern(step.path,-1)} /></div>
             {fills.map((f,i)=><div className={s.patternRow} key={i}><span>{t("FlowerPainter.UI.Flowers.Region","Region {0}",[i+1])} · {labels[f.split("|")[3]]}</span><Btn icon="close" title={t("FlowerPainter.UI.Flowers.RemoveFill","Remove this fill")} onClick={()=>act.setValue(step.path,"fills",fills.filter((_,j)=>i!==j))} testId={`fill-remove-${i}`} /></div>)}
         </Section>:null}
-        <Section title={t("FlowerPainter.UI.Flowers.Materials","Flowers and planting")}>
+        <Section title={compose ? t("FlowerPainter.UI.Flowers.FillMaterials","Fill flowers and planting") : t("FlowerPainter.UI.Flowers.Materials","Flowers and planting")}>
             <ControlList step={step} layer={layer} state={state} flat only={["flowerPalette","spacing","flowerScale",...(!compose?["bandWidth","rotation"]:[])]} />
         </Section>
     </div>;

@@ -29,6 +29,7 @@ namespace FlowerPainter.Core.Layers.Types.Floral
             c.Choice("colorPattern", "bands", ControlTier.Essential, "flowers", "bands", "segments", "single").Tip().When("shape=ring|circle|rosette|spiral|heart|outline|freeform");
             c.Toggle("shrubs", false, ControlTier.Essential, "planting").Tip();
             c.AssetMulti("flowerPalette", AssetCategories.Flower, ControlTier.Essential, "flowers").Tip();
+            c.AssetMulti("curvePalette", AssetCategories.Flower, ControlTier.Essential, "flowers").Tip();
             c.Arrangement("motifs", AssetCategories.Flower, Array.Empty<string>(), ControlTier.Essential, "layout").Tip();
             c.Arrangement("fills", AssetCategories.Flower, Array.Empty<string>(), ControlTier.More, "layout");
             c.Choice("activeFillStyle", "single", ControlTier.More, "layout", "single", "flow", "islands", "empty");

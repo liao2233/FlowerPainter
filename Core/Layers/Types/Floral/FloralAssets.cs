@@ -38,6 +38,11 @@ namespace FlowerPainter.Core.Layers.Types.Floral
 
     internal static class FloralAssets
     {
+        internal static string[] CurveDefaults(SiteContext site)
+        {
+            const string white = "FlowerPainter Flower White Flowerbed01";
+            return new[] { site?.Assets != null && site.Assets.ContainsKey(white) ? white : "Flowerbed02" };
+        }
         // The first installed item is used. Every slot has vanilla fallbacks, so asset packs are optional.
         private static readonly string[][] Mixed =
         {

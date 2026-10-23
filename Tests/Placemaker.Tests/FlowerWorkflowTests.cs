@@ -53,5 +53,26 @@ namespace FlowerPainter.Tests
             Assert.All(plan.Objects,o=>Assert.True(Poly.Contains(Poly.To2D(Frame()),o.Position.xz)));
             Assert.All(plan.Objects.Where(o=>o.Asset.Id=="Inside"),o=>Assert.True(math.distance(o.Position.xz,origin)<25));
         }
+        [Fact] public void AutomaticCurvesUseAnIndependentPaletteAndRespectPerCurveOverrides() {
+            var layer = new FloralLayer(); var settings = layer.Defaults();
+            settings.Values["shape"] = "collage"; settings.Values["fillGaps"] = true;
+            settings.Values["curvePalette"] = new[] { "WhiteRibbon" };
+            settings.Values["flowerPalette"] = new[] { "RedFill" };
+            settings.Values["motifs"] = new[] {
+                new FloralMotif { Id="auto", Kind="ring", Size=65, Width=7 }.Encode(),
+                new FloralMotif { Id="override", Kind="ring", Size=25, Width=7, Flower="BlueRibbon" }.Encode()
+            };
+            AreaPlan Plan() => layer.Plan(new AreaInput { Shape=new AreaShape { Ring=Frame() },
+                Settings=settings, Site=new SiteContext { HeightAt=p=>0 }, Seed=42 }, CancellationToken.None);
+            var before = Plan();
+            Assert.Contains(before.Objects, o=>o.Asset.Id=="WhiteRibbon");
+            Assert.Contains(before.Objects, o=>o.Asset.Id=="BlueRibbon");
+            Assert.Contains(before.Objects, o=>o.Asset.Id=="RedFill");
+            settings.Values["flowerPalette"] = new[] { "YellowFill", "PinkFill" };
+            var after = Plan();
+            Assert.Equal(before.Objects.Where(o=>o.Control=="motifs").Select(o=>(o.Position,o.Asset.Id,o.Variation)),
+                after.Objects.Where(o=>o.Control=="motifs").Select(o=>(o.Position,o.Asset.Id,o.Variation)));
+            Assert.DoesNotContain(after.Objects, o=>o.Asset.Id=="RedFill");
+        }
     }
 }

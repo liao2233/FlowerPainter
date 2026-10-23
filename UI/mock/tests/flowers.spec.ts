@@ -41,3 +41,26 @@ test("region fill choices and narrow panel remain usable",async({page})=>{
     const overflow=await page.getByTestId("flowerpainter-panel").evaluate(e=>e.scrollWidth>e.clientWidth+1);
     expect(overflow).toBe(false);await panelShot(page,"flowers-narrow-regions");
 });
+
+test("curve flowers and fill flowers remain independent", async ({page}) => {
+    await flowers(page); await page.getByTestId("flower-mode-compose").click();
+    await expect(page.getByTestId("curve-materials")).toBeVisible();
+    await page.getByTestId("assetmulti-add-curvePalette").click();
+    await page.getByTestId("asset-sample-a").click();
+    await page.keyboard.press("Escape");
+    await page.getByTestId("motif-add-curve").click();
+    await page.getByTestId("assetmulti-add-flowerPalette").click();
+    await page.getByTestId("asset-grid").getByTestId("asset-sample-b").first().click();
+    await page.keyboard.press("Escape");
+    const values = await page.evaluate(() => (window as any).pm.backend.root.values);
+    expect(values.curvePalette).toEqual(["sample-a"]);
+    expect(values.flowerPalette).toEqual(["sample-b"]);
+    expect(decodeURIComponent(values.motifs[0].split("|")[8])).toBe("");
+    await page.getByTestId("motif-flower").click();
+    await page.getByTestId("asset-grid").getByTestId("asset-sample-b").first().click();
+    await expect(page.getByTestId("motif-flower")).toContainText("Sample B");
+    const after = await page.evaluate(() => (window as any).pm.backend.root.values);
+    expect(decodeURIComponent(after.motifs[0].split("|")[8])).toBe("sample-b");
+    expect(after.curvePalette).toEqual(["sample-a"]);
+    await panelShot(page,"flowers-independent-materials");
+});
