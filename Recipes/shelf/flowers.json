@@ -3,7 +3,7 @@
   "name": "Flowers",
   "order": 1,
   "groups": [
-    "gardens"
+    "flowers"
   ],
   "types": [
     "floral"

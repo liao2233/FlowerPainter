@@ -7,7 +7,7 @@ using Unity.Mathematics;
 
 namespace FlowerPainter.Core.Layers.Types.Floral
 {
-    [AreaGenerator(49, Group = "gardens")]
+    [AreaGenerator(1, Group = "flowers")]
     public sealed class FloralLayer : LayerBase
     {
         public const string LayerId = "floral";

@@ -15,6 +15,10 @@ namespace FlowerPainter.Tests
     {
         private static float3[] Frame() => new[] {new float3(0,0,0),new float3(100,0,0),new float3(100,0,100),new float3(0,0,100)};
         [Fact] public void TheStandaloneCatalogOnlyOffersFlowers() { Assert.Equal("floral",Assert.Single(GeneratorRegistry.All).Id); }
+        [Fact] public void FlowersDoNotCreateAFunctionalPark() {
+            var recipe = new Recipe { Root = new RecipeStep { Layer="floral" } };
+            Assert.Equal(FlowerPainter.Core.Build.ParkStatsKind.NotApplicable,FlowerPainter.Core.Build.ParkStatsInput.KindOf(recipe,out _));
+        }
         [Fact] public void CurvePointsRoundTripAndScalingDoesNotChangeWidth() {
             var m=new FloralMotif {Id="free",Kind="curve",Size=80,Width=3,Points=new[]{new float2(-0.7f,0),new float2(0,0.3f),new float2(0.6f,0)}};
             var parsed=FloralMotif.Parse(m.Encode()); Assert.NotNull(parsed); Assert.Equal(m.Points,parsed.Points);
