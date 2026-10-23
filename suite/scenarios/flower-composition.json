@@ -177,6 +177,98 @@
           "do": "terrain"
         }
       ]
+    },
+    {
+      "id": "flowers-draw-and-edit",
+      "land": {
+        "size": [
+          100,
+          100
+        ],
+        "roads": "none"
+      },
+      "steps": [
+        {
+          "do": "area",
+          "tool": "points"
+        },
+        {
+          "do": "type",
+          "layer": "floral",
+          "preset": "pattern-collage"
+        },
+        {
+          "do": "motif",
+          "action": "add",
+          "kind": "curve"
+        },
+        {
+          "do": "motif",
+          "action": "draw",
+          "index": 0,
+          "points": [
+            [
+              0,
+              0
+            ],
+            [
+              -40,
+              -8
+            ],
+            [
+              -10,
+              14
+            ],
+            [
+              20,
+              -12
+            ],
+            [
+              40,
+              5
+            ]
+          ]
+        },
+        {
+          "do": "motif",
+          "action": "node",
+          "index": 0,
+          "point": 0,
+          "by": [
+            3,
+            4
+          ],
+          "verifyUndo": true
+        },
+        {
+          "do": "motif",
+          "action": "removeNode",
+          "index": 0,
+          "point": 3
+        },
+        {
+          "do": "shot",
+          "name": "drawn-curve-ui",
+          "shotMode": "ui"
+        },
+        {
+          "do": "preview",
+          "shot": "plan"
+        },
+        {
+          "do": "build"
+        },
+        {
+          "do": "camera",
+          "target": "build",
+          "view": "top",
+          "shot": "built",
+          "shotMode": "render"
+        },
+        {
+          "do": "terrain"
+        }
+      ]
     }
   ]
 }

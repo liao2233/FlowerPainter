@@ -39,6 +39,25 @@ namespace FlowerPainter.Game.Suite
             yield return UiAct(st, rec, "select pattern " + index, "motif-select-" + index, null, null,
                 () => _tool.FloralEditing && _tool.FloralIndex == index, null);
             if (rec["error"] != null || action == "select") yield break;
+            if(action=="draw" || action=="removeNode") {
+                var points=step["points"] as JArray;
+                if(action=="draw") yield return UiAct(st,rec,"draw free curve","motif-draw-curve",null,null,()=>_tool.FloralDrawing,null);
+                int n=action=="draw"?(points?.Count??0):1;
+                for(int i=0;i<n;i++) {
+                    float2 p=action=="draw"?_tool.FloralOrigin+new float2((float)points[i][0],(float)points[i][1]):_tool.FloralHandlePoint(_tool.FloralPatterns()[index],10+((int?)step["point"]??0));
+                    var pos=_tool.FloralGround(p);
+                    yield return CameraTo(pos+new float3(35,0,0),0,80,250,new JObject(),null);
+                    _panelRectFrame=-100;yield return ReadPanelRect();
+                    string why=Clickable(pos,out var screen);if(why!=null){rec["error"]="curve point "+why;yield break;}
+                    RaycastResult? hit=null;yield return Raycast(screen,r=>hit=r);if(!hit.HasValue){rec["error"]="curve point has no terrain raycast";yield break;}
+                    FlowerPainterToolSystem.SuiteClickHit(hit.Value.m_Owner,hit.Value.m_Hit,action=="removeNode");yield return Feed(rec);
+                }
+                if(action=="draw") yield return KeyPress("enter");
+                var actualPoints=_tool.FloralPatterns()[index].Points;
+                rec["controlPoints"]=actualPoints.Length;
+                if(actualPoints.Length!=(action=="draw"?n:before[index].Points.Length-1))rec["error"]="curve did not retain the requested control points";
+                yield return WaitPlan(st,rec,always:true);yield break;
+            }
             if (action == "flower")
             {
                 string asset = (string)step["asset"];

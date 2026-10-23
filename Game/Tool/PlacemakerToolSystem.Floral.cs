@@ -62,6 +62,7 @@ namespace FlowerPainter.Game.Tool
         {
             if (handle >= 10 && handle - 10 < motif.Points.Length) return motif.World(motif.Points[handle - 10] * motif.Size, FloralOrigin);
             if (handle == 0) return motif.Center(FloralOrigin);
+            if (handle == 1 && motif.Kind == "curve") return motif.World(new float2(motif.Size * 0.5f + 8, motif.Width * 0.5f + 8), FloralOrigin);
             if (handle == 3) return motif.World(new float2(0, -motif.Width * 0.5f - 3), FloralOrigin);
             return motif.World(handle == 1 ? new float2(motif.Size * 0.5f, 0) : new float2(0, motif.Size * 0.5f + 5), FloralOrigin);
         }
@@ -149,7 +150,7 @@ namespace FlowerPainter.Game.Tool
                 PreviewValue(_floralPath, "motifs", JsonConvert.SerializeObject(values));
                 return true;
             }
-            if (_in.RightPressed) {
+            if (_in.RightPressed && _in.HasHit && _in.OverWorld) {
                 var m=motifs[_floralIndex].Clone(); int point=-1; float nearestPoint=HandleRadius(_in.Hit)*2;
                 for(int i=0;i<m.Points.Length;i++) {float d=math.distance(m.World(m.Points[i]*m.Size,FloralOrigin),_in.Hit.xz); if(d<nearestPoint){point=i;nearestPoint=d;}}
                 if(point>=0 && m.Points.Length>2){var pts=new List<float2>(m.Points);pts.RemoveAt(point);m.Points=pts.ToArray();SaveMotif(m);}
@@ -165,7 +166,7 @@ namespace FlowerPainter.Game.Tool
             {
                 int h=i<4?i:i+6;
                 float d = math.distance(FloralHandlePoint(motif, h), _in.Hit.xz);
-                if (d < nearest) { nearest = d; picked = h; }
+                if (d <= nearest) { nearest = d; picked = h; }
             }
             // A fragment can move its entire motif even when its centre is outside the frame.
             if (picked < 0 && motif.Covers(_in.Hit.xz, FloralOrigin)) picked = 0;
