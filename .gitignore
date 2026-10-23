@@ -18,3 +18,4 @@ docs/showcase/
 docs/gallery-*/
 .forensics/
 .build*.log
+dist/
