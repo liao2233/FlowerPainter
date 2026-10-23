@@ -67,7 +67,7 @@ export const FloralPatternEditor = ({ step, state }: { step: StepView; state: To
     const fill = step.values.fillGaps === true;
     return (
         <Section title={t("FlowerPainter.Floral.UI.Compose", "Arrange patterns")} testId="floral-pattern-editor">
-            <div className={s.hint}>{t("FlowerPainter.Floral.UI.ComposeTip", "Place circles or flower shapes, or edit a free curve. Parts outside the frame are clipped.")}</div>
+            <div className={s.hint}>{state.floralDrawing ? t("FlowerPainter.UI.Flowers.Drawing", "Click to add curve points. Enter or right-click finishes the curve. You can drag its points afterwards.") : t("FlowerPainter.Floral.UI.ComposeTip", "Place circles or flower shapes, or edit a free curve. Parts outside the frame are clipped.")}</div>
             <div className={s.buttons}>
                 {kinds.map((kind) => <Btn key={kind} icon="plus" label={kindName(kind)} onClick={() => add(kind)} disabled={motifs.length >= 32} testId={`motif-add-${kind}`} />)}
             </div>

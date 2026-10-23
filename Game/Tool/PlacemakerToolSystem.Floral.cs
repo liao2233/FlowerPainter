@@ -18,6 +18,7 @@ namespace FlowerPainter.Game.Tool
         private System.Threading.Tasks.Task<List<string>> _floralFillTask;
         private int _floralFillVersion;
         public string FloralPath => _floralPath;
+        public bool FloralDrawing => _floralDrawing;
         public int FloralIndex => _floralIndex;
         public bool FloralEditing => _stage == ToolStage.Design && !string.IsNullOrEmpty(_floralPath) && _floralIndex >= -2 && _floralIndex != -1;
 

@@ -245,6 +245,7 @@ namespace FlowerPainter.Game.Suite
                 case "clear": yield return StepClear(st, step, rec); break;
                 case "hover": yield return StepHover(st, step, rec); break;
                 case "type": yield return StepType(st, step, rec); break;
+                case "flowerRegion": yield return StepFlowerRegion(st,step,rec); break;
                 case "value": yield return StepValue(st, step, rec); break;
                 case "entrance": yield return StepEntrance(st, step, rec); break;
                 case "entrances": yield return StepEntrancesAuto(st, step, rec); break;

@@ -359,5 +359,6 @@
   "FlowerPainter.UI.Flowers.StopRegion": "结束填充",
   "FlowerPainter.UI.Flowers.Region": "分区 {0}",
   "FlowerPainter.UI.Flowers.RemoveFill": "移除此分区填充",
-  "FlowerPainter.UI.Flowers.Materials": "花材与种植"
+  "FlowerPainter.UI.Flowers.Materials": "花材与种植",
+  "FlowerPainter.UI.Flowers.Drawing": "在地图上点击添加曲线节点，按 Enter 或右键结束。完成后可以拖动节点调整曲线。"
 }

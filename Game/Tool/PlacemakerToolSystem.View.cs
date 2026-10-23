@@ -161,6 +161,7 @@ namespace FlowerPainter.Game.Tool
                 PerimeterM = PerimeterM,
                 AreaProblem = facts.AreaProblem,
                 FloralPath = FloralEditing ? _floralPath : null,
+                FloralDrawing = _floralDrawing,
                 FloralIndex = _floralIndex,
                 Primary = StageMachine.Primary(_stage, facts),
                 CanUndo = CanUndo,

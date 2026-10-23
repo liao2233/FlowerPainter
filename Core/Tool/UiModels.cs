@@ -44,6 +44,7 @@ namespace FlowerPainter.Core.Tool
         public LocText UndoLabel, RedoLabel;
         public string MarkerStepPath, MarkerKind;
         public string FloralPath;
+        public bool FloralDrawing;
         public int FloralIndex = -1;
         public LocText MarkerLabel;
         public List<HintInfo> Hints = new List<HintInfo>();
@@ -130,8 +131,9 @@ namespace FlowerPainter.Core.Tool
                 .Set("areaM2", Round(s.AreaM2, 0)).Set("perimeterM", Round(s.PerimeterM, 1));
             if (s.AreaProblem != null) area.Set("problem", s.AreaProblem.ToJson());
             o.Set("area", area);
-            if (!string.IsNullOrEmpty(s.FloralPath) && s.FloralIndex >= 0)
+            if (!string.IsNullOrEmpty(s.FloralPath) && (s.FloralIndex >= 0 || s.FloralIndex == -2))
                 o.Set("floralEdit", JsonValue.Obj().Set("path", s.FloralPath).Set("index", s.FloralIndex));
+            o.Set("floralDrawing", s.FloralDrawing);
             o.Set("primary", Primary(s.Primary));
             o.Set("canUndo", s.CanUndo);
             o.Set("canRedo", s.CanRedo);

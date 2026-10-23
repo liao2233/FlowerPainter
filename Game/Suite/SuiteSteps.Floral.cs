@@ -50,13 +50,13 @@ namespace FlowerPainter.Game.Suite
                 rec["flower"] = _tool.FloralPatterns()[index].Flower;
                 yield return WaitPlan(st, rec); yield break;
             }
-            int handle = action == "scale" ? 1 : action == "rotate" ? 2 : 0;
+            int handle = action == "scale" ? 1 : action == "rotate" ? 2 : action == "width" ? 3 : action == "node" ? 10+((int?)step["point"]??0) : 0;
             var motif = before[index];
             var center = motif.Center(_tool.FloralOrigin);
             var start = _tool.FloralHandlePoint(motif, handle);
             var end = start;
-            if (action == "move" && step["by"] is JArray by) end += new float2((float)by[0], (float)by[1]);
-            else if (action == "scale") end = center + (start - center) * ((float?)step["factor"] ?? 1.2f);
+            if ((action == "move" || action == "node") && step["by"] is JArray by) end += new float2((float)by[0], (float)by[1]);
+            else if (action == "scale" || action == "width") end = center + (start - center) * ((float?)step["factor"] ?? 1.2f);
             else if (action == "rotate")
             {
                 math.sincos(math.radians((float?)step["degrees"] ?? 30f), out float s, out float c);
@@ -95,10 +95,13 @@ namespace FlowerPainter.Game.Suite
                 if (i != index && before[i].Encode() != after[i].Encode()) rec["error"] = "drag changed another flower pattern";
             var expected = motif.Clone();
             var a = hits[0].m_Hit.m_HitPosition.xz; var b = last.m_Hit.m_HitPosition.xz;
-            if (handle == 0) { expected.X += b.x - a.x; expected.Z += b.y - a.y; }
+            if (handle >= 10) { var d=b-center;math.sincos(math.radians(expected.Angle),out float sn,out float cs);expected.Points[handle-10]=new float2(d.x*cs+d.y*sn,-d.x*sn+d.y*cs)/expected.Size; }
+            else if (handle == 3) expected.Width=math.clamp((math.distance(b,center)-3)*2,0.5f,100);
+            else if (handle == 0) { expected.X += b.x - a.x; expected.Z += b.y - a.y; }
             else if (handle == 1) expected.Size *= math.distance(b, center) / math.distance(a, center);
             else expected.Angle += math.degrees(math.atan2(b.y - center.y, b.x - center.x) - math.atan2(a.y - center.y, a.x - center.x));
             var actual = after[index];
+            if(math.abs(expected.Width-actual.Width)>0.05f || (handle>=10 && math.distance(expected.Points[handle-10],actual.Points[handle-10])>0.005f)) rec["error"]="ribbon width or curve node drag did not match the pointer";
             if (math.abs(expected.X - actual.X) > 0.05f || math.abs(expected.Z - actual.Z) > 0.05f || math.abs(expected.Size - actual.Size) > 0.05f || math.abs(expected.Angle - actual.Angle) > 0.1f) rec["error"] = "pattern drag did not match the requested transform";
             if ((bool?)step["verifyUndo"] == true)
             {

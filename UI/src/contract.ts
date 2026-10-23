@@ -111,6 +111,7 @@ export interface ToolState {
   brush: { shape: BrushShape; size: number; angle: number; rules?: BrushRules };
   area: AreaInfo;
   floralEdit?: { path: string; index: number };
+    floralDrawing?: boolean;
   primary: PrimaryAction;
   canUndo: boolean;
   canRedo: boolean;

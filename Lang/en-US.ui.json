@@ -61,6 +61,7 @@
   "FlowerPainter.UI.Flowers.Carpet": "Fill the area",
   "FlowerPainter.UI.Flowers.CarpetPattern": "Fill pattern",
   "FlowerPainter.UI.Flowers.Compose": "Curves and patterns",
+  "FlowerPainter.UI.Flowers.Drawing": "Click to add curve points. Enter or right-click finishes the curve. You can drag its points afterwards.",
   "FlowerPainter.UI.Flowers.Empty": "Leave empty",
   "FlowerPainter.UI.Flowers.Flow": "Flowing colours",
   "FlowerPainter.UI.Flowers.Islands": "Colour islands",
