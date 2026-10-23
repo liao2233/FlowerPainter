@@ -156,6 +156,15 @@ namespace FlowerPainter.Game.Suite
             bool fresh = (bool?)step["fresh"] ?? true;
             if (string.IsNullOrEmpty(layer)) { rec["error"] = "type: no layer given"; st.Result["status"] = "type-not-selected"; yield break; }
             yield return EnsureDesign(st, rec, "The type browser");
+            if (layer == "floral") {
+                if (fresh) _tool.SelectRecipe("floral");
+                bool compose = preset == "pattern-collage" || preset == "arc-and-wave" || preset == "wave-and-petals" || preset == "crossing-arcs";
+                string mode=compose?"collage":"flow";
+                yield return UiAct(st,rec,"flower planting method",compose?"flower-mode-compose":"flower-mode-carpet",null,null,()=>((string)_tool.SuiteValue("0","shape"))==mode,null,mustChange:false);
+                if(preset=="island-carpet") yield return UiAct(st,rec,"island carpet","carpet-islands",null,null,()=>((string)_tool.SuiteValue("0","shape"))=="islands",null,mustChange:false);
+                st.S.Layer="floral"; rec["recipeRoot"]=RootLayer(); rec["plantingMethod"]=mode;
+                yield return WaitPlan(st,rec); yield break;
+            }
             string recipeId = _tool.SuiteRecipeFor(layer);
             if (recipeId == null) { rec["error"] = $"type '{layer}' has no recipe (valid types: {string.Join(", ", CatalogLayers())})"; st.Result["status"] = "type-not-selected"; yield break; }
             // the tile must be in the Make row the panel is bound to
