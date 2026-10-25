@@ -1,0 +1,198 @@
+{
+  "set": "flower-density",
+  "scenarios": [
+    {
+      "id": "density-separate",
+      "land": {
+        "size": [
+          60,
+          50
+        ],
+        "roads": "none"
+      },
+      "steps": [
+        {
+          "do": "area",
+          "tool": "points"
+        },
+        {
+          "do": "type",
+          "layer": "floral",
+          "preset": "flow-carpet"
+        },
+        {
+          "do": "pickAssets",
+          "id": "flowerPalette",
+          "assets": [
+            "FlowerPainter Flower Red Flowerbed01",
+            "FlowerPainter Flower Yellow Flowerbed01",
+            "FlowerPainter Flower Blue Flowerbed01"
+          ]
+        },
+        {
+          "do": "value",
+          "id": "overlap",
+          "value": 0
+        },
+        {
+          "do": "shot",
+          "name": "density-ui",
+          "shotMode": "ui"
+        },
+        {
+          "do": "preview",
+          "shot": "density-preview",
+          "shotMode": "render",
+          "camera": {
+            "target": "area",
+            "view": "top",
+            "distance": 120
+          }
+        },
+        {
+          "do": "build"
+        },
+        {
+          "do": "camera",
+          "target": "build",
+          "view": "top",
+          "distance": 120,
+          "shot": "density-built",
+          "shotMode": "render"
+        }
+      ]
+    },
+    {
+      "id": "density-overlapping",
+      "land": {
+        "size": [
+          60,
+          50
+        ],
+        "roads": "none"
+      },
+      "steps": [
+        {
+          "do": "area",
+          "tool": "points"
+        },
+        {
+          "do": "type",
+          "layer": "floral",
+          "preset": "flow-carpet"
+        },
+        {
+          "do": "pickAssets",
+          "id": "flowerPalette",
+          "assets": [
+            "FlowerPainter Flower Red Flowerbed01",
+            "FlowerPainter Flower Yellow Flowerbed01",
+            "FlowerPainter Flower Blue Flowerbed01"
+          ]
+        },
+        {
+          "do": "value",
+          "id": "overlap",
+          "value": 60
+        },
+        {
+          "do": "shot",
+          "name": "density-ui",
+          "shotMode": "ui"
+        },
+        {
+          "do": "preview",
+          "shot": "density-preview",
+          "shotMode": "render",
+          "camera": {
+            "target": "area",
+            "view": "top",
+            "distance": 120
+          }
+        },
+        {
+          "do": "build"
+        },
+        {
+          "do": "camera",
+          "target": "build",
+          "view": "top",
+          "distance": 120,
+          "shot": "density-built",
+          "shotMode": "render"
+        }
+      ]
+    },
+    {
+      "id": "dense-curve-and-fill",
+      "land": {
+        "size": [
+          60,
+          50
+        ],
+        "roads": "none"
+      },
+      "steps": [
+        {
+          "do": "area",
+          "tool": "points"
+        },
+        {
+          "do": "type",
+          "layer": "floral",
+          "preset": "pattern-collage"
+        },
+        {
+          "do": "motif",
+          "action": "add",
+          "kind": "curve"
+        },
+        {
+          "do": "motif",
+          "action": "flower",
+          "index": 0,
+          "asset": "FlowerPainter Flower White Flowerbed01"
+        },
+        {
+          "do": "pickAssets",
+          "id": "flowerPalette",
+          "assets": [
+            "FlowerPainter Flower Red Flowerbed01",
+            "FlowerPainter Flower Yellow Flowerbed01",
+            "FlowerPainter Flower Blue Flowerbed01"
+          ]
+        },
+        {
+          "do": "motif",
+          "action": "fill"
+        },
+        {
+          "do": "value",
+          "id": "overlap",
+          "value": 60
+        },
+        {
+          "do": "preview",
+          "shot": "dense-curve-preview",
+          "shotMode": "render",
+          "camera": {
+            "target": "area",
+            "view": "top",
+            "distance": 120
+          }
+        },
+        {
+          "do": "build"
+        },
+        {
+          "do": "camera",
+          "target": "build",
+          "view": "top",
+          "distance": 120,
+          "shot": "dense-curve-built",
+          "shotMode": "render"
+        }
+      ]
+    }
+  ]
+}

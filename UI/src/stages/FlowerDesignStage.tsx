@@ -44,7 +44,7 @@ export const FlowerDesignStage = ({ catalog, design, state }: {catalog: Catalog;
             {fills.map((f,i)=><div className={s.patternRow} key={i}><span>{t("FlowerPainter.UI.Flowers.Region","Region {0}",[i+1])} · {labels[f.split("|")[3]]}</span><Btn icon="close" title={t("FlowerPainter.UI.Flowers.RemoveFill","Remove this fill")} onClick={()=>act.setValue(step.path,"fills",fills.filter((_,j)=>i!==j))} testId={`fill-remove-${i}`} /></div>)}
         </Section>:null}
         <Section title={compose ? t("FlowerPainter.UI.Flowers.FillMaterials","Fill flowers and planting") : t("FlowerPainter.UI.Flowers.Materials","Flowers and planting")}>
-            <ControlList step={step} layer={layer} state={state} flat only={["flowerPalette","spacing","flowerScale",...(!compose?["bandWidth","rotation"]:[])]} />
+            <ControlList step={step} layer={layer} state={state} flat only={["flowerPalette","spacing","overlap","flowerScale",...(!compose?["bandWidth","rotation"]:[])]} />
         </Section>
     </div>;
 };

@@ -30,10 +30,10 @@
   "FlowerPainter.Floral.palette.Tooltip": "Choose the preferred automatic flower mix; explicit flower choices take precedence.",
   "FlowerPainter.Floral.palette.mixed": "Colourful mix",
   "FlowerPainter.Floral.palette.wild": "Wild flowers",
-  "FlowerPainter.Floral.spacing": "Flower spacing",
-  "FlowerPainter.Floral.spacing.Tooltip": "Wider spacing uses fewer props. Carpet modes enlarge flower clusters to keep the ground covered; flower size also scales the spacing.",
+  "FlowerPainter.Floral.spacing": "Base spacing",
+  "FlowerPainter.Floral.spacing.Tooltip": "Base distance between flower centres. Overlap reduces this distance further, independently of flower size.",
   "FlowerPainter.Floral.flowerScale": "Flower size",
-  "FlowerPainter.Floral.flowerScale.Tooltip": "Scale each flower prop while preserving the overall design. Carpet modes adjust spacing with the size; smaller flowers need more props.",
+  "FlowerPainter.Floral.flowerScale.Tooltip": "Set the flower prop size independently of spacing. Larger plots no longer automatically enlarge the models.",
   "FlowerPainter.Floral.rotation": "Rotation",
   "FlowerPainter.Floral.rotation.Tooltip": "Rotate the geometric design or the default S curve. Hand-placed points stay in place.",
   "FlowerPainter.Floral.petals": "Petals",
@@ -54,7 +54,6 @@
   "FlowerPainter.Floral.Preset.outline-border": "Flower border",
   "FlowerPainter.Floral.Preset.freehand-ribbon": "Freehand ribbon",
   "FlowerPainter.Floral.Issue.NoRoom": "Not enough clear space for this flower pattern. Make the selection larger or choose a narrower ribbon. A custom curve needs at least two points.",
-  "FlowerPainter.Floral.Issue.DensityLimited": "Spacing was increased to keep the whole pattern within {0} props.",
   "FlowerPainter.Floral.Stat.Flowers": "Flower props",
   "FlowerPainter.Floral.Stat.Shrubs": "Shrubs",
   "FlowerPainter.Floral.Hint.PlacePoint": "Click inside the area to add the next curve point.",
@@ -66,7 +65,6 @@
   "FlowerPainter.Floral.shape.islands": "Flower islands",
   "FlowerPainter.Floral.Preset.flow-carpet": "Flowing carpet",
   "FlowerPainter.Floral.Preset.island-carpet": "Flower islands",
-  "FlowerPainter.Floral.Issue.CarpetBudget": "The entire carpet is limited to {0} props, with larger flower clusters to maintain coverage. A smaller selection preserves finer plant sizes.",
   "FlowerPainter.Floral.UI.Reroll": "New layout",
   "FlowerPainter.Floral.UI.RerollTip": "Regenerate gap colours while preserving each manual pattern's position, size, angle and flowers.",
   "FlowerPainter.Floral.flowerPalette": "Selected flowers",
@@ -109,5 +107,7 @@
   "FlowerPainter.Floral.UI.NewFill": "New gap colours",
   "FlowerPainter.Name": "FlowerPainter",
   "FlowerPainter.Floral.Motif.heart": "Heart",
-  "FlowerPainter.Floral.Motif.curve": "Free curve"
+  "FlowerPainter.Floral.Motif.curve": "Free curve",
+  "FlowerPainter.Floral.overlap": "Prop overlap",
+  "FlowerPainter.Floral.overlap.Tooltip": "Compress planting spacing to overlap flower clusters. 0% uses the base spacing; 50% halves the distance for roughly four times as many props. Models keep their size and planting has no object cap."
 }

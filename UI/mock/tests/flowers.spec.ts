@@ -64,3 +64,21 @@ test("curve flowers and fill flowers remain independent", async ({page}) => {
     expect(after.curvePalette).toEqual(["sample-a"]);
     await panelShot(page,"flowers-independent-materials");
 });
+
+test("overlap is editable in both planting modes and independent of prop size", async ({page}) => {
+    await flowers(page);
+    await expect(page.getByTestId("slider-overlap-input")).toHaveValue("50");
+    const size = await page.getByTestId("slider-flowerScale-input").inputValue();
+    await page.getByTestId("slider-overlap-input").fill("70");
+    await page.getByTestId("slider-overlap-input").press("Enter");
+    await expect(page.getByTestId("slider-flowerScale-input")).toHaveValue(size);
+    expect(await page.evaluate(() => (window as any).pm.backend.root.values.overlap)).toBe(70);
+    await page.getByTestId("flower-mode-compose").click();
+    await expect(page.getByTestId("slider-overlap-input")).toHaveValue("70");
+    await page.getByTestId("motif-add-curve").click();
+    await page.getByTestId("slider-overlap-input").fill("90");
+    await page.getByTestId("slider-overlap-input").press("Enter");
+    expect(await page.evaluate(() => (window as any).pm.backend.root.values.overlap)).toBe(90);
+    await expect(page.getByTestId("slider-flowerScale-input")).toHaveValue(size);
+    await panelShot(page,"flowers-overlap");
+});

@@ -67,7 +67,7 @@ namespace FlowerPainter.Core.Layers.Types.Floral
             switch (shape)
             {
                 case "circle":
-                    int rows = math.min(128, math.max(1, (int)math.ceil(radius / pitch)));
+                    int rows = math.max(1, (int)math.ceil(radius / pitch));
                     float step = radius / rows;
                     for (int i = 0; i < rows; i++)
                     {

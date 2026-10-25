@@ -42,7 +42,7 @@ namespace FlowerPainter.Tests
             var layer = new FloralLayer();
             var plan = layer.Plan(input, CancellationToken.None);
             Assert.False(plan.HasErrors);
-            Assert.InRange(plan.Objects.Count, 10, FloralCarpet.IsCarpet(shape) ? FloralCarpet.MaxObjects : FloralLayer.MaxObjects);
+            Assert.True(plan.Objects.Count >= 10);
             Assert.All(plan.Objects, o =>
             {
                 Assert.Equal(AssetCategories.Flower, o.Category);
@@ -122,15 +122,16 @@ namespace FlowerPainter.Tests
         }
 
         [Fact]
-        public void LargeFlowerCarpetKeepsItsObjectBudget()
+        public void LargeFlowerDiscKeepsTheRequestedDensity()
         {
-            var input = Input("circle", 450);
-            input.Settings.Values["spacing"] = 0.5;
+            var input = Input("circle", 100);
+            input.Settings.Values["spacing"] = 0.75;
             input.Settings.Values["shrubs"] = true;
             var plan = new FloralLayer().Plan(input, CancellationToken.None);
-            Assert.InRange(plan.Objects.Count, 100, FloralLayer.MaxObjects);
-            Assert.Contains(plan.Issues, i => i.Key == "FlowerPainter.Floral.Issue.DensityLimited");
-            Assert.Contains(plan.Objects, o => math.distance(o.Position.xz, new float2(225,225)) < 10);
+            Assert.True(plan.Objects.Count >= 100);
+            Assert.True(plan.Objects.Count > 3200);
+            Assert.DoesNotContain(plan.Issues, i => i.Key == "FlowerPainter.Floral.Issue.DensityLimited");
+            Assert.Contains(plan.Objects, o => math.distance(o.Position.xz, new float2(50,50)) < 10);
         }
 
         [Fact]

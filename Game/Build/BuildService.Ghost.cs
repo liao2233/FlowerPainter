@@ -9,8 +9,7 @@
 //
 //  * Debounce: a new revision is emitted after GhostDebounceSeconds of no further Show calls (the first
 //    ghost appears immediately). Nets go in the first frame (junctions merge); surfaces/areas/objects
-//    in batches of GhostPerFrame. More than GhostMaxDefinitions → objects are sampled evenly and the
-//    status says Partial.
+//    in batches of GhostPerFrame. All flower props are emitted, including densely overlapping ones.
 //  * No error icon spam: objects get CreationFlags.Optional (ValidationSystem.CancelOptional hides a
 //    colliding optional temp with TempFlags.Hidden|Cancel and adds no icon — vanilla brushes do this). (s59) Only with
 //    "Ignore collisions in my builds" OFF: under anarchy the ghost is non-optional and untinted — it shows what the build places;
@@ -54,7 +53,6 @@ namespace FlowerPainter.Game.Build
     {
         public static float GhostDebounceSeconds = 0.25f;
         public static int GhostPerFrame = 800;
-        public static int GhostMaxDefinitions = 6000;
         private const int GhostSettleFrames = 4;
         private const int GhostWatchdogFrames = 3;
 
@@ -240,15 +238,9 @@ namespace FlowerPainter.Game.Build
             _gEmission = true;
             int rest = _work.Surfaces.Count + _work.Areas.Count;
             int objects = _work.Objects.Count;
-            int budget = math.max(0, GhostMaxDefinitions - rest);
-            _gObjects = new List<int>(math.min(objects, budget));
-            if (objects <= budget) for (int i = 0; i < objects; i++) _gObjects.Add(i);
-            else
-            {
-                _gDetails.Partial = true;
-                double stride = objects / (double)math.max(1, budget);
-                for (int k = 0; k < budget; k++) _gObjects.Add((int)(k * stride));
-            }
+            // Dense flower planting must preview every prop. Emission is still spread across frames.
+            _gObjects = new List<int>(objects);
+            for (int i = 0; i < objects; i++) _gObjects.Add(i);
             _gTotal = rest + _gObjects.Count;
             _gDetails.Planned = _work.Nets.Count + rest + objects;
             _gCursor = 0;

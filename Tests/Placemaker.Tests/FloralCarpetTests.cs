@@ -46,7 +46,7 @@ namespace FlowerPainter.Tests
             var plan = new FloralLayer().Plan(input, CancellationToken.None);
             var region = LayerRegion.From(input.Shape.Ring);
             Assert.False(plan.HasErrors);
-            Assert.InRange(plan.Objects.Count, 500, FloralCarpet.MaxObjects);
+            Assert.True(plan.Objects.Count >= 500);
             Assert.DoesNotContain(plan.Issues, i => i.Key == ObjectBudget.IssueKey);
             Assert.Equal(plan.Objects.Count, plan.Facts["floral.flowers"]);
             Assert.Equal(3, plan.Objects.Select(o => o.Control).Distinct().Count());
@@ -105,17 +105,38 @@ namespace FlowerPainter.Tests
         }
 
         [Fact]
-        public void LargeDenseCarpetStaysBoundedAndCoversBothEndsInsteadOfTruncating()
+        public void LargeCarpetExceeds3200WithoutChangingSpacingOrScale()
         {
             var input = Input("flow");
-            input.Shape.Ring = new[] { new float3(0,0,0), new float3(450,0,0), new float3(450,0,450), new float3(0,0,450) };
-            input.Settings.Values["spacing"] = 0.5;
+            input.Shape.Ring = new[] { new float3(0,0,0), new float3(120,0,0), new float3(120,0,100), new float3(0,0,100) };
             var plan = new FloralLayer().Plan(input, CancellationToken.None);
-            Assert.InRange(plan.Objects.Count, 1000, FloralCarpet.MaxObjects);
-            Assert.Contains(plan.Issues, i => i.Key == "FlowerPainter.Floral.Issue.CarpetBudget");
-            Assert.Contains(plan.Objects, o => o.Position.x < 30 && o.Position.z < 30);
-            Assert.Contains(plan.Objects, o => o.Position.x > 420 && o.Position.z > 420);
-            Assert.All(plan.Objects, o => Assert.True(math.isfinite(o.Scale) && o.Scale > 0));
+            Assert.True(plan.Objects.Count > 12000);
+            Assert.Equal(0.75, plan.Facts["floral.spacing"], 5);
+            Assert.All(plan.Objects, o => Assert.Equal(0.65f, o.Scale));
+            Assert.DoesNotContain(plan.Issues, i => i.Key == "FlowerPainter.Floral.Issue.CarpetBudget" || i.Key == ObjectBudget.IssueKey);
+            Assert.Contains(plan.Objects, o => o.Position.x < 5 && o.Position.z < 5);
+            Assert.Contains(plan.Objects, o => o.Position.x > 115 && o.Position.z > 95);
+        }
+
+        [Theory]
+        [InlineData("flow")]
+        [InlineData("islands")]
+        [InlineData("collage")]
+        public void OverlapIncreasesDensityWithoutShrinkingProps(string shape)
+        {
+            var input = NativeCarpet(); input.Settings.Values["shape"] = shape;
+            input.Settings.Values["overlap"] = 0.0;
+            var sparse = new FloralLayer().Plan(input, CancellationToken.None);
+            input.Settings.Values["overlap"] = 50.0;
+            var dense = new FloralLayer().Plan(input, CancellationToken.None);
+            Assert.True(dense.Objects.Count > sparse.Objects.Count * 3.8);
+            Assert.Equal(sparse.Facts["floral.spacing"] / 2, dense.Facts["floral.spacing"], 5);
+            Assert.All(dense.Objects.Concat(sparse.Objects), o => Assert.Equal(0.65f, o.Scale));
+            AssertInteriorCovered(input, dense);
+            input.Settings.Values["flowerScale"] = 1.2;
+            var larger = new FloralLayer().Plan(input, CancellationToken.None);
+            Assert.Equal(dense.Facts["floral.spacing"], larger.Facts["floral.spacing"]);
+            Assert.All(larger.Objects, o => Assert.Equal(1.2f, o.Scale));
         }
 
         [Theory]
@@ -194,24 +215,24 @@ namespace FlowerPainter.Tests
         }
 
         [Fact]
-        public void DefaultNativeCarpetUsesFewerThan2200PropsWithoutInteriorHoles()
+        public void DefaultNativeCarpetOverlapsPropsWithoutInteriorHoles()
         {
             var input = NativeCarpet();
             var plan = new FloralLayer().Plan(input, CancellationToken.None);
-            Assert.InRange(plan.Objects.Count, 1000, 2200);
+            Assert.True(plan.Objects.Count > 5000);
             Assert.Equal(3, plan.Objects.Select(o => o.Asset.Id).Distinct().Count());
             AssertInteriorCovered(input, plan);
         }
 
         [Fact]
-        public void WiderSpacingReducesPropsAndKeepsElongatedFlowerRegionsCovered()
+        public void WiderSpacingReducesPropsWithoutResizingThem()
         {
             var input = NativeCarpet();
             var dense = new FloralLayer().Plan(input, CancellationToken.None);
             input.Settings.Values["spacing"] = 2.0;
             var wide = new FloralLayer().Plan(input, CancellationToken.None);
             Assert.True(wide.Objects.Count < dense.Objects.Count * 0.7);
-            AssertInteriorCovered(input, wide);
+            Assert.All(wide.Objects.Concat(dense.Objects), o => Assert.Equal(0.65f, o.Scale));
         }
     }
 }

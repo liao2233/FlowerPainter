@@ -1,6 +1,6 @@
 {
   "generatedBy": "the in-game suite from GeneratorRegistry",
-  "assembly": "0.1.1+aad4a2b-dirty",
+  "assembly": "0.1.1+826966f-dirty",
   "categories": [
     {
       "id": "flowers",
@@ -167,6 +167,15 @@
           "step": 0.1,
           "unit": "m",
           "default": 1.5
+        },
+        {
+          "id": "overlap",
+          "kind": "Slider",
+          "min": 0.0,
+          "max": 90.0,
+          "step": 5.0,
+          "unit": "%",
+          "default": 50.0
         },
         {
           "id": "flowerScale",

@@ -11,14 +11,13 @@ namespace FlowerPainter.Core.Layers.Types.Floral
     public sealed class FloralLayer : LayerBase
     {
         public const string LayerId = "floral";
-        public const int MaxObjects = 1800;
         protected override string Area => "Floral";
         public override string Id => LayerId;
         public override string Icon => "Media/Game/Icons/PropsPlants.svg";
         public override LayerKind Kind => LayerKind.Fill;
         public override float MinArea => 25f;
         public override float MaxArea => 250000f;
-        // Both planners enforce their own bounded sampling. Generic thinning would tear holes in a carpet.
+        // Plant at the requested spacing and overlap. Generic thinning would tear holes in a carpet.
         protected override float ObjectsPerHectare => 0;
 
         protected override void DefineControls(ControlSet c)
@@ -41,6 +40,7 @@ namespace FlowerPainter.Core.Layers.Types.Floral
             c.AssetMulti("detailAssets", AssetCategories.Flower, ControlTier.More, "flowers").Tip();
             c.Choice("palette", "mixed", ControlTier.More, "flowers", "mixed", "wild").Tip();
             c.Slider("spacing", 1.5, 0.5, 4, 0.1, "m", ControlTier.More, "flowers").Tip();
+            c.Slider("overlap", 50, 0, 90, 5, "%", ControlTier.Essential, "flowers").Tip();
             c.Slider("flowerScale", 0.65, 0.25, 1.2, 0.05, "", ControlTier.More, "flowers").Tip();
             c.Slider("rotation", 0, 0, 355, 5, "deg", ControlTier.More, "layout").Tip();
             c.Slider("petals", 6, 3, 12, 1, "count", ControlTier.More, "layout").When("shape=rosette");
@@ -52,7 +52,7 @@ namespace FlowerPainter.Core.Layers.Types.Floral
             c.Slider("shrubSpacing", 3, 1.5, 8, 0.5, "m", ControlTier.More, "planting").When("shrubs=true");
             c.RandomRange("rotation", 0, 355);
             c.RandomRange("petals", 4, 8);
-            foreach (var key in new[] { "shape", "size", "bandWidth", "spacing", "flowerScale", "palette", "colorPattern", "shrubs", "shrubSpacing", "turns", "curve", "motifs", "fillGaps", "gapStyle" }) c.Fixed(key);
+            foreach (var key in new[] { "shape", "size", "bandWidth", "spacing", "overlap", "flowerScale", "palette", "colorPattern", "shrubs", "shrubSpacing", "turns", "curve", "motifs", "fillGaps", "gapStyle" }) c.Fixed(key);
         }
 
         protected override void DefinePresets()
@@ -105,24 +105,13 @@ namespace FlowerPainter.Core.Layers.Types.Floral
             }
             if (FloralCarpet.IsCarpet(ctx.S("shape"))) { FloralCarpet.Plan(ctx, kits, keys, scale); return; }
             float width = math.clamp(ctx.F("bandWidth"), 0.5f, 16f);
-            float pitch = math.max(math.clamp(ctx.F("spacing"), 0.5f, 4f), radius * 1.65f);
+            float pitch = FloralCarpet.Pitch(ctx.Settings);
             float margin = math.max(0.3f, ctx.Site.EdgeMargin) + radius;
             var strokes = FloralGeometry.Make(ctx.LayerRegion, ctx.Settings, ctx.Input.Markers, margin, pitch, ctx.Cancel);
             if (strokes.Count == 0) { ctx.Issue(IssueSeverity.Warning, "FlowerPainter.Floral.Issue.NoRoom"); return; }
-            int rows = math.max(1, math.min(12, (int)math.floor(width / pitch) + 1));
-            float length = 0;
-            foreach (var stroke in strokes) length += FloralGeometry.Length(stroke) * (stroke.FilledRow ? 1 : rows);
-            float requestedPitch = pitch;
-            // Increase spacing over the whole design instead of cutting the last half of a large wreath off.
-            pitch = ctx.S("shape") == "circle"
-                ? math.max(pitch, pitch * math.sqrt(length / pitch / (MaxObjects * 0.85f)))
-                : math.max(pitch, length / (MaxObjects * 0.85f));
-            if (pitch > requestedPitch * 1.05f) ctx.Issue(IssueSeverity.Info, "FlowerPainter.Floral.Issue.DensityLimited", MaxObjects);
-            if (ctx.S("shape") == "circle" && pitch > requestedPitch)
-                strokes = FloralGeometry.Make(ctx.LayerRegion, ctx.Settings, ctx.Input.Markers, margin, pitch, ctx.Cancel);
-            rows = math.max(1, math.min(12, (int)math.floor(width / pitch) + 1));
+            int rows = math.max(1, (int)math.floor(width / pitch) + 1);
             var used = new Dictionary<long, List<float2>>();
-            float cell = math.max(0.25f, pitch * 0.68f);
+            float cell = pitch * 0.68f;
             long Key(int x, int y) => ((long)x << 32) ^ (uint)y;
             bool Take(float2 p)
             {
@@ -144,7 +133,7 @@ namespace FlowerPainter.Core.Layers.Types.Floral
                     float offset = nr == 1 ? 0 : (row / (float)(nr - 1) - 0.5f) * width;
                     foreach (var sample in FloralGeometry.Samples(stroke, pitch, offset, ctx.Cancel))
                     {
-                        if (count >= MaxObjects || !Free(sample.p, radius) || !Take(sample.p)) continue;
+                        if (!Free(sample.p, radius) || !Take(sample.p)) continue;
                         int slot = ctx.S("colorPattern") == "single" ? 0 : ctx.S("colorPattern") == "segments"
                             ? (int)math.floor(sample.along * 9f) % colors : (stroke.Band + row) % colors;
                         uint variation = Hashing.Mix(ctx.Seed, (uint)count + 1u);
@@ -173,7 +162,7 @@ namespace FlowerPainter.Core.Layers.Types.Floral
                     float offset = side * (width * 0.5f + radius + shrubRadius + 0.4f);
                     foreach (var sample in FloralGeometry.Samples(stroke, shrubPitch, offset, ctx.Cancel))
                     {
-                        if (count + shrubs >= MaxObjects || !Free(sample.p, shrubRadius) || !Take(sample.p)) continue;
+                        if (!Free(sample.p, shrubRadius) || !Take(sample.p)) continue;
                         uint v = Hashing.Mix(ctx.Seed, (uint)shrubs + 0xFB00u);
                         ctx.Object(sample.p, 0, ObjectRole.Bush, AssetMix.Pick(chosen, v, "GreenBushWild01"), v, -1, AssetCategories.Bush).Scale = shrubScale;
                         shrubs++;

@@ -30,10 +30,10 @@
   "FlowerPainter.Floral.palette.Tooltip": "选择自动花材搭配；手动选择的花材优先。",
   "FlowerPainter.Floral.palette.mixed": "缤纷花卉",
   "FlowerPainter.Floral.palette.wild": "自然野花",
-  "FlowerPainter.Floral.spacing": "花卉间距",
-  "FlowerPainter.Floral.spacing.Tooltip": "间距越大，使用的 prop 越少。满铺模式会相应放大花簇，让花面保持连续；花卉尺寸也会带动间距缩放。",
+  "FlowerPainter.Floral.spacing": "基础间距",
+  "FlowerPainter.Floral.spacing.Tooltip": "控制花卉中心之间的基础距离；重叠度会进一步缩短这个距离。与花卉尺寸独立设置。",
   "FlowerPainter.Floral.flowerScale": "花卉尺寸",
-  "FlowerPainter.Floral.flowerScale.Tooltip": "缩放单个花卉 prop，整体图案大小单独调整。满铺模式会同步调整间距；花越小，需要的 prop 越多。",
+  "FlowerPainter.Floral.flowerScale.Tooltip": "单独设置花卉 prop 的模型尺寸，不再同步拉大间距，也不会因为种植数量多而自动放大模型。",
   "FlowerPainter.Floral.rotation": "图案旋转",
   "FlowerPainter.Floral.rotation.Tooltip": "旋转几何图案或默认 S 曲线；手动放置的控制点保持原位。",
   "FlowerPainter.Floral.petals": "花瓣数量",
@@ -54,7 +54,6 @@
   "FlowerPainter.Floral.Preset.outline-border": "沿边花境",
   "FlowerPainter.Floral.Preset.freehand-ribbon": "手绘花带",
   "FlowerPainter.Floral.Issue.NoRoom": "当前空间不足以布置花卉图案。请扩大选区或减小花带宽度；自定义曲线至少需要两个控制点。",
-  "FlowerPainter.Floral.Issue.DensityLimited": "已适当增大间距，将完整图案控制在 {0} 个 prop 以内。",
   "FlowerPainter.Floral.Stat.Flowers": "花卉数量",
   "FlowerPainter.Floral.Stat.Shrubs": "灌木数量",
   "FlowerPainter.Floral.Hint.PlacePoint": "在选区内部单击，按顺序添加曲线控制点。",
@@ -66,7 +65,6 @@
   "FlowerPainter.Floral.shape.islands": "花岛拼色",
   "FlowerPainter.Floral.Preset.flow-carpet": "流线花毯",
   "FlowerPainter.Floral.Preset.island-carpet": "花岛拼色",
-  "FlowerPainter.Floral.Issue.CarpetBudget": "已将完整花毯控制在 {0} 个 prop 以内，并相应放大花簇。较小的选区能保留更细腻的花卉尺寸。",
   "FlowerPainter.Floral.UI.Reroll": "换方案",
   "FlowerPainter.Floral.UI.RerollTip": "重新生成空隙的拼色，保留手动花纹的位置、大小、角度与花材。",
   "FlowerPainter.Floral.flowerPalette": "参与配色的花卉",
@@ -111,5 +109,7 @@
   "FlowerPainter.Floral.Motif.heart": "摆心形",
   "FlowerPainter.Floral.Motif.curve": "自由曲线",
   "FlowerPainter.Floral.UI.DrawCurve": "重新绘制曲线",
-  "FlowerPainter.Floral.UI.AddNode": "增加曲线节点"
+  "FlowerPainter.Floral.UI.AddNode": "增加曲线节点",
+  "FlowerPainter.Floral.overlap": "Prop 重叠度",
+  "FlowerPainter.Floral.overlap.Tooltip": "压缩种植间距，让花丛互相叠在一起。0% 使用基础间距；50% 距离减半，数量约为 4 倍。不会缩小模型，也不会按数量上限自动稀疏。"
 }

@@ -10,8 +10,8 @@ namespace FlowerPainter.Core.Layers.Types.Floral
     // Colour is a continuous field; sampling it never leaves the space between ribbons empty.
     internal static class FloralCarpet
     {
-        internal const int MaxObjects = 3200;
-        private const float CoveragePitch = 1.55f;
+        internal static float Pitch(SettingsBag settings) => math.clamp(settings.F("spacing", 1.5f), 0.5f, 4f)
+            * (1f - math.clamp(settings.F("overlap", 50f), 0f, 90f) / 100f);
         internal static bool IsCarpet(string shape) => shape == "flow" || shape == "islands" || shape == "collage";
 
         internal sealed class Pattern
@@ -90,7 +90,7 @@ namespace FlowerPainter.Core.Layers.Types.Floral
 
         // Scan only polygon interiors, including separate spans at a concave notch. This stays
         // bounded even for a long narrow diagonal outline with a very large bounding rectangle.
-        internal static List<float2> Sample(LayerRegion region, float pitch, float margin, int limit, CancellationToken cancel)
+        internal static List<float2> Sample(LayerRegion region, float pitch, float margin, CancellationToken cancel)
         {
             region.PrincipalAxes(out var center, out var axis, out _, out _);
             var cross = new float2(-axis.y, axis.x);
@@ -126,7 +126,6 @@ namespace FlowerPainter.Core.Layers.Types.Floral
                         var p = center + axis * x + cross * y;
                         if (!region.ContainsDisc(p, margin)) continue;
                         result.Add(p);
-                        if (result.Count > limit) return result;
                     }
                 }
             }
@@ -167,25 +166,11 @@ namespace FlowerPainter.Core.Layers.Types.Floral
             foreach (var motif in motifs)
                 if (!string.IsNullOrEmpty(motif.Flower)) radius = math.max(radius, FlowerRadius(ctx.Site, motif.Flower) * scale);
             if (motifs.Count > 0) foreach (var id in curvePalette) radius = math.max(radius, FlowerRadius(ctx.Site, id) * scale);
-            // A triangular lattice covers the ground at radius pitch / sqrt(3). Allow a little
-            // extra foliage overlap without piling several clusters onto the same patch.
-            // Spacing now changes density; enlarge the flowers to keep wider settings filled.
-            float requestedPitch = math.max(math.clamp(ctx.F("spacing"), 0.5f, 4f) * scale / 0.65f, radius * CoveragePitch);
-            radius = math.max(radius, requestedPitch / CoveragePitch);
-            float pitch = math.max(requestedPitch, math.sqrt(ctx.LayerRegion.Area / (MaxObjects * 0.82f)));
-            List<float2> points;
-            float carpetScale, coverRadius;
-            do
-            {
-                ctx.Cancel.ThrowIfCancellationRequested();
-                carpetScale = scale * math.max(1f, pitch / requestedPitch);
-                coverRadius = radius * carpetScale / scale;
-                points = Sample(ctx.LayerRegion, pitch, math.max(0.1f, coverRadius * 0.65f), MaxObjects, ctx.Cancel);
-                if (points.Count <= MaxObjects) break;
-                pitch *= 1.08f;
-            } while (true);
-            if (carpetScale > scale * 1.05f)
-                ctx.Issue(IssueSeverity.Info, "FlowerPainter.Floral.Issue.CarpetBudget", MaxObjects);
+            // Density is an explicit planting choice. Never widen spacing for a prop budget,
+            // a large model or a larger frame, and never resize the models to hide gaps.
+            float pitch = Pitch(ctx.Settings);
+            float coverRadius = radius;
+            var points = Sample(ctx.LayerRegion, pitch, math.max(0.1f, coverRadius * 0.65f), ctx.Cancel);
             var pattern = new Pattern(ctx.LayerRegion, collage ? ctx.S("gapStyle") : ctx.S("shape"), ctx.F("bandWidth"), ctx.F("rotation"), ctx.Seed, colors);
             var newPatternIslands = new Pattern(ctx.LayerRegion, "islands", ctx.F("bandWidth"), ctx.F("rotation"), ctx.Seed, colors);
             var newPatternFlow = new Pattern(ctx.LayerRegion, "flow", ctx.F("bandWidth"), ctx.F("rotation"), ctx.Seed, colors);
@@ -216,12 +201,9 @@ namespace FlowerPainter.Core.Layers.Types.Floral
                     ? new AssetRef(motifs[selectedMotif].Flower, "Flowerbed01")
                     : selectedMotif >= 0 ? new AssetRef(curvePalette[selectedMotif % curvePalette.Length], "Flowerbed01")
                     : AssetMix.Pick(bush ? shrubs : kits[slot], v, bush ? "GreenBushWildChild01" : "Flowerbed01");
-                // Normalize selected asset sizes so a smaller species does not open holes in its colour block.
-                float assetRadius = FlowerRadius(ctx.Site, asset.Id);
-                float objectScale = coverRadius / math.max(0.1f, assetRadius);
                 var o = ctx.Object(p, (v % 360) * math.PI / 180f, bush ? ObjectRole.Bush : ObjectRole.Planter,
                     asset, v, -1, bush ? AssetCategories.Bush : AssetCategories.Flower);
-                o.Scale = objectScale;
+                o.Scale = scale;
                 o.Control = selectedMotif >= 0 ? "motifs" : bush ? "shrubAssets" : keys[slot];
                 if (selectedMotif >= 0) motifCounts[selectedMotif]++; else gapFlowers++;
                 if (bush) bushes++; else flowers++;
@@ -233,6 +215,7 @@ namespace FlowerPainter.Core.Layers.Types.Floral
             ctx.Plan.Facts["floral.shrubs"] = bushes;
             ctx.Plan.Facts["floral.spacing"] = pitch;
             ctx.Plan.Facts["floral.coverRadius"] = coverRadius;
+            ctx.Plan.Facts["floral.overlap"] = ctx.F("overlap");
             ctx.Plan.Facts["floral.carpet"] = 1;
             ctx.Plan.Facts["floral.gapFlowers"] = gapFlowers;
             ctx.Plan.Facts["floral.motifs"] = motifs.Count;
