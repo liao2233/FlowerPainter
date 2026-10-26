@@ -1,6 +1,6 @@
 {
   "generatedBy": "the in-game suite from GeneratorRegistry",
-  "assembly": "0.1.1+826966f-dirty",
+  "assembly": "0.1.1+0dcf975-dirty",
   "categories": [
     {
       "id": "flowers",
@@ -20,6 +20,7 @@
       "group": "flowers",
       "category": "flowers",
       "presets": [
+        "partition-regions",
         "pattern-collage",
         "arc-and-wave",
         "wave-and-petals",
@@ -39,6 +40,7 @@
           "id": "shape",
           "kind": "Choice",
           "options": [
+            "partition",
             "collage",
             "flow",
             "islands",

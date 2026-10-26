@@ -82,3 +82,32 @@ test("overlap is editable in both planting modes and independent of prop size", 
     await expect(page.getByTestId("slider-flowerScale-input")).toHaveValue(size);
     await panelShot(page,"flowers-overlap");
 });
+
+test("subdivision mode draws boundaries and offers per-region filling", async ({page}) => {
+    await flowers(page);
+    await page.getByTestId("flower-mode-partition").click();
+    await expect(page.getByTestId("flower-mode-partition")).toHaveAttribute("aria-pressed","true");
+    await page.getByTestId("motif-add-ring").click();
+    await expect(page.getByTestId("motif-select-0")).toBeVisible();
+    await expect(page.getByTestId("motif-flower")).toHaveCount(0);
+    await expect(page.getByTestId("motif-width-input")).toHaveCount(0);
+    await expect(page.getByTestId("motif-fill-gaps")).toHaveCount(0);
+    await expect(page.getByTestId("curve-materials")).toHaveCount(0);
+    await expect(page.getByTestId("flower-regions")).toBeVisible();
+    await page.getByTestId("fill-pick-region").click();
+    await expect(page.getByTestId("fill-pick-region")).toHaveAttribute("aria-pressed","true");
+    await page.getByTestId("motif-add-curve").click();
+    expect(await page.evaluate(() => (window as any).pm.backend.floralDrawing)).toBe(true);
+    await expect(page.getByTestId("motif-close-curve")).toBeDisabled();
+    for (let i=0;i<3;i++) await page.getByTestId("motif-add-node").click();
+    await expect(page.getByTestId("motif-close-curve")).toBeEnabled();
+    await page.getByTestId("motif-close-curve").click();
+    const values = await page.evaluate(() => (window as any).pm.backend.root.values);
+    expect(values.shape).toBe("partition");
+    const points=values.motifs[1].split("|")[9].split(";");
+    expect(points[0]).toBe(points[points.length-1]);
+    await panelShot(page,"flowers-partition");
+    await page.getByTestId("flower-mode-compose").click();
+    await expect(page.getByTestId("motif-flower")).toBeVisible();
+    await expect(page.getByTestId("motif-width-input")).toBeVisible();
+});

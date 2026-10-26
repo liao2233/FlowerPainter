@@ -12,7 +12,8 @@ namespace FlowerPainter.Core.Layers.Types.Floral
     {
         internal static float Pitch(SettingsBag settings) => math.clamp(settings.F("spacing", 1.5f), 0.5f, 4f)
             * (1f - math.clamp(settings.F("overlap", 50f), 0f, 90f) / 100f);
-        internal static bool IsCarpet(string shape) => shape == "flow" || shape == "islands" || shape == "collage";
+        internal static bool IsCarpet(string shape) => shape == "flow" || shape == "islands" || HasMotifs(shape);
+        internal static bool HasMotifs(string shape) => shape == "collage" || shape == "partition";
 
         internal sealed class Pattern
         {
@@ -150,22 +151,26 @@ namespace FlowerPainter.Core.Layers.Types.Floral
         {
             float radius = 0.4f;
             int colors = kits.Length;
-            bool collage = ctx.S("shape") == "collage";
+            bool partition = ctx.S("shape") == "partition";
+            bool collage = HasMotifs(ctx.S("shape"));
             var motifs = collage ? FloralMotif.Read(ctx.L("motifs")) : new List<FloralMotif>();
             var curvePalette = ctx.L("curvePalette");
             if (curvePalette.Length == 0) curvePalette = FloralAssets.CurveDefaults(ctx.Site);
             var origin = FloralMotif.Origin(ctx.LayerRegion);
-            bool fillGaps = !collage || ctx.B("fillGaps");
+            bool fillGaps = !collage || (!partition && ctx.B("fillGaps"));
             var fills = collage ? FloralFill.Read(ctx.L("fills")) : new List<FloralFill>();
-            var regions = fills.Count == 0 ? null : new FloralRegions(ctx.LayerRegion, motifs, ctx.Cancel);
+            var partitions = partition ? new FloralPartitions(ctx.LayerRegion, motifs, ctx.Cancel) : null;
+            var regions = !partition && fills.Count > 0 ? new FloralRegions(ctx.LayerRegion, motifs, ctx.Cancel) : null;
+            int RegionAt(float2 p) => partition ? partitions.At(p) : regions?.At(p) ?? -1;
             var choices = new Dictionary<int, FloralFill>();
-            if (regions != null) foreach (var fill in fills) { int label = regions.At(origin + new float2(fill.X, fill.Z)); if (label > 0) choices[label] = fill; }
+            if (regions != null || partition) foreach (var fill in fills) { int label = RegionAt(origin + new float2(fill.X, fill.Z)); if (label > 0) choices[label] = fill; }
+            if (partition && fills.Count == 0) { ctx.Issue(IssueSeverity.Info, "FlowerPainter.Floral.Issue.FillPartition"); return; }
             if (collage && motifs.Count == 0 && !fillGaps && fills.Count == 0) { ctx.Issue(IssueSeverity.Info, "FlowerPainter.Floral.Issue.AddMotif"); return; }
             for (int i = 0; i < colors; i++)
                 foreach (var id in kits[i]) radius = math.max(radius, FlowerRadius(ctx.Site, id) * scale);
-            foreach (var motif in motifs)
+            if (!partition) foreach (var motif in motifs)
                 if (!string.IsNullOrEmpty(motif.Flower)) radius = math.max(radius, FlowerRadius(ctx.Site, motif.Flower) * scale);
-            if (motifs.Count > 0) foreach (var id in curvePalette) radius = math.max(radius, FlowerRadius(ctx.Site, id) * scale);
+            if (!partition && motifs.Count > 0) foreach (var id in curvePalette) radius = math.max(radius, FlowerRadius(ctx.Site, id) * scale);
             // Density is an explicit planting choice. Never widen spacing for a prop budget,
             // a large model or a larger frame, and never resize the models to hide gaps.
             float pitch = Pitch(ctx.Settings);
@@ -184,9 +189,9 @@ namespace FlowerPainter.Core.Layers.Types.Floral
                 if (((flowers + bushes) & 127) == 0) ctx.Cancel.ThrowIfCancellationRequested();
                 if (ctx.Input.Reserved?.Blocks(p, coverRadius * 0.7f) ?? false) continue;
                 int selectedMotif = -1;
-                for (int i = motifs.Count - 1; i >= 0; i--) if (motifs[i].Covers(p, origin)) { selectedMotif = i; break; }
+                for (int i = partition ? -1 : motifs.Count - 1; i >= 0; i--) if (motifs[i].Covers(p, origin)) { selectedMotif = i; break; }
                 FloralFill fill = null;
-                if (selectedMotif < 0 && regions != null) choices.TryGetValue(regions.At(p), out fill);
+                if (selectedMotif < 0 && (regions != null || partition)) choices.TryGetValue(RegionAt(p), out fill);
                 if (selectedMotif < 0 && (fill?.Style == "empty" || (!fillGaps && fill == null))) continue;
                 int slot = selectedMotif >= 0 ? selectedMotif % colors : pattern.Slot(p);
                 if (fill?.Style == "single") slot = 0;
@@ -219,6 +224,7 @@ namespace FlowerPainter.Core.Layers.Types.Floral
             ctx.Plan.Facts["floral.carpet"] = 1;
             ctx.Plan.Facts["floral.gapFlowers"] = gapFlowers;
             ctx.Plan.Facts["floral.motifs"] = motifs.Count;
+            if (partition) ctx.Plan.Facts["floral.regions"] = partitions.Regions.Count;
             for (int i = 0; i < motifCounts.Length; i++) ctx.Plan.Facts["floral.motif." + i] = motifCounts[i];
         }
     }

@@ -1,0 +1,12 @@
+{
+  "FlowerPainter.Floral.shape.partition": "Subdivisions",
+  "FlowerPainter.Floral.Preset.partition-regions": "Subdivide and fill",
+  "FlowerPainter.Floral.Issue.FillPartition": "Choose flowers, then click a subdivision to fill it.",
+  "FlowerPainter.UI.Flowers.Partition": "Subdivide the frame",
+  "FlowerPainter.UI.Flowers.PartitionFill": "Select a subdivision to fill",
+  "FlowerPainter.UI.Flowers.PartitionFillTip": "Choose flowers and click a subdivision. The hovered subdivision is outlined. Unfilled subdivisions stay empty; boundaries do not plant ribbons.",
+  "FlowerPainter.Floral.UI.Partition": "Draw subdivision boundaries",
+  "FlowerPainter.Floral.UI.PartitionTip": "Draw circles or closed shapes, or join a curve to the frame or another boundary. Crossings subdivide the frame; dangling curves do not enclose a region.",
+  "FlowerPainter.Floral.UI.PartitionDragHint": "Drag the centre to move, green to resize and orange to rotate. Drag curve nodes to rebuild the subdivision; right-click a node to remove it.",
+  "FlowerPainter.Floral.UI.CloseCurve": "Close curve"
+}

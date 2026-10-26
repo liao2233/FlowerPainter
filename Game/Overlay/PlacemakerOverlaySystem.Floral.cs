@@ -19,6 +19,14 @@ namespace FlowerPainter.Game.Overlay
         private void DrawFloralPatterns(OverlayRenderSystem.Buffer buffer, float w)
         {
             if (_tool.Stage != ToolStage.Design || _tool.Shape == null) return;
+            var hovered = _tool.FloralHoveredPartition;
+            if (hovered != null)
+            {
+                var highlight = new Color(0.2f, 1f, 0.8f, 0.95f);
+                Ring(buffer, FlowerPainter.Core.Geometry.Poly.To3D(hovered.Outer, p => _tool.FloralGround(p).y), highlight, w * 1.8f);
+                foreach (var hole in hovered.Holes)
+                    Ring(buffer, FlowerPainter.Core.Geometry.Poly.To3D(hole, p => _tool.FloralGround(p).y), highlight, w * 1.8f);
+            }
             var motifs = _tool.FloralPatterns();
             if (motifs.Count == 0) return;
             if (_floralShapeVersion != _tool.ShapeVersion)
@@ -61,6 +69,7 @@ namespace FlowerPainter.Game.Overlay
                 for (int iHandle = 0; iHandle < 4 + motif.Points.Length; iHandle++)
                 {
                     int h = iHandle < 4 ? iHandle : iHandle + 6;
+                    if (_tool.FloralPartitioning && h == 3) continue;
                     var p = _tool.FloralGround(_tool.FloralHandlePoint(motif, h));
                     var color = h == 0 ? Color.white : h == 1 ? new Color(0.35f, 1, 0.55f) : new Color(1, 0.65f, 0.2f);
                     if (h != 0) buffer.DrawDashedLine(new Color(color.r, color.g, color.b, 0.4f), new Line3.Segment(c, p), w * 0.6f, w * 3f, w * 3f);

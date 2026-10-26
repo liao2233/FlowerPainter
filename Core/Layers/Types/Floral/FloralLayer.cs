@@ -22,7 +22,7 @@ namespace FlowerPainter.Core.Layers.Types.Floral
 
         protected override void DefineControls(ControlSet c)
         {
-            c.Choice("shape", "flow", ControlTier.Essential, "layout", "collage", "flow", "islands", "ring", "circle", "rosette", "spiral", "heart", "outline", "freeform").Tip();
+            c.Choice("shape", "flow", ControlTier.Essential, "layout", "partition", "collage", "flow", "islands", "ring", "circle", "rosette", "spiral", "heart", "outline", "freeform").Tip();
             c.Slider("size", 85, 20, 100, 5, "%", ControlTier.Essential, "layout").Tip().When("shape=ring|circle|rosette|spiral|heart|outline|freeform");
             c.Slider("bandWidth", 4, 0.5, 16, 0.5, "m", ControlTier.Essential, "layout").Tip();
             c.Choice("colorPattern", "bands", ControlTier.Essential, "flowers", "bands", "segments", "single").Tip().When("shape=ring|circle|rosette|spiral|heart|outline|freeform");
@@ -57,6 +57,7 @@ namespace FlowerPainter.Core.Layers.Types.Floral
 
         protected override void DefinePresets()
         {
+            Preset("partition-regions", ("shape", "partition"));
             Preset("pattern-collage", ("shape", "collage"));
             Preset("arc-and-wave", ("shape", "collage"), ("motifs", FloralMotif.Example(1)), ("fillGaps", true), ("bandWidth", 7.0));
             Preset("wave-and-petals", ("shape", "collage"), ("motifs", FloralMotif.Example(2)), ("fillGaps", true), ("gapStyle", "islands"));
@@ -75,6 +76,8 @@ namespace FlowerPainter.Core.Layers.Types.Floral
         public override Readiness CheckReady(AreaInput input)
         {
             var settings = Merge(input?.Settings);
+            if (settings.S("shape", "flow") == "partition" && FloralFill.Read(settings.L("fills")).Count == 0)
+                return new Readiness { Ready = false, MarkerKind = "", NextStepKey = "FlowerPainter.Floral.Issue.FillPartition", ReasonKey = "FlowerPainter.Floral.Issue.FillPartition" };
             bool empty = settings.S("shape", "collage") == "collage" && !settings.B("fillGaps", false) && FloralMotif.Read(settings.L("motifs")).Count == 0 && FloralFill.Read(settings.L("fills")).Count == 0;
             return empty ? new Readiness { Ready = false, MarkerKind = "", NextStepKey = "FlowerPainter.Floral.Issue.AddMotif", ReasonKey = "FlowerPainter.Floral.Issue.AddMotif" } : new Readiness();
         }

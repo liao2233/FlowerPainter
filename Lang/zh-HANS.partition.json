@@ -1,0 +1,12 @@
+{
+  "FlowerPainter.Floral.shape.partition": "内部再分区",
+  "FlowerPainter.Floral.Preset.partition-regions": "划分区域后逐块填花",
+  "FlowerPainter.Floral.Issue.FillPartition": "请先选花，再点击一个内部分区填充。",
+  "FlowerPainter.UI.Flowers.Partition": "内部再分区",
+  "FlowerPainter.UI.Flowers.PartitionFill": "逐块选择分区填花",
+  "FlowerPainter.UI.Flowers.PartitionFillTip": "先选花和填充方式，再点击地图中的分区。鼠标所在分区会高亮；未填分区保持空白，分界线本身不种花。",
+  "FlowerPainter.Floral.UI.Partition": "绘制内部分界线",
+  "FlowerPainter.Floral.UI.PartitionTip": "添加圆或闭合图案，或把曲线接到外框、其他分界线。交叉会继续切分区域；悬空且未闭合的曲线不会分出新区域。",
+  "FlowerPainter.Floral.UI.PartitionDragHint": "拖中心移动、绿色手柄缩放、橙色手柄旋转。拖动曲线节点即可重建分区；右键节点删除。",
+  "FlowerPainter.Floral.UI.CloseCurve": "闭合曲线"
+}

@@ -26,17 +26,20 @@ export const FloralPatternEditor = ({ step, state }: { step: StepView; state: To
     const { t } = useT();
     const picker = usePicker();
     const flowers = useAssetList("flower");
+    const partition = step.values.shape === "partition";
     const motifs = readMotifs(step.values.motifs);
     const active = state.floralEdit?.path === step.path ? state.floralEdit.index : -1;
     const selected = motifs[active];
+    const curveClosed = selected?.points.length > 2 && selected.points[0][0] === selected.points[selected.points.length - 1][0] && selected.points[0][1] === selected.points[selected.points.length - 1][1];
     const kindName = (kind: string) => t("FlowerPainter.Floral.Motif." + kind, kind);
     const commit = (next: Motif[], focus = active) => {
         act.setValue(step.path, "motifs", next.map(encode));
         act.selectFloralPattern(step.path, focus >= next.length ? next.length - 1 : focus);
     };
     const add = (kind: string) => {
-        const next = [...motifs, { id: Date.now().toString(36), kind, x: 0, z: 0, size: 40, angle: 0, width: 4, points: kind === "curve" ? [[-0.5,0],[0,-0.25],[0.5,0.25]] : [], flower: "" }];
+        const next = [...motifs, { id: Date.now().toString(36), kind, x: 0, z: 0, size: 40, angle: 0, width: 4, points: kind === "curve" && !partition ? [[-0.5,0],[0,-0.25],[0.5,0.25]] : [], flower: "" }];
         commit(next, next.length - 1);
+        if (partition && kind === "curve") act.selectFloralPattern(step.path, next.length - 1 + 1000);
     };
     const change = (patch: Partial<Motif>) => commit(motifs.map((m, i) => i === active ? { ...m, ...patch } : m));
     const span = Math.max(100, Math.ceil(Math.sqrt(state.area.areaM2 || 0) * 2 / 10) * 10);
@@ -65,39 +68,40 @@ export const FloralPatternEditor = ({ step, state }: { step: StepView; state: To
     const item = selected?.flower ? flowers?.find((x) => x.id === selected.flower) : undefined;
     const fill = step.values.fillGaps === true;
     return (
-        <Section title={t("FlowerPainter.Floral.UI.Compose", "Arrange patterns")} testId="floral-pattern-editor">
-            <div className={s.hint}>{state.floralDrawing ? t("FlowerPainter.UI.Flowers.Drawing", "Click to add curve points. Enter or right-click finishes the curve. You can drag its points afterwards.") : t("FlowerPainter.Floral.UI.ComposeTip", "Place circles or flower shapes, or edit a free curve. Parts outside the frame are clipped.")}</div>
+        <Section title={partition ? t("FlowerPainter.Floral.UI.Partition", "Draw subdivision boundaries") : t("FlowerPainter.Floral.UI.Compose", "Arrange patterns")} testId="floral-pattern-editor">
+            <div className={s.hint}>{state.floralDrawing ? t("FlowerPainter.UI.Flowers.Drawing", "Click to add curve points. Enter or right-click finishes the curve. You can drag its points afterwards.") : partition ? t("FlowerPainter.Floral.UI.PartitionTip", "Draw circles or closed shapes, or join a curve to the frame or another boundary. Crossings subdivide the frame; dangling curves do not enclose a region.") : t("FlowerPainter.Floral.UI.ComposeTip", "Place circles or flower shapes, or edit a free curve. Parts outside the frame are clipped.")}</div>
             <div className={s.buttons}>
                 {kinds.map((kind) => <Btn key={kind} icon="plus" label={kindName(kind)} onClick={() => add(kind)} disabled={motifs.length >= 32} testId={`motif-add-${kind}`} />)}
             </div>
             {motifs.map((m, i) => (
                 <div className={s.patternRow} key={m.id + i}>
                     <Btn label={`${i + 1} · ${kindName(m.kind)}`} selected={i === active} onClick={() => act.selectFloralPattern(step.path, i)} testId={`motif-select-${i}`} />
-                    <span className={s.rowHint}>{flowers?.find(f => f.id === m.flower)?.name || m.flower || t("FlowerPainter.Floral.UI.AutoFlower", "From curve flowers")} · {Math.round(m.size)}m</span>
+                    <span className={s.rowHint}>{!partition ? (flowers?.find(f => f.id === m.flower)?.name || m.flower || t("FlowerPainter.Floral.UI.AutoFlower", "From curve flowers")) + " · " : ""}{Math.round(m.size)}m</span>
                     <Btn icon="plus" title={t("FlowerPainter.Floral.UI.Duplicate", "Duplicate")} onClick={() => commit([...motifs, { ...m, id: Date.now().toString(36), x: m.x + 3, z: m.z + 3 }], motifs.length)} disabled={motifs.length >= 32} testId={`motif-copy-${i}`} />
                     <Btn icon="close" title={t("FlowerPainter.Floral.UI.Remove", "Remove pattern")} onClick={() => commit(motifs.filter((_, n) => n !== i), -1)} testId={`motif-remove-${i}`} />
                 </div>
             ))}
             {selected ? (
                 <div className={s.detail} key={selected.id}>
-                    <div className={s.hint}>{t("FlowerPainter.Floral.UI.DragHint", "Drag the centre to move, green to resize, orange to rotate, and the lower handle for width. Curve nodes can be dragged; right-click a node to remove it.")}</div>
-                    <button type="button" className={s.flower} onClick={chooseFlower} data-testid="motif-flower">
+                    <div className={s.hint}>{partition ? t("FlowerPainter.Floral.UI.PartitionDragHint", "Drag the centre to move, green to resize and orange to rotate. Drag curve nodes to rebuild the subdivision; right-click a node to remove it.") : t("FlowerPainter.Floral.UI.DragHint", "Drag the centre to move, green to resize, orange to rotate, and the lower handle for width. Curve nodes can be dragged; right-click a node to remove it.")}</div>
+                    {!partition ? <button type="button" className={s.flower} onClick={chooseFlower} data-testid="motif-flower">
                         {item ? <Thumb item={item} size={24} /> : null}
                         <span>{t("FlowerPainter.Floral.UI.MotifFlower", "Pattern flower")}: {item?.name ?? (selected.flower || t("FlowerPainter.Floral.UI.AutoFlower", "From curve flowers"))}</span>
-                    </button>
+                    </button> : null}
                     {selected.kind === "curve" ? <div className={s.buttons}><Btn label={t("FlowerPainter.Floral.UI.DrawCurve","Draw a new curve")} onClick={() => { change({points:[]}); act.selectFloralPattern(step.path,active+1000); }} testId="motif-draw-curve" /><Btn label={t("FlowerPainter.Floral.UI.AddNode","Add curve node")} onClick={() => change({points:[...selected.points,selected.points.length ? [selected.points[selected.points.length-1][0]+0.2,selected.points[selected.points.length-1][1]] : [0,0]]})} disabled={selected.points.length >= 64} testId="motif-add-node" /></div> : null}<div className={s.adjustments}>
                         {adjust("size", t("FlowerPainter.Floral.UI.Size", "Size"))}
                         {adjust("angle", t("FlowerPainter.Floral.UI.Angle", "Rotation"))}
-                        {adjust("width", t("FlowerPainter.Floral.UI.Width", "Ribbon width"))}
+                        {!partition ? adjust("width", t("FlowerPainter.Floral.UI.Width", "Ribbon width")) : null}
                         {adjust("x", t("FlowerPainter.Floral.UI.OffsetX", "East/west"))}
                         {adjust("z", t("FlowerPainter.Floral.UI.OffsetZ", "North/south"))}
                     </div>
+                    {partition && selected.kind === "curve" ? <Btn label={t("FlowerPainter.Floral.UI.CloseCurve", "Close curve")} disabled={selected.points.length < 3 || (selected.points.length >= 64) || curveClosed} onClick={()=>change({points:[...selected.points,[...selected.points[0]]]})} testId="motif-close-curve" /> : null}
                 </div>
             ) : null}
             <div className={s.buttons}>
                 <Btn label={t("FlowerPainter.Floral.UI.EditFrame", "Edit frame")} onClick={() => act.selectFloralPattern(step.path, -1)} testId="motif-edit-frame" />
-                <Btn variant={fill ? "ghost" : "accent"} label={fill ? t("FlowerPainter.Floral.UI.ClearFill", "Clear gap fill") : t("FlowerPainter.Floral.UI.Fill", "Fill gaps with colours")} onClick={() => { act.selectFloralPattern(step.path, -1); act.setValue(step.path, "fillGaps", !fill); }} testId="motif-fill-gaps" />
-                {fill ? <Btn icon="shuffle" label={t("FlowerPainter.Floral.UI.NewFill", "New gap colours")} onClick={() => act.randomize(step.path)} testId="motif-reroll-fill" /> : null}
+                {!partition ? <Btn variant={fill ? "ghost" : "accent"} label={fill ? t("FlowerPainter.Floral.UI.ClearFill", "Clear gap fill") : t("FlowerPainter.Floral.UI.Fill", "Fill gaps with colours")} onClick={() => { act.selectFloralPattern(step.path, -1); act.setValue(step.path, "fillGaps", !fill); }} testId="motif-fill-gaps" /> : null}
+                {!partition && fill ? <Btn icon="shuffle" label={t("FlowerPainter.Floral.UI.NewFill", "New gap colours")} onClick={() => act.randomize(step.path)} testId="motif-reroll-fill" /> : null}
             </div>
         </Section>
     );

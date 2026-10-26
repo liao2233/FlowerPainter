@@ -2,7 +2,7 @@
 
 Independent Cities: Skylines II flower planting mod. No Placemaker DLL or enabled Placemaker mod is required.
 
-Select an area, fill it with the existing flowing/island carpets or compose circles, petal/heart motifs and editable curves. Choose flowers per ribbon and fill connected gaps independently. Preview uses real temporary flower meshes without their cyan outlines; geometry remains temporary until Build.
+Select an area and fill it with flowing/island carpets, subdivide it using circles and editable curves, or compose planted ribbons. Subdivision boundaries plant no flowers: choose and fill each enclosed region independently, then edit the boundaries to repartition. Ribbon mode retains independent curve flowers and gap fills. Preview uses real temporary flower meshes without their cyan outlines; geometry remains temporary until Build.
 
 Build `FlowerPainter.csproj` in Release with `Deploy=false` and `ManagedPath` pointing to the installed game's `Cities2_Data/Managed`. UI dependencies and the UI build use npm in `UI`. Deploy while the game is closed.
 
@@ -10,7 +10,9 @@ GPL-3.0. Extracted from the locally developed Placemaker project. Shared selecti
 
 ## 使用
 
-点击花朵图标或按 Ctrl+Shift+F 打开。先选定区域，再选择“直接铺满”或“曲线组合”。直接铺满保留流线拼色和花岛拼色。
+点击花朵图标或按 Ctrl+Shift+F 打开。先选定区域，再选择“直接铺满”、“内部再分区”或“曲线组合”。直接铺满保留流线拼色和花岛拼色。
+
+内部再分区：在外框中添加圆、心形、花瓣或自由曲线作为零宽分界线。圆的内外、嵌套区域以及交叉曲线形成的区域可分别选中；悬空且未闭合的线不会产生新区域。自由曲线可重新绘制、拖节点或点击“闭合曲线”。选好花材和填充方式，点击“点击地图选择填充区域”，鼠标所在分区会高亮，点击即可逐块填花；未填区域保持空白，分界线本身不生成花带。移动或重绘边界会重新切分，已有填充按原点击位置重新归属。
 
 曲线组合可画圆、摆花瓣或心形，也可添加自由曲线。图案可移动、缩放、旋转和单独调粗细；自由曲线支持拖动节点、增加节点、右键删除节点。点击“重新绘制曲线”后，在地图上逐点绘制，Enter 或右键结束。超出范围的部分不种植。
 
@@ -22,7 +24,7 @@ GPL-3.0. Extracted from the locally developed Placemaker project. Shared selecti
 
 ## 验证与分发
 
-77 项花卉核心测试、5 项界面测试通过。密度实测 `send-flower-density-1026-015045`：同一地块从 0% 重叠的 1185 个增加至 60% 的 7387 个，预览和建造均完整保留全部物件；铺满、重叠铺满及独立曲线填充 3 个场景均建造成功、0 步骤错误。曲线与填充独立选花、两种花丛的全部 8 色通过真实游戏建造与截图检查：`send-curve-flower-colors-1024-023454`，3 个场景均建造完成且 0 步骤错误。真实游戏验证了两种铺满、圆与心形、曲线范围裁剪、分区选花及填充、从空白逐点绘制、节点增删、拖动、缩放、粗细调整和撤销重做。成功组合运行：`send-flower-composition-1023-220204`；每个场景均建造完成且 0 步骤错误。游戏日志和原图保存在原工作区的 `.forensics/suite/runs/` 中。
+84 项花卉核心测试、6 项界面测试通过。新增精确分区覆盖圆内外、嵌套、交叉、多条开曲线闭合、逐块填花、留空与重绘。内部分区实测 `send-flower-partitions-1026-131813`：圆内外、交叉曲线多分区、重绘边界 3 个场景均建造成功、0 步骤错误；截图确认未填花时只有边界，填充后各区域花色独立。密度实测 `send-flower-density-1026-015045`：同一地块从 0% 重叠的 1185 个增加至 60% 的 7387 个，预览和建造均完整保留全部物件；铺满、重叠铺满及独立曲线填充 3 个场景均建造成功、0 步骤错误。曲线与填充独立选花、两种花丛的全部 8 色通过真实游戏建造与截图检查：`send-curve-flower-colors-1024-023454`，3 个场景均建造完成且 0 步骤错误。真实游戏验证了两种铺满、圆与心形、曲线范围裁剪、分区选花及填充、从空白逐点绘制、节点增删、拖动、缩放、粗细调整和撤销重做。成功组合运行：`send-flower-composition-1023-220204`；每个场景均建造完成且 0 步骤错误。游戏日志和原图保存在原工作区的 `.forensics/suite/runs/` 中。
 
 `tools/Package.ps1` 输出独立运行包和完整源码包到 `dist/`。开发时可共享已有 npm 依赖缓存；源码包和运行包都不包含对原 Placemaker 项目的运行时或项目引用。未发布至外部平台。
 

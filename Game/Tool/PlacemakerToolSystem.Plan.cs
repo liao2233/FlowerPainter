@@ -197,7 +197,8 @@ namespace FlowerPainter.Game.Tool
 
         private void UpdatePlanning()
         {
-            bool canPlan = _shape != null && _recipe != null && _stage != ToolStage.Building;
+            // Incomplete designs (for example, subdivision boundaries with no fills) have no preview.
+            bool canPlan = _shape != null && _recipe != null && _stage != ToolStage.Building && Unready() == null;
             if (!canPlan)
             {
                 if (_plan != null || _requestedRevision >= 0)
