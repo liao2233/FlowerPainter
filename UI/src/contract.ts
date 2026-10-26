@@ -111,6 +111,7 @@ export interface ToolState {
   brush: { shape: BrushShape; size: number; angle: number; rules?: BrushRules };
   area: AreaInfo;
   floralEdit?: { path: string; index: number };
+  floralPartitions?: { selected: number; regions: {id: number; area: number; fillIndex: number}[] };
     floralDrawing?: boolean;
   primary: PrimaryAction;
   canUndo: boolean;
@@ -526,6 +527,8 @@ export const Values = {
 
 export const Triggers = {
   selectFloralPattern: "selectFloralPattern",
+  selectFloralRegion: "selectFloralRegion",
+  fillFloralRegion: "fillFloralRegion",
   toggleTool: "toggleTool",                 // ()
   close: "close",                           // ()
   setPanelCollapsed: "setPanelCollapsed",   // (collapsed: boolean)

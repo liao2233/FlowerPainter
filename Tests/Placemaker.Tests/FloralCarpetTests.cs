@@ -110,8 +110,8 @@ namespace FlowerPainter.Tests
             var input = Input("flow");
             input.Shape.Ring = new[] { new float3(0,0,0), new float3(120,0,0), new float3(120,0,100), new float3(0,0,100) };
             var plan = new FloralLayer().Plan(input, CancellationToken.None);
-            Assert.True(plan.Objects.Count > 12000);
-            Assert.Equal(0.75, plan.Facts["floral.spacing"], 5);
+            Assert.True(plan.Objects.Count > 5000);
+            Assert.Equal(1.5, plan.Facts["floral.spacing"], 5);
             Assert.All(plan.Objects, o => Assert.Equal(0.65f, o.Scale));
             Assert.DoesNotContain(plan.Issues, i => i.Key == "FlowerPainter.Floral.Issue.CarpetBudget" || i.Key == ObjectBudget.IssueKey);
             Assert.Contains(plan.Objects, o => o.Position.x < 5 && o.Position.z < 5);
@@ -215,10 +215,15 @@ namespace FlowerPainter.Tests
         }
 
         [Fact]
-        public void DefaultNativeCarpetOverlapsPropsWithoutInteriorHoles()
+        public void ExplicitOverlapCoversNativePropsWhileDefaultIsZero()
         {
             var input = NativeCarpet();
+            Assert.Equal(0, input.Settings.F("overlap", -1));
+            var sparse = new FloralLayer().Plan(input, CancellationToken.None);
+            Assert.Equal(1.5, sparse.Facts["floral.spacing"], 5);
+            input.Settings.Values["overlap"] = 50.0;
             var plan = new FloralLayer().Plan(input, CancellationToken.None);
+            Assert.True(plan.Objects.Count > sparse.Objects.Count * 3.8);
             Assert.True(plan.Objects.Count > 5000);
             Assert.Equal(3, plan.Objects.Select(o => o.Asset.Id).Distinct().Count());
             AssertInteriorCovered(input, plan);

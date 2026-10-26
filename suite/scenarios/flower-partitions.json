@@ -54,6 +54,25 @@
           ]
         },
         {
+          "do": "flowerRegion",
+          "style": "single",
+          "flower": "FlowerPainter Flower White Flowerbed01",
+          "at": [
+            0,
+            0
+          ]
+        },
+        {
+          "do": "shot",
+          "name": "selected-region-settings",
+          "shotMode": "ui",
+          "camera": {
+            "target": "area",
+            "view": "top",
+            "distance": 120
+          }
+        },
+        {
           "do": "preview",
           "shot": "circle-regions",
           "shotMode": "render",
@@ -144,11 +163,14 @@
         },
         {
           "do": "flowerRegion",
-          "style": "single",
-          "flower": "FlowerPainter Flower Yellow Flowerbed01",
+          "style": "flow",
           "at": [
             -25,
             18
+          ],
+          "flowers": [
+            "FlowerPainter Flower Yellow Flowerbed01",
+            "FlowerPainter Flower Orange Flowerbed01"
           ]
         },
         {

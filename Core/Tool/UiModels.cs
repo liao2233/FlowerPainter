@@ -24,6 +24,18 @@ namespace FlowerPainter.Core.Tool
         public HintInfo(string key, params string[] keys) { Text = new LocText(key); Keys = keys ?? Array.Empty<string>(); }
     }
 
+    public sealed class FloralRegionView
+    {
+        public int Id, FillIndex = -1;
+        public double Area;
+    }
+
+    public sealed class FloralPartitionView
+    {
+        public int Selected = -1;
+        public List<FloralRegionView> Regions = new List<FloralRegionView>();
+    }
+
     public sealed class ToolStateInput
     {
         public bool Open;
@@ -46,6 +58,7 @@ namespace FlowerPainter.Core.Tool
         public string FloralPath;
         public bool FloralDrawing;
         public int FloralIndex = -1;
+        public FloralPartitionView FloralPartitions;
         public LocText MarkerLabel;
         public List<HintInfo> Hints = new List<HintInfo>();
         public bool Planning;
@@ -134,6 +147,12 @@ namespace FlowerPainter.Core.Tool
             if (!string.IsNullOrEmpty(s.FloralPath) && (s.FloralIndex >= 0 || s.FloralIndex == -2))
                 o.Set("floralEdit", JsonValue.Obj().Set("path", s.FloralPath).Set("index", s.FloralIndex));
             o.Set("floralDrawing", s.FloralDrawing);
+            if (s.FloralPartitions != null) {
+                var regions = JsonValue.Arr();
+                foreach (var region in s.FloralPartitions.Regions)
+                    regions.Add(JsonValue.Obj().Set("id", region.Id).Set("fillIndex", region.FillIndex).Set("area", Round(region.Area, 1)));
+                o.Set("floralPartitions", JsonValue.Obj().Set("selected", s.FloralPartitions.Selected).Set("regions", regions));
+            }
             o.Set("primary", Primary(s.Primary));
             o.Set("canUndo", s.CanUndo);
             o.Set("canRedo", s.CanRedo);

@@ -1,6 +1,6 @@
 {
   "generatedBy": "the in-game suite from GeneratorRegistry",
-  "assembly": "0.1.1+0dcf975-dirty",
+  "assembly": "0.1.1+61541d7-dirty",
   "categories": [
     {
       "id": "flowers",
@@ -177,7 +177,7 @@
           "max": 90.0,
           "step": 5.0,
           "unit": "%",
-          "default": 50.0
+          "default": 0.0
         },
         {
           "id": "flowerScale",

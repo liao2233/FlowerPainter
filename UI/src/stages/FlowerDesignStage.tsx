@@ -5,6 +5,7 @@ import { useT } from "../lib/l10n";
 import { Btn, Section } from "../components/common";
 import { ControlList } from "../controls/Controls";
 import { FloralPatternEditor } from "../components/FloralPatternEditor";
+import { FloralPartitionFill } from "../components/FloralPartitionFill";
 import { usePicker, useAssetList } from "../components/picker";
 import s from "../components/floral.module.scss";
 
@@ -14,6 +15,7 @@ export const FlowerDesignStage = ({ catalog, design, state }: {catalog: Catalog;
     if(!step || !layer) return null;
     const partition=step.values.shape==="partition";
     const compose=step.values.shape==="collage" || partition;
+    const fillingPartitions=partition && state.floralEdit?.index===-2;
     const style=String(step.values.activeFillStyle || "single");
     const flower=String(step.values.activeFillFlower || "");
     const fills=Array.isArray(step.values.fills)?step.values.fills as string[]:[];
@@ -25,7 +27,7 @@ export const FlowerDesignStage = ({ catalog, design, state }: {catalog: Catalog;
         <Section title={t("FlowerPainter.UI.Flowers.Method","How to plant")}>
             <div className={s.buttons}>
                 <Btn label={t("FlowerPainter.UI.Flowers.Carpet","Fill the area")} selected={!compose} onClick={()=>{act.selectFloralPattern(step.path,-1);act.setValue(step.path,"shape","flow");}} testId="flower-mode-carpet" />
-                <Btn label={t("FlowerPainter.UI.Flowers.Partition","Subdivide the frame")} selected={partition} onClick={()=>act.setValue(step.path,"shape","partition")} testId="flower-mode-partition" />
+                <Btn label={t("FlowerPainter.UI.Flowers.Partition","Subdivide the frame")} selected={partition} onClick={()=>{act.selectFloralPattern(step.path,-1);act.setValue(step.path,"shape","partition");}} testId="flower-mode-partition" />
                 <Btn label={t("FlowerPainter.UI.Flowers.Compose","Curves and patterns")} selected={compose && !partition} onClick={()=>act.setValue(step.path,"shape","collage")} testId="flower-mode-compose" />
             </div>
             <div className={s.hint}>{t("FlowerPainter.UI.Flowers.Preview","Real flowers update after edits. Only the part inside your frame is planted.")}</div>
@@ -36,8 +38,10 @@ export const FlowerDesignStage = ({ catalog, design, state }: {catalog: Catalog;
         </Section> : null}
         {!compose ? <Section title={t("FlowerPainter.UI.Flowers.CarpetPattern","Fill pattern")}><div className={s.buttons}>
             {["flow","islands"].map(k=><Btn key={k} selected={step.values.shape===k} label={labels[k]} onClick={()=>act.setValue(step.path,"shape",k)} testId={`carpet-${k}`} />)}
-        </div></Section> : <FloralPatternEditor step={step} state={state} />}
-        {compose ? <Section title={partition ? t("FlowerPainter.UI.Flowers.PartitionFill","Select a subdivision to fill") : t("FlowerPainter.UI.Flowers.Regions","Fill individual regions")} testId="flower-regions">
+        </div></Section> : !fillingPartitions ? <FloralPatternEditor step={step} state={state} /> : null}
+        {partition && !fillingPartitions ? <Btn variant="accent" label={t("FlowerPainter.UI.Partitions.DoneDrawing", "Finish boundaries → select regions")} onClick={()=>act.selectFloralPattern(step.path,-2)} testId="partition-finish-boundaries" /> : null}
+        {fillingPartitions ? <FloralPartitionFill step={step} state={state} /> : null}
+        {compose && !partition ? <Section title={t("FlowerPainter.UI.Flowers.Regions","Fill individual regions")} testId="flower-regions">
             <div className={s.hint}>{partition ? t("FlowerPainter.UI.Flowers.PartitionFillTip","Choose flowers and click a subdivision. The hovered subdivision is outlined. Unfilled subdivisions stay empty; boundaries do not plant ribbons.") : t("FlowerPainter.UI.Flowers.RegionTip","Choose a fill and flower, then click an empty region on the map. Inside and outside a circle can use different fills.")}</div>
             <div className={s.buttons}>{Object.keys(labels).map(k=><Btn key={k} selected={style===k} label={labels[k]} onClick={()=>act.setValue(step.path,"activeFillStyle",k)} testId={`fill-style-${k}`} />)}</div>
             {style==="single" ? <Btn label={flowers?.find(f=>f.id===flower)?.name || t("FlowerPainter.UI.Flowers.PickFlower","Choose flower")} onClick={()=>picker.open({category:"flower",mode:"single",title:t("FlowerPainter.UI.Flowers.PickFlower","Choose flower"),selected:flower?[flower]:[],allowAutomatic:false,onPick:ids=>act.setValue(step.path,"activeFillFlower",ids[0]||"")})} testId="fill-flower" /> : null}
@@ -45,8 +49,8 @@ export const FlowerDesignStage = ({ catalog, design, state }: {catalog: Catalog;
             <Btn label={t("FlowerPainter.UI.Flowers.StopRegion","Finish filling")} onClick={()=>act.selectFloralPattern(step.path,-1)} /></div>
             {fills.map((f,i)=><div className={s.patternRow} key={i}><span>{t("FlowerPainter.UI.Flowers.Region","Region {0}",[i+1])} · {labels[f.split("|")[3]]}</span><Btn icon="close" title={t("FlowerPainter.UI.Flowers.RemoveFill","Remove this fill")} onClick={()=>act.setValue(step.path,"fills",fills.filter((_,j)=>i!==j))} testId={`fill-remove-${i}`} /></div>)}
         </Section>:null}
-        <Section title={compose ? t("FlowerPainter.UI.Flowers.FillMaterials","Fill flowers and planting") : t("FlowerPainter.UI.Flowers.Materials","Flowers and planting")}>
-            <ControlList step={step} layer={layer} state={state} flat only={["flowerPalette","spacing","overlap","flowerScale",...(!compose || partition?["bandWidth","rotation"]:[])]} />
-        </Section>
+        {!partition || fillingPartitions ? <Section title={partition ? t("FlowerPainter.UI.Partitions.Planting", "Planting spacing and size (all regions)") : compose ? t("FlowerPainter.UI.Flowers.FillMaterials","Fill flowers and planting") : t("FlowerPainter.UI.Flowers.Materials","Flowers and planting")}>
+            <ControlList step={step} layer={layer} state={state} flat only={[...(!partition?["flowerPalette"]:[]),"spacing","overlap","flowerScale",...(!compose || partition?["bandWidth","rotation"]:[])]} />
+        </Section> : null}
     </div>;
 };

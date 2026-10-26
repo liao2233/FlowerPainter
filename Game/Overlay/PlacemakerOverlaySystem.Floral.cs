@@ -19,6 +19,13 @@ namespace FlowerPainter.Game.Overlay
         private void DrawFloralPatterns(OverlayRenderSystem.Buffer buffer, float w)
         {
             if (_tool.Stage != ToolStage.Design || _tool.Shape == null) return;
+            var selectedRegion = _tool.FloralSelectedPartition;
+            if (selectedRegion != null) {
+                var color = new Color(1f, 0.78f, 0.22f, 1f);
+                Ring(buffer, FlowerPainter.Core.Geometry.Poly.To3D(selectedRegion.Outer, p => _tool.FloralGround(p).y), color, w * 2f);
+                foreach (var hole in selectedRegion.Holes)
+                    Ring(buffer, FlowerPainter.Core.Geometry.Poly.To3D(hole, p => _tool.FloralGround(p).y), color, w * 2f);
+            }
             var hovered = _tool.FloralHoveredPartition;
             if (hovered != null)
             {

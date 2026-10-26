@@ -16,6 +16,8 @@ namespace FlowerPainter.Game.Suite
         {
             yield return EnsureDesign(st, rec, "Options");
             if (rec["error"] != null) yield break;
+            if (_tool.FloralPartitioning && _tool.FloralIndex == -2)
+                yield return UiAct(st, rec, "edit subdivision boundaries", "partition-edit-boundaries", null, null, () => _tool.FloralIndex != -2, null);
             string action = (string)step["action"] ?? "select";
             var before = _tool.FloralPatterns();
             int index = (int?)step["index"] ?? 0;

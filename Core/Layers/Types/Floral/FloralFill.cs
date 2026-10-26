@@ -11,15 +11,18 @@ namespace FlowerPainter.Core.Layers.Types.Floral
     {
         public float X, Z;
         public string Style = "flow", Flower = "";
-        public string Encode() => string.Join("|", "v1", X.ToString("R", CultureInfo.InvariantCulture), Z.ToString("R", CultureInfo.InvariantCulture), Style, Uri.EscapeDataString(Flower));
+        public string[] Flowers = Array.Empty<string>();
+        public string Encode() => Flowers.Length == 0
+            ? string.Join("|", "v1", X.ToString("R", CultureInfo.InvariantCulture), Z.ToString("R", CultureInfo.InvariantCulture), Style, Uri.EscapeDataString(Flower))
+            : string.Join("|", "v2", X.ToString("R", CultureInfo.InvariantCulture), Z.ToString("R", CultureInfo.InvariantCulture), Style, Uri.EscapeDataString(Flower), string.Join(",", Array.ConvertAll(Flowers, Uri.EscapeDataString)));
         public static List<FloralFill> Read(string[] values)
         {
             var list = new List<FloralFill>();
             foreach (var text in values ?? Array.Empty<string>()) {
                 var a = text.Split('|');
-                if (a.Length != 5 || a[0] != "v1" || (a[3] != "flow" && a[3] != "islands" && a[3] != "single" && a[3] != "empty")) continue;
+                if (!((a.Length == 5 && a[0] == "v1") || (a.Length == 6 && a[0] == "v2")) || (a[3] != "flow" && a[3] != "islands" && a[3] != "single" && a[3] != "empty")) continue;
                 if (!float.TryParse(a[1], NumberStyles.Float, CultureInfo.InvariantCulture, out var x) || !float.TryParse(a[2], NumberStyles.Float, CultureInfo.InvariantCulture, out var z) || !math.isfinite(x) || !math.isfinite(z)) continue;
-                try { list.Add(new FloralFill { X = x, Z = z, Style = a[3], Flower = Uri.UnescapeDataString(a[4]) }); } catch (UriFormatException) { }
+                try { list.Add(new FloralFill { X = x, Z = z, Style = a[3], Flower = Uri.UnescapeDataString(a[4]), Flowers = a.Length == 6 && a[5].Length > 0 ? Array.ConvertAll(a[5].Split(','), Uri.UnescapeDataString) : Array.Empty<string>() }); } catch (UriFormatException) { }
                 if (list.Count == 64) break;
             }
             return list;

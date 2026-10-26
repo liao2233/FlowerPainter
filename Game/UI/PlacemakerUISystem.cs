@@ -104,6 +104,8 @@ namespace FlowerPainter.Game.UI
             Trigger<bool>("acknowledgePermanent", ack => _tool.AcknowledgePermanent(ack));
             Trigger<string, string>("setMarkerKind", (p, kind) => _tool.SetMarkerKind(p, kind));
             Trigger<string, double>("selectFloralPattern", (p, i) => _tool.SelectFloralPattern(p, (int)i));
+            Trigger<double>("selectFloralRegion", i => _tool.SelectFloralRegion((int)i));
+            Trigger<string, string>("fillFloralRegion", (style, flowers) => _tool.FillFloralRegion(style, flowers));
             Trigger<string, double>("removeMarker", (p, i) => _tool.RemoveMarker(p, (int)Math.Round(i)));
             Trigger<string>("setPreviewMode", m => _tool.SetPreviewMode(m));
             // s17 park stats (docs/proposals/s17.md)

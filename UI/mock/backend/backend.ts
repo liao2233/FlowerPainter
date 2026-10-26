@@ -571,6 +571,7 @@ export class MockBackend {
 
     floralEdit: {path:string;index:number} | undefined;
     floralDrawing = false;
+    floralPartitions: ToolState["floralPartitions"];
     onTrigger(name: string, args: unknown[]) {
         const a = args as any[];
         const json = (s: unknown) => {
@@ -644,6 +645,20 @@ export class MockBackend {
             case "selectFloralPattern": {
                 let index=Number(a[1]);this.floralDrawing=index>=1000;if(this.floralDrawing)index-=1000;
                 this.floralEdit=index>=0 || index===-2?{path:String(a[0]),index}:undefined;break;
+            }
+            case "selectFloralRegion": {
+                if (this.floralPartitions) this.floralPartitions.selected=Number(a[0]);
+                break;
+            }
+            case "fillFloralRegion": {
+                const region=this.floralPartitions?.regions.find(r=>r.id===this.floralPartitions?.selected);
+                if (!region || !this.root) break;
+                const props=json(a[1]) as string[];
+                const fills=[...(this.root.values.fills as string[] || [])];
+                const fill=["v2",region.id,0,a[0],encodeURIComponent(props[0]||""),props.map(encodeURIComponent).join(",")].join("|");
+                if(region.fillIndex<0) {region.fillIndex=fills.length;fills.push(fill);} else fills[region.fillIndex]=fill;
+                this.edit({key:"FlowerPainter.Undo.ChangeValue"},()=>{this.root!.values.fills=fills;});
+                break;
             }
             case "selectRecipe": {
                 const r = this.recipes.find((x) => x.info.id === a[0]);
@@ -1523,6 +1538,7 @@ export class MockBackend {
         return {
             open: this.open,
             floralEdit:this.floralEdit, floralDrawing:this.floralDrawing,
+            floralPartitions:this.floralPartitions,
             stage: this.stage,
             reachable: this.reachable(),
             areaMode: this.mode,

@@ -40,7 +40,7 @@ namespace FlowerPainter.Core.Layers.Types.Floral
             c.AssetMulti("detailAssets", AssetCategories.Flower, ControlTier.More, "flowers").Tip();
             c.Choice("palette", "mixed", ControlTier.More, "flowers", "mixed", "wild").Tip();
             c.Slider("spacing", 1.5, 0.5, 4, 0.1, "m", ControlTier.More, "flowers").Tip();
-            c.Slider("overlap", 50, 0, 90, 5, "%", ControlTier.Essential, "flowers").Tip();
+            c.Slider("overlap", 0, 0, 90, 5, "%", ControlTier.Essential, "flowers").Tip();
             c.Slider("flowerScale", 0.65, 0.25, 1.2, 0.05, "", ControlTier.More, "flowers").Tip();
             c.Slider("rotation", 0, 0, 355, 5, "deg", ControlTier.More, "layout").Tip();
             c.Slider("petals", 6, 3, 12, 1, "count", ControlTier.More, "layout").When("shape=rosette");

@@ -315,6 +315,8 @@ const json = (v: SettingValue) => JSON.stringify(v);
 /** Every UI → C# call, typed after contract.ts Triggers. */
 export const act = {
     selectFloralPattern: (path: string, index: number) => fire(Triggers.selectFloralPattern, path, index),
+    selectFloralRegion: (id: number) => fire(Triggers.selectFloralRegion, id),
+    fillFloralRegion: (style: string, flowers: string[]) => fire(Triggers.fillFloralRegion, style, JSON.stringify(flowers)),
     toggleTool: () => fire(Triggers.toggleTool),
     close: () => fire(Triggers.close),
     setPanelCollapsed: (collapsed: boolean) => fire(Triggers.setPanelCollapsed, collapsed),

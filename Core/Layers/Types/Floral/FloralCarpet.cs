@@ -11,7 +11,7 @@ namespace FlowerPainter.Core.Layers.Types.Floral
     internal static class FloralCarpet
     {
         internal static float Pitch(SettingsBag settings) => math.clamp(settings.F("spacing", 1.5f), 0.5f, 4f)
-            * (1f - math.clamp(settings.F("overlap", 50f), 0f, 90f) / 100f);
+            * (1f - math.clamp(settings.F("overlap", 0f), 0f, 90f) / 100f);
         internal static bool IsCarpet(string shape) => shape == "flow" || shape == "islands" || HasMotifs(shape);
         internal static bool HasMotifs(string shape) => shape == "collage" || shape == "partition";
 
@@ -179,6 +179,10 @@ namespace FlowerPainter.Core.Layers.Types.Floral
             var pattern = new Pattern(ctx.LayerRegion, collage ? ctx.S("gapStyle") : ctx.S("shape"), ctx.F("bandWidth"), ctx.F("rotation"), ctx.Seed, colors);
             var newPatternIslands = new Pattern(ctx.LayerRegion, "islands", ctx.F("bandWidth"), ctx.F("rotation"), ctx.Seed, colors);
             var newPatternFlow = new Pattern(ctx.LayerRegion, "flow", ctx.F("bandWidth"), ctx.F("rotation"), ctx.Seed, colors);
+            var fillPatterns = new Dictionary<FloralFill, Pattern>();
+            foreach (var fill in choices.Values)
+                if (fill.Flowers.Length > 0)
+                    fillPatterns[fill] = new Pattern(ctx.LayerRegion, fill.Style, ctx.F("bandWidth"), ctx.F("rotation"), ctx.Seed, fill.Flowers.Length);
             var shrubs = ctx.L("shrubAssets");
             if (shrubs.Length == 0) shrubs = new[] { "GreenBushWildChild01" };
             int flowers = 0, bushes = 0;
@@ -197,19 +201,21 @@ namespace FlowerPainter.Core.Layers.Types.Floral
                 if (fill?.Style == "single") slot = 0;
                 else if (fill?.Style == "islands") slot = newPatternIslands.Slot(p);
                 else if (fill?.Style == "flow") slot = newPatternFlow.Slot(p);
-                bool bush = selectedMotif < 0 && ctx.B("shrubs") && colors > 1 && slot == colors - 1;
+                bool ownPalette = fill != null && fill.Flowers.Length > 0;
+                int fillSlot = ownPalette && fill.Style != "single" ? fillPatterns[fill].Slot(p) : 0;
+                bool bush = !ownPalette && selectedMotif < 0 && ctx.B("shrubs") && colors > 1 && slot == colors - 1;
                 // Manual flowers retain their variation and rotation when the gaps are filled or rerolled.
                 uint v = selectedMotif >= 0
                     ? Hashing.Mix(Seeds.Hash(motifs[selectedMotif].Id), (int)math.round(p.x * 100), (int)math.round(p.y * 100))
                     : Hashing.Mix(ctx.Seed, (uint)(flowers + bushes + 1));
-                var asset = selectedMotif < 0 && fill?.Style == "single" && !string.IsNullOrEmpty(fill.Flower) ? new AssetRef(fill.Flower, "Flowerbed01") : selectedMotif >= 0 && !string.IsNullOrEmpty(motifs[selectedMotif].Flower)
+                var asset = ownPalette ? new AssetRef(fill.Flowers[fillSlot], "Flowerbed01") : selectedMotif < 0 && fill?.Style == "single" && !string.IsNullOrEmpty(fill.Flower) ? new AssetRef(fill.Flower, "Flowerbed01") : selectedMotif >= 0 && !string.IsNullOrEmpty(motifs[selectedMotif].Flower)
                     ? new AssetRef(motifs[selectedMotif].Flower, "Flowerbed01")
                     : selectedMotif >= 0 ? new AssetRef(curvePalette[selectedMotif % curvePalette.Length], "Flowerbed01")
                     : AssetMix.Pick(bush ? shrubs : kits[slot], v, bush ? "GreenBushWildChild01" : "Flowerbed01");
                 var o = ctx.Object(p, (v % 360) * math.PI / 180f, bush ? ObjectRole.Bush : ObjectRole.Planter,
                     asset, v, -1, bush ? AssetCategories.Bush : AssetCategories.Flower);
                 o.Scale = scale;
-                o.Control = selectedMotif >= 0 ? "motifs" : bush ? "shrubAssets" : keys[slot];
+                o.Control = ownPalette ? "fills" : selectedMotif >= 0 ? "motifs" : bush ? "shrubAssets" : keys[slot];
                 if (selectedMotif >= 0) motifCounts[selectedMotif]++; else gapFlowers++;
                 if (bush) bushes++; else flowers++;
             }

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using Newtonsoft.Json;
 using FlowerPainter.Core;
 using FlowerPainter.Core.Layers.Common;
@@ -21,6 +22,8 @@ namespace FlowerPainter.Game.Tool
         public bool FloralPartitioning => _recipe?.Root?.Settings.S("shape", "flow") == "partition";
         private int _partitionDesign = -1, _partitionShape = -1;
         private string _partitionKey;
+        private float2? _partitionSelection;
+        private FloralPartitions _partitionShown;
         private System.Threading.Tasks.Task<FloralPartitions> _partitionTask;
         private FloralPartitions PartitionMap()
         {
@@ -55,6 +58,44 @@ namespace FlowerPainter.Game.Tool
                 return label > 0 ? map.Regions[label - 1] : null;
             }
         }
+        public int SelectedFloralRegion => _partitionSelection.HasValue ? PartitionMap()?.At(FloralOrigin + _partitionSelection.Value) ?? -1 : -1;
+        public Region FloralSelectedPartition {
+            get { var map = PartitionMap(); int id = SelectedFloralRegion; return FloralEditing && _floralIndex == -2 && id > 0 ? map.Regions[id - 1] : null; }
+        }
+        public FloralPartitionView FloralPartitionState()
+        {
+            if (!FloralPartitioning || !FloralEditing || _floralIndex != -2) return null;
+            var state = new FloralPartitionView { Selected = SelectedFloralRegion };
+            var map = PartitionMap(); if (map == null) return state;
+            var fills = FloralFill.Read(_recipe.Root.Settings.L("fills"));
+            for (int i = 0; i < map.Regions.Count; i++) {
+                int fillIndex = fills.FindLastIndex(f => map.At(FloralOrigin + new float2(f.X, f.Z)) == i + 1);
+                state.Regions.Add(new FloralRegionView { Id = i + 1, Area = map.Regions[i].Area, FillIndex = fillIndex });
+            }
+            return state;
+        }
+        public void SelectFloralRegion(int id)
+        {
+            if (!FloralPartitioning || _floralIndex != -2) return;
+            var map = PartitionMap(); if (map == null || id < 1 || id > map.Regions.Count) return;
+            _partitionSelection = Poly.PoleOfInaccessibility(map.Regions[id - 1], out _, 0.2f) - FloralOrigin;
+            Touch();
+        }
+        public void FillFloralRegion(string style, string flowersJson)
+        {
+            if (!FloralPartitioning || _floralIndex != -2 || !_partitionSelection.HasValue) return;
+            var map = PartitionMap(); int label = SelectedFloralRegion; if (map == null || label < 1) return;
+            if (style != "single" && style != "flow" && style != "islands" && style != "empty") return;
+            string[] flowers;
+            try { flowers = (JsonConvert.DeserializeObject<string[]>(flowersJson) ?? new string[0]).Where(s => !string.IsNullOrEmpty(s)).Distinct().ToArray(); }
+            catch (JsonException) { return; }
+            if (style != "empty" && flowers.Length == 0) return;
+            var fills = FloralFill.Read(_recipe.Root.Settings.L("fills"));
+            fills.RemoveAll(f => map.At(FloralOrigin + new float2(f.X, f.Z)) == label);
+            if (fills.Count >= 64) return;
+            fills.Add(new FloralFill { X = _partitionSelection.Value.x, Z = _partitionSelection.Value.y, Style = style, Flower = flowers.FirstOrDefault() ?? "", Flowers = flowers });
+            SetValue("0", "fills", JsonConvert.SerializeObject(fills.Select(f => f.Encode()).ToArray()));
+        }
         public string FloralPath => _floralPath;
         public bool FloralDrawing => _floralDrawing;
         public int FloralIndex => _floralIndex;
@@ -64,6 +105,7 @@ namespace FlowerPainter.Game.Tool
         {
             CancelGesture(); ExitMarkerMode();
             _floralFillTask = null;
+            if (index != -2 || _floralIndex != -2) _partitionSelection = null;
             _floralDrawing = index >= 1000;
             if (_floralDrawing) index -= 1000;
             if (index == -2) { _floralPath = path ?? "0"; _floralIndex = -2; PartitionMap(); Touch(); return; }
@@ -113,6 +155,7 @@ namespace FlowerPainter.Game.Tool
             var motifs = FloralMotif.Read(step.Settings.L("motifs"));
             if (_floralIndex == -2) {
                 var partitions = FloralPartitioning ? PartitionMap() : null;
+                if (partitions != _partitionShown) { _partitionShown = partitions; Touch(); }
                 if (_floralFillTask != null) {
                     if (!_floralFillTask.IsCompleted) return true;
                     var task = _floralFillTask; _floralFillTask = null;
@@ -124,6 +167,10 @@ namespace FlowerPainter.Game.Tool
                 if (_in.RightPressed) { SelectFloralPattern("", -1); return true; }
                 if (_in.LeftPressed && _in.HasHit && _in.OverWorld) {
                     if (FloralPartitioning && partitions == null) return true;
+                    if (partitions != null) {
+                        _partitionSelection = partitions.At(_in.Hit.xz) > 0 ? _in.Hit.xz - FloralOrigin : (float2?)null;
+                        Touch(); return true;
+                    }
                     var region = LayerRegion.From(_shape.Ring); var origin = FloralOrigin;
                     var hit=_in.Hit.xz;
                     var fills = FloralFill.Read(step.Settings.L("fills"));
@@ -140,12 +187,8 @@ namespace FlowerPainter.Game.Tool
                         var values = new List<string>(); foreach (var f in fills) values.Add(f.Encode());
                         return values;
                     }
-                    // The exact subdivision is already cached; commit this click before leaving fill mode.
-                    if (partitions != null) SetValue(_floralPath,"fills",JsonConvert.SerializeObject(FillRegion()));
-                    else {
-                        _floralFillVersion=_designVersion;
-                        _floralFillTask=System.Threading.Tasks.Task.Run(FillRegion);
-                    }
+                    _floralFillVersion=_designVersion;
+                    _floralFillTask=System.Threading.Tasks.Task.Run(FillRegion);
                 }
                 return true;
             }

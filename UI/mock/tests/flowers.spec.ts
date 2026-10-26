@@ -67,7 +67,7 @@ test("curve flowers and fill flowers remain independent", async ({page}) => {
 
 test("overlap is editable in both planting modes and independent of prop size", async ({page}) => {
     await flowers(page);
-    await expect(page.getByTestId("slider-overlap-input")).toHaveValue("50");
+    await expect(page.getByTestId("slider-overlap-input")).toHaveValue("0");
     const size = await page.getByTestId("slider-flowerScale-input").inputValue();
     await page.getByTestId("slider-overlap-input").fill("70");
     await page.getByTestId("slider-overlap-input").press("Enter");
@@ -93,9 +93,8 @@ test("subdivision mode draws boundaries and offers per-region filling", async ({
     await expect(page.getByTestId("motif-width-input")).toHaveCount(0);
     await expect(page.getByTestId("motif-fill-gaps")).toHaveCount(0);
     await expect(page.getByTestId("curve-materials")).toHaveCount(0);
-    await expect(page.getByTestId("flower-regions")).toBeVisible();
-    await page.getByTestId("fill-pick-region").click();
-    await expect(page.getByTestId("fill-pick-region")).toHaveAttribute("aria-pressed","true");
+    await expect(page.getByTestId("flower-regions")).toHaveCount(0);
+    await expect(page.getByTestId("fill-flower")).toHaveCount(0);
     await page.getByTestId("motif-add-curve").click();
     expect(await page.evaluate(() => (window as any).pm.backend.floralDrawing)).toBe(true);
     await expect(page.getByTestId("motif-close-curve")).toBeDisabled();
@@ -110,4 +109,42 @@ test("subdivision mode draws boundaries and offers per-region filling", async ({
     await page.getByTestId("flower-mode-compose").click();
     await expect(page.getByTestId("motif-flower")).toBeVisible();
     await expect(page.getByTestId("motif-width-input")).toBeVisible();
+});
+
+test("partition workflow selects first and applies independent props and styles", async ({page}) => {
+    await flowers(page,1280,720);
+    await page.getByTestId("flower-mode-partition").click();
+    await page.getByTestId("motif-add-ring").click();
+    await expect(page.getByTestId("partition-settings")).toHaveCount(0);
+    await page.getByTestId("partition-finish-boundaries").click();
+    // Geometry selection is exercised by the native suite; supply its view contract here.
+    await page.evaluate(()=>{const b=(window as any).pm.backend;b.floralPartitions={selected:-1,regions:[{id:1,area:500,fillIndex:-1},{id:2,area:800,fillIndex:-1}]};b.publishAll();});
+    await expect(page.getByTestId("floral-pattern-editor")).toHaveCount(0);
+    await expect(page.getByTestId("fill-style-single")).toHaveCount(0);
+    await page.getByTestId("partition-select-1").click();
+    expect(await page.evaluate(()=>(window as any).pm.backend.root.values.fills||[])).toEqual([]);
+    await expect(page.getByTestId("partition-apply")).toBeDisabled();
+    await page.getByTestId("fill-flower").click();
+    await page.getByTestId("asset-grid").getByTestId("asset-sample-a").first().click();
+    expect(await page.evaluate(()=>(window as any).pm.backend.root.values.fills||[])).toEqual([]);
+    await page.getByTestId("partition-apply").click();
+    const first=await page.evaluate(()=>(window as any).pm.backend.root.values.fills[0]);
+    await page.getByTestId("partition-select-2").click();
+    await expect(page.getByTestId("partition-props")).not.toContainText("Sample A");
+    await page.getByTestId("fill-style-flow").click();
+    await page.getByTestId("fill-flower").click();
+    for (const id of ["sample-a","sample-b"]) await page.getByTestId("asset-grid").getByTestId("asset-"+id).first().click();
+    await page.getByTestId("asset-picker-close").click();
+    await page.getByTestId("partition-apply").click();
+    const fills=await page.evaluate(()=>(window as any).pm.backend.root.values.fills);
+    expect(fills[0]).toBe(first);expect(fills[1].split("|")[3]).toBe("flow");expect(fills[1].split("|")[5]).toBe("sample-a,sample-b");
+    await page.getByTestId("partition-select-1").click();
+    await expect(page.getByTestId("fill-style-single")).toHaveAttribute("aria-pressed","true");
+    await expect(page.getByTestId("partition-props")).toContainText("Sample A");
+    await expect(page.getByTestId("slider-overlap-input")).toHaveValue("0");
+    expect(await page.getByTestId("flowerpainter-panel").evaluate(e=>e.scrollWidth>e.clientWidth+1)).toBe(false);
+    await panelShot(page,"flowers-select-then-fill");
+    await page.getByTestId("partition-edit-boundaries").click();
+    await expect(page.getByTestId("floral-pattern-editor")).toBeVisible();
+    await expect(page.getByTestId("partition-settings")).toHaveCount(0);
 });

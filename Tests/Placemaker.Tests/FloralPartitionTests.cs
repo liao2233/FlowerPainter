@@ -89,5 +89,38 @@ namespace FlowerPainter.Tests
             using var cancel=new CancellationTokenSource(); cancel.Cancel();
             Assert.Throws<OperationCanceledException>(()=>new FloralPartitions(LayerRegion.From(Frame),new List<FloralMotif>{Circle()},cancel.Token));
         }
+
+        [Fact] public void RegionPalettesRoundTripWithoutChangingLegacyFills()
+        {
+            var legacy = new FloralFill {X=4,Z=-6,Style="single",Flower="Old|Flower"};
+            Assert.Equal(legacy.Encode(), FloralFill.Read(new[]{legacy.Encode()})[0].Encode());
+            var fill = new FloralFill {X=-2,Z=3,Style="flow",Flowers=new[]{"Red,Flower", "Blue|花%"}};
+            var restored = FloralFill.Read(new[]{fill.Encode()})[0];
+            Assert.Equal(fill.Flowers, restored.Flowers); Assert.Equal(fill.Style, restored.Style);
+            Assert.Equal(fill.X, restored.X); Assert.Equal(fill.Z, restored.Z);
+        }
+
+        [Theory]
+        [InlineData("flow")]
+        [InlineData("islands")]
+        public void EachSubdivisionUsesItsOwnPaletteAndStyle(string style)
+        {
+            var input=Input(Circle(60));
+            var inside=new FloralFill {Style=style,Flowers=new[]{"Red","Yellow"}};
+            var outside=new FloralFill {X=-40,Z=-40,Style="single",Flowers=new[]{"Blue"}};
+            input.Settings.Values["fills"]=new[]{inside.Encode(),outside.Encode()};
+            input.Settings.Values["flowerPalette"]=new[]{"MustNotUseGlobal"};
+            var map=Map(Circle(60));int inner=map.At(new float2(50,50));
+            var plan=Plan(input);
+            var a=plan.Objects.Where(o=>map.At(o.Position.xz)==inner).ToList();
+            Assert.Equal(2,a.Select(o=>o.Asset.Id).Distinct().Count());
+            Assert.All(a,o=>Assert.Contains(o.Asset.Id,inside.Flowers));
+            Assert.All(plan.Objects.Where(o=>map.At(o.Position.xz)!=inner),o=>Assert.Equal("Blue",o.Asset.Id));
+            inside.Style="single";inside.Flowers=new[]{"White"};
+            input.Settings.Values["fills"]=new[]{inside.Encode(),outside.Encode()};
+            var changed=Plan(input);
+            Assert.All(changed.Objects.Where(o=>map.At(o.Position.xz)==inner),o=>Assert.Equal("White",o.Asset.Id));
+            Assert.Equal(plan.Objects.Where(o=>map.At(o.Position.xz)!=inner).Select(o=>(o.Position,o.Asset.Id)),changed.Objects.Where(o=>map.At(o.Position.xz)!=inner).Select(o=>(o.Position,o.Asset.Id)));
+        }
     }
 }
