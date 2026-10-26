@@ -11,11 +11,24 @@ namespace FlowerPainter.Tests
 {
     public class FloralPatchTests
     {
-        private static AreaPlan Plan(Action<SettingsBag> edit, float width=30, float depth=20, float2 offset=default)
+        private static AreaPlan Plan(Action<SettingsBag> edit, float width=30, float depth=20, float2 offset=default, Func<float2,float> terrain=null)
         {
             var layer=new FloralLayer();var settings=layer.Defaults();settings.Values["plantingSystem"]="patch";edit(settings);
-            return layer.Plan(new AreaInput { Settings=settings, Seed=42, Site=new SiteContext {HeightAt=p=>0},
+            return layer.Plan(new AreaInput { Settings=settings, Seed=42, Site=new SiteContext {HeightAt=terrain??(p=>0)},
                 Shape=new AreaShape {Ring=new[]{new float3(offset.x,0,offset.y),new float3(offset.x+width,0,offset.y),new float3(offset.x+width,0,offset.y+depth),new float3(offset.x,0,offset.y+depth)}}},CancellationToken.None);
+        }
+        [Theory]
+        [InlineData("flag")][InlineData("flow")]
+        public void PatchTrianglesFollowHillsWithoutCoveringFlowersInValleys(string shape)
+        {
+            float Height(float2 p) => 2f*math.sin(p.x*math.PI/10)*math.cos(p.y*math.PI/10);
+            var plan=Plan(s=>s.Values["shape"]=shape,terrain:Height);
+            Assert.NotEmpty(plan.Objects);
+            foreach(var obj in plan.Objects) foreach(var mesh in new[]{obj.FlowerPatch,obj.FlowerPatch.Lod})
+                for(int i=0;i<mesh.Indices.Length;i+=3) {
+                    var center=obj.Position+(mesh.Vertices[mesh.Indices[i]]+mesh.Vertices[mesh.Indices[i+1]]+mesh.Vertices[mesh.Indices[i+2]])/3;
+                    Assert.InRange(center.y-Height(center.xz),-.1f,.4f);
+                }
         }
         [Fact] public void LargeFlagSharesRepeatedTilePayloadsAwayFromWorldOrigin()
         {

@@ -1,0 +1,88 @@
+{
+  "scenarios": [
+    {
+      "steps": [
+        {
+          "tool": "points",
+          "do": "area",
+          "rect": [
+            319,
+            313
+          ]
+        },
+        {
+          "do": "type",
+          "layer": "floral",
+          "preset": "patch-carpet"
+        },
+        {
+          "shot": "patch",
+          "do": "preview",
+          "camera": {
+            "target": "area",
+            "view": "top",
+            "distance": 900
+          },
+          "shotMode": "ui"
+        },
+        {
+          "shot": "built",
+          "do": "build",
+          "camera": {
+            "target": "area",
+            "view": "top",
+            "distance": 900
+          },
+          "shotMode": "ui"
+        }
+      ],
+      "land": {
+        "wavelength": 100,
+        "size": [
+          345,
+          340
+        ],
+        "amplitude": 0.3,
+        "ground": "bumpy",
+        "roads": "none"
+      },
+      "id": "user-scale"
+    },
+    {
+      "steps": [
+        {
+          "do": "edit",
+          "build": true
+        },
+        {
+          "id": "shape",
+          "value": "flag",
+          "do": "value"
+        },
+        {
+          "shot": "flag",
+          "camera": {
+            "target": "area",
+            "distance": 900,
+            "view": "top"
+          },
+          "shotMode": "ui",
+          "do": "preview"
+        },
+        {
+          "shot": "built-flag",
+          "camera": {
+            "target": "area",
+            "distance": 900,
+            "view": "top"
+          },
+          "shotMode": "ui",
+          "do": "build"
+        }
+      ],
+      "id": "user-scale-flag",
+      "on": "user-scale"
+    }
+  ],
+  "set": "flower-patch-scale"
+}

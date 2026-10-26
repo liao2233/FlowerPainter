@@ -1,0 +1,145 @@
+{
+  "set": "flower-patch-terrain",
+  "scenarios": [
+    {
+      "id": "flag-hills",
+      "land": {
+        "size": [
+          55,
+          45
+        ],
+        "roads": "none",
+        "ground": "bumpy",
+        "grade": 6,
+        "amplitude": 2,
+        "wavelength": 20
+      },
+      "steps": [
+        {
+          "do": "area",
+          "tool": "points",
+          "rect": [
+            30,
+            20
+          ]
+        },
+        {
+          "do": "type",
+          "layer": "floral"
+        },
+        {
+          "value": "flag",
+          "id": "shape",
+          "do": "value"
+        },
+        {
+          "do": "wait",
+          "seconds": 15
+        },
+        {
+          "shotMode": "render",
+          "do": "camera",
+          "view": "top",
+          "shot": "design-render",
+          "target": "area",
+          "distance": 120
+        },
+        {
+          "shotMode": "ui",
+          "name": "design-panel",
+          "do": "shot"
+        },
+        {
+          "do": "preview",
+          "shot": "far-preview",
+          "shotMode": "render",
+          "camera": {
+            "target": "area",
+            "view": "top",
+            "distance": 500
+          }
+        },
+        {
+          "do": "build",
+          "shot": "built",
+          "shotMode": "render",
+          "camera": {
+            "target": "area",
+            "distance": 500,
+            "view": "top"
+          }
+        }
+      ]
+    },
+    {
+      "id": "patch-hills",
+      "land": {
+        "size": [
+          75,
+          65
+        ],
+        "roads": "none",
+        "ground": "bumpy",
+        "grade": 6,
+        "amplitude": 2,
+        "wavelength": 20
+      },
+      "steps": [
+        {
+          "do": "area",
+          "tool": "points",
+          "rect": [
+            50,
+            40
+          ]
+        },
+        {
+          "do": "type",
+          "layer": "floral"
+        },
+        {
+          "value": "patch",
+          "id": "plantingSystem",
+          "do": "value"
+        },
+        {
+          "do": "wait",
+          "seconds": 15
+        },
+        {
+          "shotMode": "render",
+          "do": "camera",
+          "view": "top",
+          "shot": "design-render",
+          "target": "area",
+          "distance": 120
+        },
+        {
+          "shotMode": "ui",
+          "name": "design-panel",
+          "do": "shot"
+        },
+        {
+          "do": "preview",
+          "shot": "far-preview",
+          "shotMode": "render",
+          "camera": {
+            "target": "area",
+            "view": "top",
+            "distance": 500
+          }
+        },
+        {
+          "do": "build",
+          "shot": "built",
+          "shotMode": "render",
+          "camera": {
+            "target": "area",
+            "distance": 500,
+            "view": "top"
+          }
+        }
+      ]
+    }
+  ]
+}

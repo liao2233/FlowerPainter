@@ -140,14 +140,47 @@ namespace FlowerPainter.Game.Preview
 
         private Func<float2, float> HeightGrid(float2 min, float2 max)
         {
-            float cell = math.max(4f, math.cmax(max - min) / MaxGrid);
-            int nx = (int)math.ceil((max.x - min.x) / cell) + 1, nz = (int)math.ceil((max.y - min.y) / cell) + 1;
-            var heights = new float[nx * nz];
             var data = _terrain.GetHeightData();
-            for (int j = 0; j < nz; j++)
-                for (int i = 0; i < nx; i++)
-                    heights[j * nx + i] = TerrainUtils.SampleHeight(ref data, new float3(min.x + i * cell, 0f, min.y + j * cell));
-            return Bilinear(heights, nx, nz, min, cell);
+            // Preserve the game's original grid and interpolation. Resampling onto an unrelated
+            // 4 m grid smooths hills by more than the height of a flower, burying patch geometry.
+            var scale = data.scale;
+            var offset = data.offset;
+            var resolution = data.resolution.xz;
+            Func<float2, float2> map = p => (p + offset.xz) * scale.xz;
+            var height = CopyHeightGrid(data.heights, resolution, map, min, max, scale.y, offset.y);
+            if (!data.hasBackdrop) return height;
+            Func<float2, float2> backdropMap = p => (p + offset.xz * 4f) * scale.xz / 4f / TerrainSystem.kDownScaledHeightmapScale;
+            var backdrop = data.downscaledHeights.Length == 0 ? (Func<float2, float>)(_ => 0f)
+                : CopyHeightGrid(data.downscaledHeights, data.downScaledResolution.xz, backdropMap, min, max, scale.y, offset.y);
+            return p =>
+            {
+                int2 cell = (int2)math.floor(map(p));
+                return math.any(cell < 0) || math.any(cell + 1 >= resolution) ? backdrop(p) : height(p);
+            };
+        }
+
+        private static Func<float2, float> CopyHeightGrid(NativeArray<ushort> source, int2 resolution,
+            Func<float2, float2> map, float2 min, float2 max, float heightScale, float heightOffset)
+        {
+            int2 first = math.clamp((int2)math.floor(map(min)), 0, resolution - 1);
+            int2 last = math.clamp((int2)math.floor(map(max)) + 1, 0, resolution - 1);
+            int2 size = last - first + 1;
+            var heights = new ushort[size.x * size.y];
+            for (int z = 0; z < size.y; z++)
+                for (int x = 0; x < size.x; x++)
+                    heights[z * size.x + x] = source[(z + first.y) * resolution.x + x + first.x];
+            // Only managed data is captured: the worker never reads the live NativeArray.
+            return p =>
+            {
+                float2 q = map(p);
+                int2 cell = (int2)math.floor(q);
+                int2 a = math.clamp(cell, first, last), b = math.clamp(cell + 1, first, last);
+                float2 t = math.saturate(q - a);
+                a -= first; b -= first;
+                float low = math.lerp((float)heights[a.y * size.x + a.x], heights[a.y * size.x + b.x], t.x);
+                float high = math.lerp((float)heights[b.y * size.x + a.x], heights[b.y * size.x + b.x], t.x);
+                return math.lerp(low, high, t.y) / heightScale - heightOffset;
+            };
         }
 
         private Func<float2, float> WaterGrid(float2 min, float2 max)

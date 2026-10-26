@@ -28,11 +28,10 @@ namespace FlowerPainter.Core.Layers.Types.Floral
 
         // Identify the sampled tile before expanding every bloom into triangles. Identical
         // tiles share one payload as well as one game prefab, including on repeated flag bands.
-        private static string Identify(FlowerPatchMesh ground, List<Bloom> blooms)
+        private static string Identify(List<Bloom> blooms)
         {
             using var stream = new MemoryStream(); using var writer = new BinaryWriter(stream);
-            writer.Write(3); writer.Write(ground.Vertices.Length);
-            foreach (var p in ground.Vertices) { writer.Write(p.x); writer.Write(p.y); writer.Write(p.z); }
+            writer.Write(4);
             writer.Write(blooms.Count);
             foreach (var b in blooms) {
                 writer.Write(b.Ground.x); writer.Write(b.Ground.y); writer.Write(b.Ground.z);
@@ -81,11 +80,8 @@ namespace FlowerPainter.Core.Layers.Types.Floral
             float3 Ground(float2 p, float up=0) => new float3((float)Math.Round(p.x-origin.x,3), (float)Math.Round(terrain(p)-origin.y,3)+up, (float)Math.Round(p.y-origin.z,3));
             foreach (var region in pieces) {
                 cancel.ThrowIfCancellationRequested();
-                if (!EarClip.Triangulate(region, out var verts, out var tris)) continue;
-                foreach (var t in tris) {
-                    var a=Ground(verts[t.x],0.04f); var b=Ground(verts[t.y],0.04f); var c=Ground(verts[t.z],0.04f);
-                    near.Top(a,b,c,0); far.Top(a,b,c,0);
-                }
+                // The foliage belongs to each bloom. A solid polygon spanning the tile
+                // bridges terrain depressions and hides the flowers growing beneath it.
                 Poly.Bounds(region.Outer,out var min,out var max);
                 int x0=(int)math.floor(min.x/pitch), x1=(int)math.ceil(max.x/pitch);
                 int z0=(int)math.floor(min.y/pitch), z1=(int)math.ceil(max.y/pitch);
@@ -109,7 +105,7 @@ namespace FlowerPainter.Core.Layers.Types.Floral
                     blooms.Add(new Bloom {Ground=ground,Radius=radius,Height=h,Seed=seed,Color=color});
                 }
             }
-            string name=Identify(near.Finish(),blooms);
+            string name=Identify(blooms);
             if(cache.TryGetValue(name,out var shared))return shared;
             foreach(var bloom in blooms) {
                 cancel.ThrowIfCancellationRequested();

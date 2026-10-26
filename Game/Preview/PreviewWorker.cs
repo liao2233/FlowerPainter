@@ -26,8 +26,9 @@ namespace FlowerPainter.Game.Preview
             public string FailureKey;
         }
 
-        /// <summary>A plan running longer than this is abandoned (layers are budgeted at 250 ms for 5 ha).</summary>
-        public double TimeoutSeconds = 12.0;
+        /// <summary>Large flower carpets generate merged mesh payloads as well as placement intents.
+        /// Allow that work to finish; edits and tool closure still cancel it immediately.</summary>
+        public double TimeoutSeconds = 60.0;
 
         private readonly object _lock = new object();
         private CancellationTokenSource _cts;
