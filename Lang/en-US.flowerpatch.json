@@ -1,0 +1,21 @@
+{
+  "FlowerPainter.Floral.Issue.PatchFailed": "Flower patch generation failed. See the FlowerPainter log.",
+  "FlowerPainter.Floral.plantingSystem": "Flower models",
+  "FlowerPainter.Floral.plantingSystem.props": "Original props",
+  "FlowerPainter.Floral.plantingSystem.patch": "Flower patches",
+  "FlowerPainter.Floral.plantingSystem.Tooltip": "Combine flowers into patches clipped to the region boundary.",
+  "FlowerPainter.Floral.bloomSpacing": "Blossom spacing",
+  "FlowerPainter.Floral.bloomSpacing.Tooltip": "Smaller spacing makes denser flowers. Each patch contains many blossoms.",
+  "FlowerPainter.Floral.patchHeight": "Flower height",
+  "FlowerPainter.Floral.patchHeight.Tooltip": "Height of the flower patches.",
+  "FlowerPainter.Floral.flagTemplate": "Flag design",
+  "FlowerPainter.Floral.flagTemplate.Tooltip": "Colour blossoms using this flag design.",
+  "FlowerPainter.Floral.flagTemplate.china": "China",
+  "FlowerPainter.Floral.flagTemplate.japan": "Japan",
+  "FlowerPainter.Floral.flagTemplate.france": "France",
+  "FlowerPainter.Floral.shape.flag": "Flag",
+  "FlowerPainter.Floral.Preset.flag-china": "Chinese flag flowers",
+  "FlowerPainter.Floral.Preset.patch-carpet": "Flower patches",
+  "FlowerPainter.Floral.Stat.PatchFlowers": "Blossoms",
+  "FlowerPainter.Floral.Stat.Patches": "Patch objects"
+}

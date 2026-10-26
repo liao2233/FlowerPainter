@@ -50,6 +50,7 @@ namespace FlowerPainter.Game.Tool
             if (PermanentPending()) { Flash(new LocText("FlowerPainter.Reason.AcknowledgePermanent")); return; }
             // Price = build: the plan carries concrete prefab names for every automatic asset.
             ResolveAssets();
+            if (_patchAssetsPending || _patchAssetsFailed) return;
             _feedback.Started();
             var request = new BuildRequest
             {

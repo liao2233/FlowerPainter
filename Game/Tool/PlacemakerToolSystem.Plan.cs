@@ -47,6 +47,7 @@ namespace FlowerPainter.Game.Tool
             {
                 if (_brushPlanning != null) return true;
                 if (_floralFillTask != null) return true;
+                if (_patchAssetsPending) return true;
                 if (_shape == null || _recipe == null || _stage == ToolStage.Building) return false;
                 return _worker.Busy && _requestedRevision == _inputRevision;
             }

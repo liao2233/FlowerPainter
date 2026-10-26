@@ -349,7 +349,8 @@ namespace FlowerPainter.Game.Assets
 
         /// <summary>True when any loaded prefab has this name (missing-asset detection).</summary>
         public bool PrefabExists(string name) =>
-            !string.IsNullOrEmpty(name) && _allPrefabsByName.TryGetValue(name, out var e) && Usable(e);
+            !string.IsNullOrEmpty(name) && (World.GetOrCreateSystemManaged<FlowerPatchPrefabSystem>().TryResolve(name, out _)
+                || _allPrefabsByName.TryGetValue(name, out var e) && Usable(e));
 
         public bool TryGetItem(string name, out CatalogItem item) => _byName.TryGetValue(name ?? "", out item);
 
@@ -405,6 +406,7 @@ namespace FlowerPainter.Game.Assets
         private Entity ResolveName(string name, string category)
         {
             if (string.IsNullOrEmpty(name)) return Entity.Null;
+            if (World.GetOrCreateSystemManaged<FlowerPatchPrefabSystem>().TryResolve(name, out var patch)) return patch;
             if (_byName.TryGetValue(name, out var item) && Usable(item.Prefab)) return item.Prefab;
             // Not catalogued (e.g. a prefab a layer names explicitly that our heuristics skip):
             // still honour it when it exists and is of a usable kind for the category.

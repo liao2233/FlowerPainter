@@ -1,6 +1,22 @@
 import {test,expect,Page} from "@playwright/test";
 import {open,drawPolygon,FIELD,panelShot,waitPlanned} from "./helpers";
 
+test("flower patches and flags expose their own planting controls",async({page})=>{
+    await flowers(page,1280,720);
+    await page.getByTestId("planting-patch").click();
+    await expect(page.getByTestId("slider-bloomSpacing-input")).toHaveValue("0.28");
+    await expect(page.getByTestId("slider-overlap-input")).toHaveCount(0);
+    await page.getByTestId("flower-mode-flag").click();
+    await expect(page.getByTestId("flag-templates")).toBeVisible();
+    await expect(page.getByTestId("assetmulti-add-flowerPalette")).toHaveCount(0);
+    await expect(page.getByTestId("flower-mode-carpet")).toHaveAttribute("aria-pressed","false");
+    await panelShot(page,"flower-patch-flag");
+    await page.getByTestId("flower-mode-carpet").click();
+    await expect(page.getByTestId("planting-patch")).toHaveAttribute("aria-pressed","true");
+    await page.getByTestId("planting-props").click();
+    await expect(page.getByTestId("slider-overlap-input")).toHaveValue("0");
+});
+
 async function flowers(page:Page,width=1920,height=1080){
     await open(page,{real:true,width,height});
     await page.waitForFunction(()=>(window as any).pm.backend.hostUp===true);

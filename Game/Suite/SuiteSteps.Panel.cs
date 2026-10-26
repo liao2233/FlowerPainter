@@ -160,8 +160,10 @@ namespace FlowerPainter.Game.Suite
                 if (fresh) { _tool.SelectRecipe("floral"); _tool.ResetStep("0"); }
                 bool compose = preset == "pattern-collage" || preset == "arc-and-wave" || preset == "wave-and-petals" || preset == "crossing-arcs";
                 bool partition = preset == "partition-regions";
-                string mode=partition?"partition":compose?"collage":"flow";
-                yield return UiAct(st,rec,"flower planting method",partition?"flower-mode-partition":compose?"flower-mode-compose":"flower-mode-carpet",null,null,()=>((string)_tool.SuiteValue("0","shape"))==mode,null,mustChange:false);
+                bool flag=preset=="flag-china";
+                string mode=flag?"flag":partition?"partition":compose?"collage":"flow";
+                yield return UiAct(st,rec,"flower planting method",flag?"flower-mode-flag":partition?"flower-mode-partition":compose?"flower-mode-compose":"flower-mode-carpet",null,null,()=>((string)_tool.SuiteValue("0","shape"))==mode,null,mustChange:false);
+                if(preset=="patch-carpet") yield return UiAct(st,rec,"flower patch models","planting-patch",null,null,()=>((string)_tool.SuiteValue("0","plantingSystem"))=="patch",null);
                 if(preset=="island-carpet") yield return UiAct(st,rec,"island carpet","carpet-islands",null,null,()=>((string)_tool.SuiteValue("0","shape"))=="islands",null,mustChange:false);
                 st.S.Layer="floral"; rec["recipeRoot"]=RootLayer(); rec["plantingMethod"]=mode;
                 yield return WaitPlan(st,rec); yield break;

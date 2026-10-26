@@ -22,7 +22,11 @@ namespace FlowerPainter.Core.Layers.Types.Floral
 
         protected override void DefineControls(ControlSet c)
         {
-            c.Choice("shape", "flow", ControlTier.Essential, "layout", "partition", "collage", "flow", "islands", "ring", "circle", "rosette", "spiral", "heart", "outline", "freeform").Tip();
+            c.Choice("plantingSystem", "props", ControlTier.Essential, "flowers", "props", "patch").Tip();
+            c.Slider("bloomSpacing", 0.28, 0.22, 0.5, 0.02, "m", ControlTier.Essential, "flowers").Tip();
+            c.Slider("patchHeight", 0.24, 0.12, 0.6, 0.02, "m", ControlTier.Essential, "flowers").Tip();
+            c.Choice("flagTemplate", "china", ControlTier.Essential, "layout", "china", "japan", "france").Tip();
+            c.Choice("shape", "flow", ControlTier.Essential, "layout", "flag", "partition", "collage", "flow", "islands", "ring", "circle", "rosette", "spiral", "heart", "outline", "freeform").Tip();
             c.Slider("size", 85, 20, 100, 5, "%", ControlTier.Essential, "layout").Tip().When("shape=ring|circle|rosette|spiral|heart|outline|freeform");
             c.Slider("bandWidth", 4, 0.5, 16, 0.5, "m", ControlTier.Essential, "layout").Tip();
             c.Choice("colorPattern", "bands", ControlTier.Essential, "flowers", "bands", "segments", "single").Tip().When("shape=ring|circle|rosette|spiral|heart|outline|freeform");
@@ -52,11 +56,13 @@ namespace FlowerPainter.Core.Layers.Types.Floral
             c.Slider("shrubSpacing", 3, 1.5, 8, 0.5, "m", ControlTier.More, "planting").When("shrubs=true");
             c.RandomRange("rotation", 0, 355);
             c.RandomRange("petals", 4, 8);
-            foreach (var key in new[] { "shape", "size", "bandWidth", "spacing", "overlap", "flowerScale", "palette", "colorPattern", "shrubs", "shrubSpacing", "turns", "curve", "motifs", "fillGaps", "gapStyle" }) c.Fixed(key);
+            foreach (var key in new[] { "plantingSystem", "bloomSpacing", "patchHeight", "flagTemplate", "shape", "size", "bandWidth", "spacing", "overlap", "flowerScale", "palette", "colorPattern", "shrubs", "shrubSpacing", "turns", "curve", "motifs", "fillGaps", "gapStyle" }) c.Fixed(key);
         }
 
         protected override void DefinePresets()
         {
+            Preset("flag-china", ("shape", "flag"), ("plantingSystem", "patch"), ("flagTemplate", "china"));
+            Preset("patch-carpet", ("shape", "flow"), ("plantingSystem", "patch"));
             Preset("partition-regions", ("shape", "partition"));
             Preset("pattern-collage", ("shape", "collage"));
             Preset("arc-and-wave", ("shape", "collage"), ("motifs", FloralMotif.Example(1)), ("fillGaps", true), ("bandWidth", 7.0));
@@ -91,6 +97,7 @@ namespace FlowerPainter.Core.Layers.Types.Floral
 
         protected override void PlanCore(LayerContext ctx)
         {
+            if(ctx.S("shape")=="flag" || (ctx.S("plantingSystem")=="patch" && (ctx.S("shape")=="partition" || ctx.S("shape")=="flow" || ctx.S("shape")=="islands"))) { FlowerPatchPlanner.Plan(ctx); return; }
             float scale = math.clamp(ctx.F("flowerScale"), 0.25f, 1.2f);
             var selected = new List<string>();
             foreach (var id in ctx.L("flowerPalette"))

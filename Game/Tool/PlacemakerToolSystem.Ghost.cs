@@ -79,7 +79,7 @@ namespace FlowerPainter.Game.Tool
                     BuildRunning = _building,
                     ValuePreview = ValuePreviewKind,
                     Dragging = _gesture != Gesture.None,
-                    PlanAvailable = _plan != null,
+                    PlanAvailable = _plan != null && !_patchAssetsPending && !_patchAssetsFailed,
                     PlanRevision = rev,
                     PlanStale = PlanStale,
                     GhostAvailable = _ghost.Available,

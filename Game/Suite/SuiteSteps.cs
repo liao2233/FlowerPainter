@@ -273,6 +273,7 @@ namespace FlowerPainter.Game.Suite
                     else yield return Seconds((float?)step["seconds"] ?? 1f);
                     break;
                 case "grow": yield return StepGrow(st, step, rec); break;
+                case "saveReload": yield return StepSaveReload(st, rec); break;
                 case "undo": yield return StepUndoRedo(st, step, rec, true); break;
                 case "redo": yield return StepUndoRedo(st, step, rec, false); break;
                 case "key": yield return StepKey(st, step, rec); break;

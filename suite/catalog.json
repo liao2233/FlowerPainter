@@ -1,6 +1,6 @@
 {
   "generatedBy": "the in-game suite from GeneratorRegistry",
-  "assembly": "0.1.1+61541d7-dirty",
+  "assembly": "0.1.1+531fa9e-dirty",
   "categories": [
     {
       "id": "flowers",
@@ -20,6 +20,8 @@
       "group": "flowers",
       "category": "flowers",
       "presets": [
+        "flag-china",
+        "patch-carpet",
         "partition-regions",
         "pattern-collage",
         "arc-and-wave",
@@ -37,9 +39,47 @@
       ],
       "options": [
         {
+          "id": "plantingSystem",
+          "kind": "Choice",
+          "options": [
+            "props",
+            "patch"
+          ],
+          "default": "props"
+        },
+        {
+          "id": "bloomSpacing",
+          "kind": "Slider",
+          "min": 0.22,
+          "max": 0.5,
+          "step": 0.02,
+          "unit": "m",
+          "default": 0.28
+        },
+        {
+          "id": "patchHeight",
+          "kind": "Slider",
+          "min": 0.12,
+          "max": 0.6,
+          "step": 0.02,
+          "unit": "m",
+          "default": 0.24
+        },
+        {
+          "id": "flagTemplate",
+          "kind": "Choice",
+          "options": [
+            "china",
+            "japan",
+            "france"
+          ],
+          "default": "china"
+        },
+        {
           "id": "shape",
           "kind": "Choice",
           "options": [
+            "flag",
             "partition",
             "collage",
             "flow",

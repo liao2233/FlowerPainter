@@ -687,6 +687,7 @@ namespace FlowerPainter.Core
 
     public sealed class PlannedObject
     {
+        public Layers.Types.Floral.FlowerPatchMesh FlowerPatch;
         public float3 Position;
         /// <summary>Yaw in radians around +Y (0 = facing +Z).</summary>
         public float Yaw;

@@ -17,6 +17,8 @@ namespace FlowerPainter.Game.Tool
 
         private int _resolvedCatalogVersion = int.MinValue;
         private int _assetsResolvedStamp;
+        private bool _patchAssetsPending;
+        private bool _patchAssetsFailed;
 
         /// <summary>Bumped whenever the plan's assets were (re)resolved — summary change detection.</summary>
         public int AssetsResolvedStamp => _assetsResolvedStamp;
@@ -27,13 +29,23 @@ namespace FlowerPainter.Game.Tool
         /// </summary>
         private void ResolveAssets()
         {
-            if (_plan == null) return;
+            if (_plan == null) { _patchAssetsPending = false; _patchAssetsFailed = false; return; }
             var catalog = Services.Assets;
             if (catalog == null || !catalog.Ready) return;
             int version = catalog.Version;
             if (ReferenceEquals(_resolvedPlan, _plan) && _resolvedCatalogVersion == version) return;
-            try { AutoAssets.Resolve(_plan, catalog); }
-            catch (Exception e) { Mod.Log.Warn("FlowerPainter: resolving automatic assets failed: " + e.Message); }
+            _patchAssetsFailed = false;
+            try {
+                _patchAssetsPending = !World.GetOrCreateSystemManaged<Assets.FlowerPatchPrefabSystem>().Prepare(_plan);
+                if (_patchAssetsPending) return;
+                AutoAssets.Resolve(_plan, catalog);
+            }
+            catch (Exception e) {
+                _patchAssetsPending = false;
+                _patchAssetsFailed = true;
+                Mod.Log.Warn("FlowerPainter: resolving automatic assets failed: " + e.Message);
+                _plan.Issues.Add(new PlanIssue { Severity = IssueSeverity.Error, Key = "FlowerPainter.Floral.Issue.PatchFailed" });
+            }
             _resolvedPlan = _plan;
             _resolvedCatalogVersion = version;
             _assetsResolvedStamp++;
