@@ -72,14 +72,16 @@ namespace FlowerPainter.Game.Assets
             entity=Entity.Null;
             return name!=null && _entities.TryGetValue(name,out entity) && UnityEngine.Time.frameCount-_createdAt[name]>=3 && EntityManager.HasComponent<ObjectGeometryData>(entity);
         }
-        public bool Prepare(ComposedPlan plan) {
-            bool ready=true;
+        public bool Prepare(ComposedPlan plan,out double progress) {
+            bool ready=true;int total=0,complete=0;
             foreach(var layer in plan.Layers) foreach(var obj in layer.Objects) {
                 var mesh=obj.FlowerPatch;if(mesh==null)continue;
+                total++;
                 if(_failed.Contains(mesh.Name))throw new InvalidOperationException("Flower patch could not be created: "+mesh.Name);
-                if(TryResolve(mesh.Name,out _))continue;
+                if(TryResolve(mesh.Name,out _)){complete++;continue;}
                 ready=false;if(_requested.Add(mesh.Name))_pending.Enqueue(mesh);
             }
+            progress=total==0?1:(double)complete/total;
             return ready;
         }
         [Preserve] protected override void OnUpdate() {

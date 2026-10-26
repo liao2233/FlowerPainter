@@ -18,19 +18,28 @@ namespace FlowerPainter.Core.Layers.Types.Floral
         public int Flowers;
         public string Name;
 
-        public void Identify()
+        private struct Bloom
         {
-            Vertices = Array.ConvertAll(Vertices, p => math.round(p*1000)/1000);
-            if (Lod != null) Lod.Vertices = Array.ConvertAll(Lod.Vertices, p => math.round(p*1000)/1000);
+            public float3 Ground;
+            public float Radius, Height;
+            public uint Seed;
+            public int Color;
+        }
+
+        // Identify the sampled tile before expanding every bloom into triangles. Identical
+        // tiles share one payload as well as one game prefab, including on repeated flag bands.
+        private static string Identify(FlowerPatchMesh ground, List<Bloom> blooms)
+        {
             using var stream = new MemoryStream(); using var writer = new BinaryWriter(stream);
-            writer.Write(2); Write(this); if (Lod != null) Write(Lod);
-            using var hash = SHA256.Create();
-            Name = Prefix + BitConverter.ToString(hash.ComputeHash(stream.ToArray())).Replace("-", "").Substring(0, 32);
-            void Write(FlowerPatchMesh mesh) {
-                foreach (var p in mesh.Vertices) { writer.Write(p.x); writer.Write(p.y); writer.Write(p.z); }
-                foreach (var uv in mesh.UV) { writer.Write(uv.x); writer.Write(uv.y); }
-                foreach (var i in mesh.Indices) writer.Write(i);
+            writer.Write(3); writer.Write(ground.Vertices.Length);
+            foreach (var p in ground.Vertices) { writer.Write(p.x); writer.Write(p.y); writer.Write(p.z); }
+            writer.Write(blooms.Count);
+            foreach (var b in blooms) {
+                writer.Write(b.Ground.x); writer.Write(b.Ground.y); writer.Write(b.Ground.z);
+                writer.Write(b.Radius); writer.Write(b.Height); writer.Write(b.Seed); writer.Write(b.Color);
             }
+            using var hash = SHA256.Create();
+            return Prefix + BitConverter.ToString(hash.ComputeHash(stream.ToArray())).Replace("-", "").Substring(0, 32);
         }
 
         public static readonly string[] Hex = { "193D17", "326329", "487F32", "E3B832", "D8202F", "FFD338", "2352B4", "F5F0E4", "F288B2", "78399D", "F17D25", "B72A74", "201D2D", "168242", "48B5CD", "182D68" };
@@ -64,9 +73,11 @@ namespace FlowerPainter.Core.Layers.Types.Floral
         }
 
         internal static FlowerPatchMesh Make(List<Region> pieces, float3 origin, float pitch, float height,
-            Func<float2,int> colorAt, Func<float2,float> terrain, Func<float2,float> clearance, System.Threading.CancellationToken cancel)
+            Func<float2,int> colorAt, Func<float2,float> terrain, Func<float2,float> clearance, System.Threading.CancellationToken cancel,
+            Dictionary<string,FlowerPatchMesh> cache)
         {
-            var near = new Builder(); var far = new Builder(); int flowers = 0;
+            var near = new Builder(); var far = new Builder(); var blooms = new List<Bloom>();
+            int originX=(int)math.round(origin.x/pitch),originZ=(int)math.round(origin.z/pitch);
             float3 Ground(float2 p, float up=0) => new float3((float)Math.Round(p.x-origin.x,3), (float)Math.Round(terrain(p)-origin.y,3)+up, (float)Math.Round(p.y-origin.z,3));
             foreach (var region in pieces) {
                 cancel.ThrowIfCancellationRequested();
@@ -84,41 +95,56 @@ namespace FlowerPainter.Core.Layers.Types.Floral
                     // Keep ownership on a single tile. Petals may touch adjacent tiles without duplicate stems.
                     if(!region.Contains(p))continue;
                     var jitter=new float2((seed&255)/255f-.5f,((seed>>8)&255)/255f-.5f)*pitch*.26f;
-                    if(clearance(p)>math.length(jitter))p+=jitter;
+                    var local=new float2((x-originX+0.5f)*pitch,(z-originZ+0.5f)*pitch);
+                    if(clearance(p)>math.length(jitter))local+=jitter;
+                    p=origin.xz+local;
                     float radius=math.min(pitch*0.64f,clearance(p)/1.03f);
                     if(radius<0.025f)continue;
                     int color=colorAt(p); if(color<0)continue;
-                    float rotation=(seed%360)*math.PI/180f;
                     float h=height*(0.85f+(seed%31)/100f);
-                    var ground=Ground(p); var center=ground+new float3(0,h,0);
-                    float3 Rad(float angle,float r,float y) => ground+new float3(math.cos(angle)*r,y,math.sin(angle)*r);
-                    // Low leaves form a textured green mass beneath the flower heads.
-                    for(int leaf=0;leaf<3;leaf++) {
-                        float angle=rotation+leaf*2.094395f;
-                        var tip=Rad(angle,radius*1.03f,h*0.42f);
-                        var left=Rad(angle-0.5f,radius*0.55f,h*0.22f);
-                        var right=Rad(angle+0.5f,radius*0.55f,h*0.22f);
-                        var basePoint=ground+new float3(0,h*0.08f,0);
-                        near.Top(basePoint,left,tip,1,leaf%3);near.Top(basePoint,tip,right,2,leaf%3);
-                    }
-                    // Five cupped petals; all flowers in this tile are one mesh/entity.
-                    for(int petal=0;petal<5;petal++) {
-                        float a=rotation+petal*math.PI*0.4f;
-                        var left=Rad(a-0.52f,radius*0.82f,h*0.94f);
-                        var tipLeft=Rad(a-0.24f,radius,h);
-                        var tipRight=Rad(a+0.24f,radius,h);
-                        var right=Rad(a+0.52f,radius*0.82f,h*0.94f);
-                        near.Top(center,left,tipLeft,color,1+(int)(seed%3));
-                        near.Top(center,tipLeft,tipRight,color,2);near.Top(center,tipRight,right,color,2);
-                    }
-                    float core=radius*0.15f;
-                    near.Top(center+new float3(-core,0.006f,-core),center+new float3(core,0.006f,-core),center+new float3(0,0.018f,core),3);
-                    // An octagon approximates the same flower-head coverage at distance.
-                    for(int k=0;k<8;k++) far.Top(center,Rad(rotation+k*math.PI/4,radius*.9f,h*.98f),Rad(rotation+(k+1)*math.PI/4,radius*.9f,h*.98f),color);
-                    flowers++;
+                    var ground=Ground(p);
+                    // Calculate local coordinates before adding the world origin. Subtracting
+                    // kilometre-scale floats otherwise makes identical tiles hash differently.
+                    ground.x=(float)Math.Round(local.x,3);ground.z=(float)Math.Round(local.y,3);
+                    blooms.Add(new Bloom {Ground=ground,Radius=radius,Height=h,Seed=seed,Color=color});
                 }
             }
-            var mesh=near.Finish();mesh.Lod=far.Finish();mesh.Flowers=flowers;mesh.Identify();return mesh;
+            string name=Identify(near.Finish(),blooms);
+            if(cache.TryGetValue(name,out var shared))return shared;
+            foreach(var bloom in blooms) {
+                cancel.ThrowIfCancellationRequested();
+                var ground=bloom.Ground;float h=bloom.Height,radius=bloom.Radius;uint seed=bloom.Seed;int color=bloom.Color;
+                float rotation=(seed%360)*math.PI/180f;
+                var center=ground+new float3(0,h,0);
+                float3 Rad(float angle,float r,float y) => ground+new float3(math.cos(angle)*r,y,math.sin(angle)*r);
+                // Low leaves form a textured green mass beneath the flower heads.
+                for(int leaf=0;leaf<3;leaf++) {
+                    float angle=rotation+leaf*2.094395f;
+                    var tip=Rad(angle,radius*1.03f,h*0.42f);
+                    var left=Rad(angle-0.5f,radius*0.55f,h*0.22f);
+                    var right=Rad(angle+0.5f,radius*0.55f,h*0.22f);
+                    var basePoint=ground+new float3(0,h*0.08f,0);
+                    near.Top(basePoint,left,tip,1,leaf%3);near.Top(basePoint,tip,right,2,leaf%3);
+                }
+                // Five cupped petals; all flowers in this tile are one mesh/entity.
+                for(int petal=0;petal<5;petal++) {
+                    float a=rotation+petal*math.PI*0.4f;
+                    var left=Rad(a-0.52f,radius*0.82f,h*0.94f);
+                    var tipLeft=Rad(a-0.24f,radius,h);
+                    var tipRight=Rad(a+0.24f,radius,h);
+                    var right=Rad(a+0.52f,radius*0.82f,h*0.94f);
+                    near.Top(center,left,tipLeft,color,1+(int)(seed%3));
+                    near.Top(center,tipLeft,tipRight,color,2);near.Top(center,tipRight,right,color,2);
+                }
+                float core=radius*0.15f;
+                near.Top(center+new float3(-core,0.006f,-core),center+new float3(core,0.006f,-core),center+new float3(0,0.018f,core),3);
+                // An octagon approximates the same flower-head coverage at distance.
+                for(int k=0;k<8;k++) far.Top(center,Rad(rotation+k*math.PI/4,radius*.9f,h*.98f),Rad(rotation+(k+1)*math.PI/4,radius*.9f,h*.98f),color);
+            }
+            var mesh=near.Finish();mesh.Lod=far.Finish();mesh.Flowers=blooms.Count;mesh.Name=name;
+            mesh.Vertices=Array.ConvertAll(mesh.Vertices,p=>math.round(p*1000)/1000);
+            mesh.Lod.Vertices=Array.ConvertAll(mesh.Lod.Vertices,p=>math.round(p*1000)/1000);
+            cache.Add(name,mesh);return mesh;
         }
     }
 }

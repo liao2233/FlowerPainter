@@ -25,6 +25,7 @@ namespace FlowerPainter.Core.Layers.Types.Floral
             var palette=ctx.L("flowerPalette");if(palette.Length==0)palette=new[]{"Red","Yellow","White"};
             float pitch=math.clamp(ctx.F("bloomSpacing"),0.22f,0.5f),height=math.clamp(ctx.F("patchHeight"),0.12f,0.6f);
             int flowers=0, triangles=0;float tile=14*pitch;
+            var meshes=new Dictionary<string,FlowerPatchMesh>();
             // Each template retains its own aspect ratio, including square and non-rectangular flags.
             var template=FlagCatalog.Get(ctx.S("flagTemplate"));
             var dimensions=template.Fit(frame.Max-frame.Min);float flagW=dimensions.x,flagH=dimensions.y;
@@ -60,14 +61,15 @@ namespace FlowerPainter.Core.Layers.Types.Floral
                     return d;
                 }
                 Poly.Bounds(region.Outer,out var min,out var max);
-                for(float z=math.floor(min.y/tile)*tile;z<max.y;z+=tile)for(float x=math.floor(min.x/tile)*tile;x<max.x;x+=tile) {
+                for(int tz=(int)math.floor(min.y/tile);tz*tile<max.y;tz++)for(int tx=(int)math.floor(min.x/tile);tx*tile<max.x;tx++) {
                     ctx.Cancel.ThrowIfCancellationRequested();
+                    float x=tx*tile,z=tz*tile;
                     var lo=new float2(x,z);var hi=lo+tile;
                     if(flag){lo=math.max(lo,flagMin);hi=math.min(hi,flagMin+new float2(flagW,flagH));if(math.any(hi<=lo))continue;}
                     var pieces=Poly.Boolean(new[]{region},new[]{new Region(Rect(lo,hi))},BoolOp.Intersection);
                     if(pieces.Count==0)continue;
                     var pos=new float3(x,ctx.H(new float2(x,z)),z);
-                    var mesh=FlowerPatchMesh.Make(pieces,pos,pitch,height,Color,ctx.H,Clearance,ctx.Cancel);
+                    var mesh=FlowerPatchMesh.Make(pieces,pos,pitch,height,Color,ctx.H,Clearance,ctx.Cancel,meshes);
                     if(mesh.Flowers==0)continue;
                     var obj=ctx.Object(pos.xz,0,ObjectRole.Planter,new AssetRef(mesh.Name),0,-1,AssetCategories.Flower);
                     obj.Position=pos;obj.Control="plantingSystem";obj.FlowerPatch=mesh;

@@ -264,12 +264,13 @@ namespace FlowerPainter.Game.Tool
             Touch();
         }
 
-        /// <summary>Coarse 0..0.95 while Planning (0 = queued, the request has not started), else null.</summary>
+        /// <summary>Measured model preparation progress, otherwise a coarse planning estimate; null when idle.</summary>
         public double? PlanningProgress
         {
             get
             {
                 if (!Planning) return null;
+                if (_patchAssetsPending) return _patchAssetsProgress;
                 bool running = _requestedRevision == _inputRevision && _worker.Busy;
                 double ms = running ? (UnityEngine.Time.realtimeSinceStartup - _planStartedAt) * 1000.0 : -1;
                 return PlanSchedule.Progress(ms, _planMs);

@@ -1,0 +1,185 @@
+{
+  "set": "flower-patch-visibility",
+  "scenarios": [
+    {
+      "id": "flag-far",
+      "land": {
+        "size": [
+          205,
+          165
+        ],
+        "roads": "none",
+        "ground": "flat",
+        "grade": 6
+      },
+      "steps": [
+        {
+          "do": "area",
+          "tool": "points",
+          "rect": [
+            180,
+            140
+          ]
+        },
+        {
+          "do": "type",
+          "layer": "floral",
+          "preset": "flag-china"
+        },
+        {
+          "do": "preview",
+          "shot": "far-preview",
+          "shotMode": "render",
+          "camera": {
+            "target": "area",
+            "view": "top",
+            "distance": 500
+          }
+        },
+        {
+          "do": "camera",
+          "target": "area",
+          "view": "oblique",
+          "distance": 40,
+          "shot": "close-preview",
+          "shotMode": "render"
+        },
+        {
+          "do": "shot",
+          "name": "panel",
+          "shotMode": "ui"
+        },
+        {
+          "do": "build",
+          "shot": "built",
+          "shotMode": "render",
+          "camera": {
+            "distance": 500,
+            "target": "area",
+            "view": "top"
+          }
+        }
+      ]
+    },
+    {
+      "id": "patch-slope",
+      "land": {
+        "size": [
+          75,
+          65
+        ],
+        "roads": "none",
+        "ground": "slope",
+        "grade": 6
+      },
+      "steps": [
+        {
+          "do": "area",
+          "tool": "points",
+          "rect": [
+            50,
+            40
+          ]
+        },
+        {
+          "do": "type",
+          "layer": "floral",
+          "preset": "patch-carpet"
+        },
+        {
+          "do": "preview",
+          "shot": "far-preview",
+          "shotMode": "render",
+          "camera": {
+            "target": "area",
+            "view": "top",
+            "distance": 500
+          }
+        },
+        {
+          "do": "camera",
+          "target": "area",
+          "view": "oblique",
+          "distance": 40,
+          "shot": "close-preview",
+          "shotMode": "render"
+        },
+        {
+          "do": "shot",
+          "name": "panel",
+          "shotMode": "ui"
+        },
+        {
+          "do": "build",
+          "shot": "built",
+          "shotMode": "render",
+          "camera": {
+            "distance": 500,
+            "target": "area",
+            "view": "top"
+          }
+        }
+      ]
+    },
+    {
+      "id": "large-carpet",
+      "land": {
+        "size": [
+          280,
+          280
+        ],
+        "roads": "none",
+        "ground": "flat",
+        "grade": 6
+      },
+      "steps": [
+        {
+          "do": "area",
+          "tool": "points",
+          "rect": [
+            255,
+            253
+          ]
+        },
+        {
+          "do": "type",
+          "layer": "floral",
+          "preset": "patch-carpet"
+        },
+        {
+          "do": "preview",
+          "shot": "far-preview",
+          "shotMode": "render",
+          "camera": {
+            "target": "area",
+            "view": "top",
+            "distance": 800
+          }
+        },
+        {
+          "do": "camera",
+          "target": "area",
+          "view": "oblique",
+          "distance": 40,
+          "shot": "close-preview",
+          "shotMode": "render"
+        },
+        {
+          "do": "shot",
+          "name": "panel",
+          "shotMode": "ui"
+        },
+        {
+          "do": "build",
+          "shot": "built",
+          "shotMode": "render",
+          "camera": {
+            "distance": 800,
+            "target": "area",
+            "view": "top"
+          }
+        }
+      ]
+    }
+  ]
+}

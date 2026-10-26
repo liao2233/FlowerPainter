@@ -12,10 +12,10 @@ namespace FlowerPainter.Tests
         };
 
         [Fact]
-        public void DefaultsDesignSketchReviewGhost()
+        public void DefaultsDesignAndReviewToGhost()
         {
             var m = new PreviewModeMachine();
-            Assert.Equal(PreviewMode.Sketch, m.Selected(ToolStage.Design));
+            Assert.Equal(PreviewMode.Ghost, m.Selected(ToolStage.Design));
             Assert.Equal(PreviewMode.Ghost, m.Selected(ToolStage.Review));
             Assert.Equal(PreviewMode.Sketch, m.Selected(ToolStage.Area));
             Assert.Equal(PreviewMode.Sketch, m.Selected(ToolStage.Manage));
@@ -25,6 +25,7 @@ namespace FlowerPainter.Tests
         public void DesignSketchSendsNothing()
         {
             var m = new PreviewModeMachine();
+            m.Set(ToolStage.Design, PreviewMode.Sketch);
             var d = m.Step(Ready(ToolStage.Design));
             Assert.Equal(GhostCommand.None, d.Command);
             Assert.Equal(PreviewMode.Sketch, d.Effective);
@@ -126,6 +127,7 @@ namespace FlowerPainter.Tests
         public void DesignChoiceSticksAcrossStages()
         {
             var m = new PreviewModeMachine();
+            Assert.True(m.Set(ToolStage.Design, PreviewMode.Sketch));
             Assert.True(m.Set(ToolStage.Design, PreviewMode.Ghost));
             Assert.False(m.Set(ToolStage.Design, PreviewMode.Ghost));
             Assert.Equal(PreviewMode.Ghost, m.Step(Ready(ToolStage.Design)).Effective);
@@ -172,6 +174,7 @@ namespace FlowerPainter.Tests
             Assert.Equal(GhostCommand.Hide, d.Command);
             Assert.Equal(SketchObjects.Full, d.Objects);
             Assert.Equal(-1, m.RequestedRevision);
+            Assert.False(d.GhostPending);
             Assert.Equal(GhostCommand.None, m.Step(i).Command);
         }
 

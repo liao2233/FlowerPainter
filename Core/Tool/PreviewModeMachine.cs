@@ -5,8 +5,8 @@
 // applies anything. The tool asks this machine once per frame what to do with the ghost.
 //
 // Rules:
-// - Each stage has its own choice for the session: Design starts as sketch (fast while editing),
-//   Review as ghost. setPreviewMode changes the choice of the current stage and it sticks.
+// - Each stage has its own choice for the session: Design and Review start as ghost.
+//   setPreviewMode changes the choice of the current stage and it sticks.
 // - While something is dragged (slider previewValue, outline/handle gesture) the effective mode is
 //   always sketch; when the drag ends the ghost comes back. Hovering an asset in a picker is not a
 //   drag: the ghost stays and follows the hovered asset.
@@ -53,7 +53,7 @@ namespace FlowerPainter.Core.Tool
         public ValuePreviewKind ValuePreview;
         /// <summary>Outline/handle/marker drag in progress.</summary>
         public bool Dragging;
-        /// <summary>A composed plan exists (possibly stale).</summary>
+        /// <summary>A composed plan with buildable content exists (possibly stale).</summary>
         public bool PlanAvailable;
         public int PlanRevision;
         /// <summary>The plan is older than the input (re-planning in the background).</summary>

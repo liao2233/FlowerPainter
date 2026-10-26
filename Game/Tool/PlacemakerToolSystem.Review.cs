@@ -18,6 +18,7 @@ namespace FlowerPainter.Game.Tool
         private int _resolvedCatalogVersion = int.MinValue;
         private int _assetsResolvedStamp;
         private bool _patchAssetsPending;
+        private double _patchAssetsProgress;
         private bool _patchAssetsFailed;
 
         /// <summary>Bumped whenever the plan's assets were (re)resolved — summary change detection.</summary>
@@ -36,7 +37,7 @@ namespace FlowerPainter.Game.Tool
             if (ReferenceEquals(_resolvedPlan, _plan) && _resolvedCatalogVersion == version) return;
             _patchAssetsFailed = false;
             try {
-                _patchAssetsPending = !World.GetOrCreateSystemManaged<Assets.FlowerPatchPrefabSystem>().Prepare(_plan);
+                _patchAssetsPending = !World.GetOrCreateSystemManaged<Assets.FlowerPatchPrefabSystem>().Prepare(_plan,out _patchAssetsProgress);
                 if (_patchAssetsPending) return;
                 AutoAssets.Resolve(_plan, catalog);
             }

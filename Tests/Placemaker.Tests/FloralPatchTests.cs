@@ -11,11 +11,19 @@ namespace FlowerPainter.Tests
 {
     public class FloralPatchTests
     {
-        private static AreaPlan Plan(Action<SettingsBag> edit, float width=30, float depth=20)
+        private static AreaPlan Plan(Action<SettingsBag> edit, float width=30, float depth=20, float2 offset=default)
         {
             var layer=new FloralLayer();var settings=layer.Defaults();settings.Values["plantingSystem"]="patch";edit(settings);
             return layer.Plan(new AreaInput { Settings=settings, Seed=42, Site=new SiteContext {HeightAt=p=>0},
-                Shape=new AreaShape {Ring=new[]{new float3(0,0,0),new float3(width,0,0),new float3(width,0,depth),new float3(0,0,depth)}}},CancellationToken.None);
+                Shape=new AreaShape {Ring=new[]{new float3(offset.x,0,offset.y),new float3(offset.x+width,0,offset.y),new float3(offset.x+width,0,offset.y+depth),new float3(offset.x,0,offset.y+depth)}}},CancellationToken.None);
+        }
+        [Fact] public void LargeFlagSharesRepeatedTilePayloadsAwayFromWorldOrigin()
+        {
+            var plan=Plan(s=>s.Values["shape"]="flag",180,140,new float2(1958.5f,-80));
+            Assert.InRange(plan.Objects.Sum(o=>o.FlowerPatch.Flowers),270000,280000);
+            var meshes=plan.Objects.Select(o=>o.FlowerPatch).Distinct().ToArray();
+            Assert.True(meshes.Length<plan.Objects.Count/3,$"{meshes.Length} meshes for {plan.Objects.Count} tiles");
+            Assert.Equal(meshes.Length,meshes.Select(m=>m.Name).Distinct().Count());
         }
         [Fact] public void DenseFlowersUsePatchesAndSimplerDistantMeshes()
         {
