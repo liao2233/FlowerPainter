@@ -357,7 +357,10 @@ if (-not $KeepGraphics) {
         $t = $t -replace '"lodCrossFade":\s*true', '"lodCrossFade": false'
         $t = $t -replace '"edgeScrolling":\s*true', '"edgeScrolling": false'
         $t = $t -replace '"levelOfDetail":\s*[0-9.]+', '"levelOfDetail": 1'
-        $t = $t -replace '"resolution":\s*\{[^}]*\}', ('"resolution": {"width": ' + $w + ', "height": ' + $h + '}')
+        # Resolution also contains a nested refreshRateRatio in current game settings.
+        # Edit its dimensions in place instead of stopping at that inner closing brace.
+        $t = $t -replace '("resolution":\s*\{\s*"width":\s*)[0-9]+', ('${1}' + $w)
+        $t = $t -replace '("resolution":\s*\{\s*"width":\s*[0-9]+,\s*"height":\s*)[0-9]+', ('${1}' + $h)
         $t = $t -replace '("enabled":\s*)true(,\s*"isAdaptive")', '${1}false$2'
         $t = $t -replace '("enabled":\s*)true(,\s*"nearSampleCount")', '${1}false$2'
         $t = $t -replace '("enabled":\s*)true(,\s*"sampleCount")', '${1}false$2'
