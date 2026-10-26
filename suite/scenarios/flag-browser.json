@@ -1,0 +1,61 @@
+{
+  "set": "flag-browser",
+  "scenarios": [
+    {
+      "id": "catalog-wto",
+      "land": {
+        "size": [
+          46,
+          36
+        ],
+        "roads": "none"
+      },
+      "steps": [
+        {
+          "do": "area",
+          "tool": "points",
+          "rect": [
+            30,
+            20
+          ]
+        },
+        {
+          "do": "type",
+          "layer": "floral",
+          "preset": "flag-china"
+        },
+        {
+          "do": "value",
+          "id": "flagTemplate",
+          "value": "wto"
+        },
+        {
+          "do": "shot",
+          "name": "flag-browser",
+          "shotMode": "ui"
+        },
+        {
+          "do": "preview",
+          "shot": "flag-preview",
+          "shotMode": "render",
+          "camera": {
+            "target": "area",
+            "view": "top",
+            "distance": 75
+          }
+        },
+        {
+          "do": "build"
+        },
+        {
+          "do": "camera",
+          "target": "build",
+          "view": "top",
+          "distance": 75,
+          "shot": "flag-top",
+          "shotMode": "render"
+        }
+      ]
+    }
+  ]
+}

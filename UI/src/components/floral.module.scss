@@ -10,3 +10,13 @@
 .adjustments { display: flex; flex-direction: column; }
 .adjust { display: flex; flex-direction: row; align-items: center; width: 100%; font-size: 11rem; margin-bottom: 5rem; }
 .adjustLabel { width: 90rem; flex-shrink: 0; }
+.flagCurrent { display: flex; align-items: center; margin-bottom: 8rem; }
+.flagCurrent img { margin-right: 12rem; }
+.flagSearch { width: 100%; padding: 7rem; margin-bottom: 8rem; color: #eaf2f6; background-color: rgba(0,0,0,0.25); border: 1rem solid rgba(255,255,255,0.2); border-radius: 4rem; }
+.flagList { display: flex; flex-wrap: wrap; max-height: 210rem; overflow-y: auto; margin-bottom: 8rem; }
+.flagTile { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; width: 31%; min-height: 76rem; margin: 0 1% 5rem 0; padding: 5rem; border: 1rem solid rgba(255,255,255,0.12); border-radius: 4rem; color: #eaf2f6; background-color: rgba(255,255,255,0.04); font-size: 11rem; }
+.flagTile[aria-pressed="true"] { background-color: rgba(75,181,224,0.22); border-color: rgba(100,200,245,0.85); }
+.flagTile:hover { background-color: rgba(255,255,255,0.12); }
+.flagThumb { display: flex; align-items: center; justify-content: center; width: 65rem; height: 40rem; margin-bottom: 4rem; }
+.flagTile span { text-align: center; }
+.flagWarning { color: #f3c661; font-size: 11rem; margin-top: 4rem; }

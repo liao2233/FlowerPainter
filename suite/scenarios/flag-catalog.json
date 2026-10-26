@@ -1,0 +1,240 @@
+{
+  "set": "flag-catalog",
+  "scenarios": [
+    {
+      "id": "catalog-us",
+      "land": {
+        "size": [
+          72,
+          48
+        ],
+        "roads": "none"
+      },
+      "steps": [
+        {
+          "do": "area",
+          "tool": "points",
+          "rect": [
+            56,
+            32
+          ]
+        },
+        {
+          "do": "type",
+          "layer": "floral",
+          "preset": "flag-china"
+        },
+        {
+          "do": "value",
+          "id": "flagTemplate",
+          "value": "us"
+        },
+        {
+          "do": "shot",
+          "name": "flag-browser",
+          "shotMode": "ui"
+        },
+        {
+          "do": "preview",
+          "shot": "flag-preview",
+          "shotMode": "render",
+          "camera": {
+            "target": "area",
+            "view": "top",
+            "distance": 123.20000000000002
+          }
+        },
+        {
+          "do": "build"
+        },
+        {
+          "do": "camera",
+          "target": "build",
+          "view": "top",
+          "distance": 123.20000000000002,
+          "shot": "flag-top",
+          "shotMode": "render"
+        }
+      ]
+    },
+    {
+      "id": "catalog-np",
+      "land": {
+        "size": [
+          40,
+          44
+        ],
+        "roads": "none"
+      },
+      "steps": [
+        {
+          "do": "area",
+          "tool": "points",
+          "rect": [
+            24,
+            28
+          ]
+        },
+        {
+          "do": "type",
+          "layer": "floral",
+          "preset": "flag-china"
+        },
+        {
+          "do": "value",
+          "id": "flagTemplate",
+          "value": "np"
+        },
+        {
+          "do": "shot",
+          "name": "flag-browser",
+          "shotMode": "ui"
+        },
+        {
+          "do": "preview",
+          "shot": "flag-preview",
+          "shotMode": "render",
+          "camera": {
+            "target": "area",
+            "view": "top",
+            "distance": 61.60000000000001
+          }
+        },
+        {
+          "do": "build"
+        },
+        {
+          "do": "camera",
+          "target": "build",
+          "view": "top",
+          "distance": 61.60000000000001,
+          "shot": "flag-top",
+          "shotMode": "render"
+        },
+        {
+          "do": "saveReload"
+        },
+        {
+          "do": "camera",
+          "target": "build",
+          "view": "top",
+          "distance": 61.60000000000001,
+          "shot": "flag-reloaded",
+          "shotMode": "render"
+        }
+      ]
+    },
+    {
+      "id": "catalog-un",
+      "land": {
+        "size": [
+          80,
+          60
+        ],
+        "roads": "none"
+      },
+      "steps": [
+        {
+          "do": "area",
+          "tool": "points",
+          "rect": [
+            64,
+            44
+          ]
+        },
+        {
+          "do": "type",
+          "layer": "floral",
+          "preset": "flag-china"
+        },
+        {
+          "do": "value",
+          "id": "flagTemplate",
+          "value": "un"
+        },
+        {
+          "do": "shot",
+          "name": "flag-browser",
+          "shotMode": "ui"
+        },
+        {
+          "do": "preview",
+          "shot": "flag-preview",
+          "shotMode": "render",
+          "camera": {
+            "target": "area",
+            "view": "top",
+            "distance": 140.8
+          }
+        },
+        {
+          "do": "build"
+        },
+        {
+          "do": "camera",
+          "target": "build",
+          "view": "top",
+          "distance": 140.8,
+          "shot": "flag-top",
+          "shotMode": "render"
+        }
+      ]
+    },
+    {
+      "id": "catalog-first-aid",
+      "land": {
+        "size": [
+          32,
+          28
+        ],
+        "roads": "none"
+      },
+      "steps": [
+        {
+          "do": "area",
+          "tool": "points",
+          "rect": [
+            16,
+            12
+          ]
+        },
+        {
+          "do": "type",
+          "layer": "floral",
+          "preset": "flag-china"
+        },
+        {
+          "do": "value",
+          "id": "flagTemplate",
+          "value": "first-aid"
+        },
+        {
+          "do": "shot",
+          "name": "flag-browser",
+          "shotMode": "ui"
+        },
+        {
+          "do": "preview",
+          "shot": "flag-preview",
+          "shotMode": "render",
+          "camera": {
+            "target": "area",
+            "view": "top",
+            "distance": 35.2
+          }
+        },
+        {
+          "do": "build"
+        },
+        {
+          "do": "camera",
+          "target": "build",
+          "view": "top",
+          "distance": 35.2,
+          "shot": "flag-top",
+          "shotMode": "render"
+        }
+      ]
+    }
+  ]
+}

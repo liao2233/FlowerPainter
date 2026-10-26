@@ -1,0 +1,7 @@
+<Project>
+  <!-- Same immutable maps in the game, engine-free tests and real-Core UI mock. -->
+  <ItemGroup>
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)Assets\Flags\catalog.json" LogicalName="FlowerPainter.Flags.catalog.json" />
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)Assets\Flags\maps\*.bin" LogicalName="FlowerPainter.Flags.maps.%(Filename)%(Extension)" />
+  </ItemGroup>
+</Project>

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using FlowerPainter.Core.Geometry;
 using FlowerPainter.Core.Layers.Common;
 using FlowerPainter.Core.Tool;
@@ -25,7 +26,7 @@ namespace FlowerPainter.Core.Layers.Types.Floral
             c.Choice("plantingSystem", "props", ControlTier.Essential, "flowers", "props", "patch").Tip();
             c.Slider("bloomSpacing", 0.28, 0.22, 0.5, 0.02, "m", ControlTier.Essential, "flowers").Tip();
             c.Slider("patchHeight", 0.24, 0.12, 0.6, 0.02, "m", ControlTier.Essential, "flowers").Tip();
-            c.Choice("flagTemplate", "china", ControlTier.Essential, "layout", "china", "japan", "france").Tip();
+            c.Choice("flagTemplate", "china", ControlTier.Essential, "layout", FlagCatalog.All.Select(f=>f.Id).ToArray()).Tip();
             c.Choice("shape", "flow", ControlTier.Essential, "layout", "flag", "partition", "collage", "flow", "islands", "ring", "circle", "rosette", "spiral", "heart", "outline", "freeform").Tip();
             c.Slider("size", 85, 20, 100, 5, "%", ControlTier.Essential, "layout").Tip().When("shape=ring|circle|rosette|spiral|heart|outline|freeform");
             c.Slider("bandWidth", 4, 0.5, 16, 0.5, "m", ControlTier.Essential, "layout").Tip();

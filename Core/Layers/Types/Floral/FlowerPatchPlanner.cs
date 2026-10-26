@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using FlowerPainter.Core.Geometry;
 using FlowerPainter.Core.Layers.Common;
 using Unity.Mathematics;
@@ -24,16 +25,32 @@ namespace FlowerPainter.Core.Layers.Types.Floral
             var palette=ctx.L("flowerPalette");if(palette.Length==0)palette=new[]{"Red","Yellow","White"};
             float pitch=math.clamp(ctx.F("bloomSpacing"),0.22f,0.5f),height=math.clamp(ctx.F("patchHeight"),0.12f,0.6f);
             int flowers=0, triangles=0;float tile=14*pitch;
-            // Flags retain their 3:2 footprint and are centred in the selection.
-            var span=frame.Max-frame.Min;float flagW=math.min(span.x,span.y*1.5f),flagH=flagW/1.5f;
+            // Each template retains its own aspect ratio, including square and non-rectangular flags.
+            var template=FlagCatalog.Get(ctx.S("flagTemplate"));
+            var dimensions=template.Fit(frame.Max-frame.Min);float flagW=dimensions.x,flagH=dimensions.y;
             var flagMin=origin-new float2(flagW,flagH)*0.5f;
+            Region flagRegion=null;
+            if(flag) {
+                flagRegion=new Region(template.Outline.Length>0?template.Outline.Select(p=>flagMin+p*dimensions).ToArray():Rect(flagMin,flagMin+dimensions));
+                regions=Poly.Boolean(regions.Select(r=>r.region).ToArray(),new[]{flagRegion},BoolOp.Intersection)
+                    .Select(r=>(r,(FloralFill)null)).ToList();
+                float recommended=template.RecommendedColumns*pitch;
+                ctx.Stat("FlowerPainter.Floral.Stat.FlagWidth",flagW,"m");
+                ctx.Stat("FlowerPainter.Floral.Stat.FlagHeight",flagH,"m");
+                ctx.Plan.Facts["floral.flagWidth"]=flagW;ctx.Plan.Facts["floral.flagHeight"]=flagH;
+                ctx.Plan.Facts["floral.flagRecommendedWidth"]=recommended;
+                if(flagW<recommended)ctx.Issue(IssueSeverity.Warning,"FlowerPainter.Floral.Issue.FlagSmall",
+                    Math.Round(flagW,1),Math.Round(flagH,1),Math.Round(recommended,1),Math.Round(recommended/template.Ratio,1));
+                if(regions.Sum(r=>r.region.Area)<flagRegion.Area*.98f)
+                    ctx.Issue(IssueSeverity.Warning,"FlowerPainter.Floral.Issue.FlagClipped");
+            }
             foreach(var item in regions) {
                 var selected=item.fill?.Flowers.Length>0?item.fill.Flowers:item.fill?.Style=="single"&&!string.IsNullOrEmpty(item.fill.Flower)?new[]{item.fill.Flower}:palette;
                 string style=item.fill?.Style??(shape=="islands"?"islands":"flow");
                 var pattern=new FloralCarpet.Pattern(frame,style,ctx.F("bandWidth"),ctx.F("rotation"),ctx.Seed,selected.Length);
                 int Color(float2 p) {
                     if(ctx.Input.Reserved?.Blocks(p,0.05f)??false)return -1;
-                    if(flag)return FlagColor(ctx.S("flagTemplate"),(p-flagMin)/new float2(flagW,flagH));
+                    if(flag)return template.Color((p-flagMin)/dimensions);
                     return FlowerPatchMesh.ColorOf(selected[style=="single"?0:pattern.Slot(p)]);
                 }
                 var region=item.region;
@@ -64,25 +81,6 @@ namespace FlowerPainter.Core.Layers.Types.Floral
         }
         private static float2[] Rect(float2 a,float2 b)=>new[]{a,new float2(b.x,a.y),b,new float2(a.x,b.y)};
 
-        // China: 30x20 construction grid; all four small stars point towards the large star.
-        // Source: https://www.gov.cn/xinwen/2020-12/24/5572913/files/ced32b3ff3644aa4bfe841b71050345f.pdf
-        internal static int FlagColor(string flag,float2 uv)
-        {
-            if(math.any(uv<0)||math.any(uv>1))return -1;
-            if(flag=="japan")return math.length((uv-new float2(0.5f))*new float2(1.5f,1))<=0.3f?4:7;
-            if(flag=="france")return uv.x<1f/3?15:uv.x<2f/3?7:4;
-            var p=new float2(uv.x*30,(1-uv.y)*20);
-            var big=new float2(5,5);
-            if(Star(p,big,3,-math.PI/2))return 5;
-            foreach(var c in new[]{new float2(10,2),new float2(12,4),new float2(12,7),new float2(10,9)})
-                if(Star(p,c,1,math.atan2(big.y-c.y,big.x-c.x)))return 5;
-            return 4;
-        }
-        private static bool Star(float2 p,float2 c,float r,float angle)
-        {
-            if(math.distance(p,c)>r)return false;
-            var points=new float2[10];for(int i=0;i<10;i++){float a=angle+i*math.PI/5;points[i]=c+new float2(math.cos(a),math.sin(a))*r*((i&1)==0?1:0.381966f);}
-            return Poly.Contains(points,p);
-        }
+        internal static int FlagColor(string flag,float2 uv)=>FlagCatalog.Get(flag).Color(uv);
     }
 }

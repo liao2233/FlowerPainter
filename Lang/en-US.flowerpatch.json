@@ -10,12 +10,13 @@
   "FlowerPainter.Floral.patchHeight.Tooltip": "Height of the flower patches.",
   "FlowerPainter.Floral.flagTemplate": "Flag design",
   "FlowerPainter.Floral.flagTemplate.Tooltip": "Colour blossoms using this flag design.",
-  "FlowerPainter.Floral.flagTemplate.china": "China",
-  "FlowerPainter.Floral.flagTemplate.japan": "Japan",
-  "FlowerPainter.Floral.flagTemplate.france": "France",
   "FlowerPainter.Floral.shape.flag": "Flag",
   "FlowerPainter.Floral.Preset.flag-china": "Chinese flag flowers",
   "FlowerPainter.Floral.Preset.patch-carpet": "Flower patches",
   "FlowerPainter.Floral.Stat.PatchFlowers": "Blossoms",
-  "FlowerPainter.Floral.Stat.Patches": "Patch objects"
+  "FlowerPainter.Floral.Stat.Patches": "Patch objects",
+  "FlowerPainter.Floral.Stat.FlagWidth": "Flag width",
+  "FlowerPainter.Floral.Stat.FlagHeight": "Flag height",
+  "FlowerPainter.Floral.Issue.FlagSmall": "This flag is {0} × {1} m. At this flower spacing, try {2} × {3} m or larger to retain its main details. Small emblems and lettering may still be simplified.",
+  "FlowerPainter.Floral.Issue.FlagClipped": "The selection clips part of this flag. Use a rectangular selection to preserve the complete design."
 }

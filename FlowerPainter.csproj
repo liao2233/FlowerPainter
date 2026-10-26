@@ -66,6 +66,7 @@
     <None Include="Recipes\*.json" CopyToOutputDirectory="Always" LinkBase="Recipes" />
     <None Include="Recipes\shelf\*.json" CopyToOutputDirectory="Always" LinkBase="Recipes\shelf" />
     <None Include="LICENSE" CopyToOutputDirectory="PreserveNewest" Condition="Exists('LICENSE')" />
+    <None Include="Assets\Flags\*.md;Assets\Flags\extra-sources.json" CopyToOutputDirectory="Always" LinkBase="FlagSources" />
   </ItemGroup>
 
   <!-- Every build names its commit (the in-game suite records it): InformationalVersion = Version+<short hash>[-dirty]. -->

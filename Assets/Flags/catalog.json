@@ -1,0 +1,2467 @@
+[
+  {
+    "id": "ad",
+    "code": "ad",
+    "en": "Andorra",
+    "zh": "安道尔",
+    "group": "europe",
+    "ratio": 1.4285714285714286,
+    "columns": 200
+  },
+  {
+    "id": "ae",
+    "code": "ae",
+    "en": "United Arab Emirates",
+    "zh": "阿拉伯联合酋长国",
+    "group": "asia",
+    "ratio": 2,
+    "columns": 40
+  },
+  {
+    "id": "af-republic",
+    "code": "af-republic",
+    "en": "Afghanistan (Republic, 2004–2021)",
+    "zh": "阿富汗（共和国，2004—2021）",
+    "group": "asia",
+    "ratio": 1.5,
+    "columns": 200
+  },
+  {
+    "id": "af",
+    "code": "af",
+    "en": "Afghanistan (2021–)",
+    "zh": "阿富汗（2021—）",
+    "group": "asia",
+    "ratio": 2,
+    "columns": 200
+  },
+  {
+    "id": "ag",
+    "code": "ag",
+    "en": "Antigua & Barbuda",
+    "zh": "安提瓜和巴布达",
+    "group": "americas",
+    "ratio": 1.5,
+    "columns": 200
+  },
+  {
+    "id": "ai",
+    "code": "ai",
+    "en": "Anguilla",
+    "zh": "安圭拉",
+    "group": "americas",
+    "ratio": 2,
+    "columns": 200
+  },
+  {
+    "id": "al",
+    "code": "al",
+    "en": "Albania",
+    "zh": "阿尔巴尼亚",
+    "group": "europe",
+    "ratio": 1.4,
+    "columns": 100
+  },
+  {
+    "id": "am",
+    "code": "am",
+    "en": "Armenia",
+    "zh": "亚美尼亚",
+    "group": "asia",
+    "ratio": 2,
+    "columns": 40
+  },
+  {
+    "id": "ao",
+    "code": "ao",
+    "en": "Angola",
+    "zh": "安哥拉",
+    "group": "africa",
+    "ratio": 1.5,
+    "columns": 200
+  },
+  {
+    "id": "aq",
+    "code": "aq",
+    "en": "Antarctica",
+    "zh": "南极洲",
+    "group": "polar",
+    "ratio": 1.5,
+    "columns": 200
+  },
+  {
+    "id": "ar",
+    "code": "ar",
+    "en": "Argentina",
+    "zh": "阿根廷",
+    "group": "americas",
+    "ratio": 1.6,
+    "columns": 100
+  },
+  {
+    "id": "as",
+    "code": "as",
+    "en": "American Samoa",
+    "zh": "美属萨摩亚",
+    "group": "oceania",
+    "ratio": 2,
+    "columns": 200
+  },
+  {
+    "id": "at",
+    "code": "at",
+    "en": "Austria",
+    "zh": "奥地利",
+    "group": "europe",
+    "ratio": 1.5,
+    "columns": 40
+  },
+  {
+    "id": "au-union",
+    "code": "au-union",
+    "en": "African Union",
+    "zh": "非洲联盟",
+    "group": "organizations",
+    "ratio": 1.5,
+    "columns": 200
+  },
+  {
+    "id": "au",
+    "code": "au",
+    "en": "Australia",
+    "zh": "澳大利亚",
+    "group": "oceania",
+    "ratio": 2,
+    "columns": 100
+  },
+  {
+    "id": "aw",
+    "code": "aw",
+    "en": "Aruba",
+    "zh": "阿鲁巴",
+    "group": "americas",
+    "ratio": 1.5,
+    "columns": 200
+  },
+  {
+    "id": "ax",
+    "code": "ax",
+    "en": "Åland Islands",
+    "zh": "奥兰群岛",
+    "group": "europe",
+    "ratio": 1.5294117647058822,
+    "columns": 200
+  },
+  {
+    "id": "az",
+    "code": "az",
+    "en": "Azerbaijan",
+    "zh": "阿塞拜疆",
+    "group": "asia",
+    "ratio": 2,
+    "columns": 40
+  },
+  {
+    "id": "ba",
+    "code": "ba",
+    "en": "Bosnia & Herzegovina",
+    "zh": "波斯尼亚和黑塞哥维那",
+    "group": "europe",
+    "ratio": 2,
+    "columns": 200
+  },
+  {
+    "id": "bb",
+    "code": "bb",
+    "en": "Barbados",
+    "zh": "巴巴多斯",
+    "group": "americas",
+    "ratio": 1.5,
+    "columns": 100
+  },
+  {
+    "id": "bd",
+    "code": "bd",
+    "en": "Bangladesh",
+    "zh": "孟加拉国",
+    "group": "asia",
+    "ratio": 1.6666666666666667,
+    "columns": 40
+  },
+  {
+    "id": "be",
+    "code": "be",
+    "en": "Belgium",
+    "zh": "比利时",
+    "group": "europe",
+    "ratio": 1.1538461538461537,
+    "columns": 40
+  },
+  {
+    "id": "bf",
+    "code": "bf",
+    "en": "Burkina Faso",
+    "zh": "布基纳法索",
+    "group": "africa",
+    "ratio": 1.5,
+    "columns": 100
+  },
+  {
+    "id": "bg",
+    "code": "bg",
+    "en": "Bulgaria",
+    "zh": "保加利亚",
+    "group": "europe",
+    "ratio": 1.6666666666666667,
+    "columns": 40
+  },
+  {
+    "id": "bh",
+    "code": "bh",
+    "en": "Bahrain",
+    "zh": "巴林",
+    "group": "asia",
+    "ratio": 1.6666666666666667,
+    "columns": 40
+  },
+  {
+    "id": "bi",
+    "code": "bi",
+    "en": "Burundi",
+    "zh": "布隆迪",
+    "group": "africa",
+    "ratio": 1.6666666666666667,
+    "columns": 100
+  },
+  {
+    "id": "bj",
+    "code": "bj",
+    "en": "Benin",
+    "zh": "贝宁",
+    "group": "africa",
+    "ratio": 1.5,
+    "columns": 40
+  },
+  {
+    "id": "bl",
+    "code": "bl",
+    "en": "St. Barthélemy",
+    "zh": "圣巴泰勒米",
+    "group": "americas",
+    "ratio": 1.5,
+    "columns": 200
+  },
+  {
+    "id": "bm",
+    "code": "bm",
+    "en": "Bermuda",
+    "zh": "百慕大",
+    "group": "americas",
+    "ratio": 2,
+    "columns": 200
+  },
+  {
+    "id": "bn",
+    "code": "bn",
+    "en": "Brunei",
+    "zh": "文莱",
+    "group": "asia",
+    "ratio": 2,
+    "columns": 200
+  },
+  {
+    "id": "bo",
+    "code": "bo",
+    "en": "Bolivia",
+    "zh": "玻利维亚",
+    "group": "americas",
+    "ratio": 1.4666646509237142,
+    "columns": 40
+  },
+  {
+    "id": "bq",
+    "code": "bq",
+    "en": "Caribbean Netherlands",
+    "zh": "荷属加勒比区",
+    "group": "americas",
+    "ratio": 1.5,
+    "columns": 200
+  },
+  {
+    "id": "br",
+    "code": "br",
+    "en": "Brazil",
+    "zh": "巴西",
+    "group": "americas",
+    "ratio": 1.4285714285714286,
+    "columns": 100
+  },
+  {
+    "id": "bs",
+    "code": "bs",
+    "en": "Bahamas",
+    "zh": "巴哈马",
+    "group": "americas",
+    "ratio": 2,
+    "columns": 40
+  },
+  {
+    "id": "bt",
+    "code": "bt",
+    "en": "Bhutan",
+    "zh": "不丹",
+    "group": "asia",
+    "ratio": 1.5,
+    "columns": 200
+  },
+  {
+    "id": "bv",
+    "code": "bv",
+    "en": "Bouvet Island",
+    "zh": "布韦岛",
+    "group": "polar",
+    "ratio": 1.375,
+    "columns": 200
+  },
+  {
+    "id": "bw",
+    "code": "bw",
+    "en": "Botswana",
+    "zh": "博茨瓦纳",
+    "group": "africa",
+    "ratio": 1.5,
+    "columns": 40
+  },
+  {
+    "id": "by",
+    "code": "by",
+    "en": "Belarus",
+    "zh": "白俄罗斯",
+    "group": "europe",
+    "ratio": 2,
+    "columns": 200
+  },
+  {
+    "id": "bz",
+    "code": "bz",
+    "en": "Belize",
+    "zh": "伯利兹",
+    "group": "americas",
+    "ratio": 1.6666666666666667,
+    "columns": 200
+  },
+  {
+    "id": "ca",
+    "code": "ca",
+    "en": "Canada",
+    "zh": "加拿大",
+    "group": "americas",
+    "ratio": 2,
+    "columns": 100
+  },
+  {
+    "id": "cc",
+    "code": "cc",
+    "en": "Cocos (Keeling) Islands",
+    "zh": "科科斯（基林）群岛",
+    "group": "asia",
+    "ratio": 2,
+    "columns": 200
+  },
+  {
+    "id": "cd",
+    "code": "cd",
+    "en": "Congo - Kinshasa",
+    "zh": "刚果（金）",
+    "group": "africa",
+    "ratio": 1.3333333333333333,
+    "columns": 40
+  },
+  {
+    "id": "cf",
+    "code": "cf",
+    "en": "Central African Republic",
+    "zh": "中非共和国",
+    "group": "africa",
+    "ratio": 1.5,
+    "columns": 40
+  },
+  {
+    "id": "cg",
+    "code": "cg",
+    "en": "Congo - Brazzaville",
+    "zh": "刚果（布）",
+    "group": "africa",
+    "ratio": 1.5,
+    "columns": 40
+  },
+  {
+    "id": "ch",
+    "code": "ch",
+    "en": "Switzerland",
+    "zh": "瑞士",
+    "group": "europe",
+    "ratio": 1,
+    "columns": 40
+  },
+  {
+    "id": "checkered",
+    "code": "checkered",
+    "en": "Racing / checkered",
+    "zh": "赛车／方格旗",
+    "group": "themes",
+    "ratio": 1.5,
+    "columns": 40
+  },
+  {
+    "id": "ci",
+    "code": "ci",
+    "en": "Côte d’Ivoire",
+    "zh": "科特迪瓦",
+    "group": "africa",
+    "ratio": 1.5,
+    "columns": 40
+  },
+  {
+    "id": "ck",
+    "code": "ck",
+    "en": "Cook Islands",
+    "zh": "库克群岛",
+    "group": "oceania",
+    "ratio": 2,
+    "columns": 200
+  },
+  {
+    "id": "cl",
+    "code": "cl",
+    "en": "Chile",
+    "zh": "智利",
+    "group": "americas",
+    "ratio": 1.5,
+    "columns": 200
+  },
+  {
+    "id": "cm",
+    "code": "cm",
+    "en": "Cameroon",
+    "zh": "喀麦隆",
+    "group": "africa",
+    "ratio": 1.5,
+    "columns": 40
+  },
+  {
+    "id": "china",
+    "code": "cn",
+    "en": "China",
+    "zh": "中国",
+    "group": "asia",
+    "ratio": 1.5,
+    "columns": 100
+  },
+  {
+    "id": "co",
+    "code": "co",
+    "en": "Colombia",
+    "zh": "哥伦比亚",
+    "group": "americas",
+    "ratio": 1.5,
+    "columns": 40
+  },
+  {
+    "id": "cr",
+    "code": "cr",
+    "en": "Costa Rica",
+    "zh": "哥斯达黎加",
+    "group": "americas",
+    "ratio": 1.6666666666666667,
+    "columns": 40
+  },
+  {
+    "id": "cu",
+    "code": "cu",
+    "en": "Cuba",
+    "zh": "古巴",
+    "group": "americas",
+    "ratio": 2,
+    "columns": 40
+  },
+  {
+    "id": "cv",
+    "code": "cv",
+    "en": "Cape Verde",
+    "zh": "佛得角",
+    "group": "africa",
+    "ratio": 1.7,
+    "columns": 100
+  },
+  {
+    "id": "cw",
+    "code": "cw",
+    "en": "Curaçao",
+    "zh": "库拉索",
+    "group": "americas",
+    "ratio": 1.5,
+    "columns": 200
+  },
+  {
+    "id": "cx",
+    "code": "cx",
+    "en": "Christmas Island",
+    "zh": "圣诞岛",
+    "group": "asia",
+    "ratio": 2,
+    "columns": 200
+  },
+  {
+    "id": "cy",
+    "code": "cy",
+    "en": "Cyprus",
+    "zh": "塞浦路斯",
+    "group": "asia",
+    "ratio": 1.5,
+    "columns": 200
+  },
+  {
+    "id": "cz",
+    "code": "cz",
+    "en": "Czechia",
+    "zh": "捷克",
+    "group": "europe",
+    "ratio": 1.5,
+    "columns": 40
+  },
+  {
+    "id": "de",
+    "code": "de",
+    "en": "Germany",
+    "zh": "德国",
+    "group": "europe",
+    "ratio": 1.6666666666666667,
+    "columns": 40
+  },
+  {
+    "id": "dj",
+    "code": "dj",
+    "en": "Djibouti",
+    "zh": "吉布提",
+    "group": "africa",
+    "ratio": 1.5,
+    "columns": 200
+  },
+  {
+    "id": "dk",
+    "code": "dk",
+    "en": "Denmark",
+    "zh": "丹麦",
+    "group": "europe",
+    "ratio": 1.3214285714285714,
+    "columns": 40
+  },
+  {
+    "id": "dm",
+    "code": "dm",
+    "en": "Dominica",
+    "zh": "多米尼克",
+    "group": "americas",
+    "ratio": 2,
+    "columns": 200
+  },
+  {
+    "id": "do",
+    "code": "do",
+    "en": "Dominican Republic",
+    "zh": "多米尼加共和国",
+    "group": "americas",
+    "ratio": 1.5,
+    "columns": 200
+  },
+  {
+    "id": "dz",
+    "code": "dz",
+    "en": "Algeria",
+    "zh": "阿尔及利亚",
+    "group": "africa",
+    "ratio": 1.5,
+    "columns": 40
+  },
+  {
+    "id": "ec",
+    "code": "ec",
+    "en": "Ecuador",
+    "zh": "厄瓜多尔",
+    "group": "americas",
+    "ratio": 1.5,
+    "columns": 200
+  },
+  {
+    "id": "ee",
+    "code": "ee",
+    "en": "Estonia",
+    "zh": "爱沙尼亚",
+    "group": "europe",
+    "ratio": 1.5714285714285714,
+    "columns": 40
+  },
+  {
+    "id": "eg",
+    "code": "eg",
+    "en": "Egypt",
+    "zh": "埃及",
+    "group": "africa",
+    "ratio": 1.5,
+    "columns": 200
+  },
+  {
+    "id": "eh",
+    "code": "eh",
+    "en": "Western Sahara",
+    "zh": "西撒哈拉",
+    "group": "africa",
+    "ratio": 2,
+    "columns": 200
+  },
+  {
+    "id": "er",
+    "code": "er",
+    "en": "Eritrea",
+    "zh": "厄立特里亚",
+    "group": "africa",
+    "ratio": 2,
+    "columns": 200
+  },
+  {
+    "id": "es",
+    "code": "es",
+    "en": "Spain",
+    "zh": "西班牙",
+    "group": "europe",
+    "ratio": 1.5,
+    "columns": 200
+  },
+  {
+    "id": "et",
+    "code": "et",
+    "en": "Ethiopia",
+    "zh": "埃塞俄比亚",
+    "group": "africa",
+    "ratio": 2,
+    "columns": 200
+  },
+  {
+    "id": "eu",
+    "code": "eu",
+    "en": "European Union",
+    "zh": "欧盟",
+    "group": "organizations",
+    "ratio": 1.5,
+    "columns": 100
+  },
+  {
+    "id": "fi",
+    "code": "fi",
+    "en": "Finland",
+    "zh": "芬兰",
+    "group": "europe",
+    "ratio": 1.6363636363636365,
+    "columns": 40
+  },
+  {
+    "id": "first-aid",
+    "code": "first-aid",
+    "en": "First aid",
+    "zh": "急救（绿底白十字）",
+    "group": "themes",
+    "ratio": 1.5,
+    "columns": 40
+  },
+  {
+    "id": "fj",
+    "code": "fj",
+    "en": "Fiji",
+    "zh": "斐济",
+    "group": "oceania",
+    "ratio": 2,
+    "columns": 200
+  },
+  {
+    "id": "fk",
+    "code": "fk",
+    "en": "Falkland Islands",
+    "zh": "福克兰群岛",
+    "group": "americas",
+    "ratio": 2,
+    "columns": 200
+  },
+  {
+    "id": "fm",
+    "code": "fm",
+    "en": "Micronesia",
+    "zh": "密克罗尼西亚",
+    "group": "oceania",
+    "ratio": 1.9,
+    "columns": 100
+  },
+  {
+    "id": "fo",
+    "code": "fo",
+    "en": "Faroe Islands",
+    "zh": "法罗群岛",
+    "group": "europe",
+    "ratio": 1.375,
+    "columns": 200
+  },
+  {
+    "id": "france",
+    "code": "fr",
+    "en": "France",
+    "zh": "法国",
+    "group": "europe",
+    "ratio": 1.5,
+    "columns": 40
+  },
+  {
+    "id": "ga",
+    "code": "ga",
+    "en": "Gabon",
+    "zh": "加蓬",
+    "group": "africa",
+    "ratio": 1.3333333333333333,
+    "columns": 40
+  },
+  {
+    "id": "gb-eng",
+    "code": "gb-eng",
+    "en": "England",
+    "zh": "英格兰",
+    "group": "europe",
+    "ratio": 1.6666666666666667,
+    "columns": 40
+  },
+  {
+    "id": "gb-nir",
+    "code": "gb-nir",
+    "en": "Northern Ireland (Ulster Banner, historical)",
+    "zh": "北爱尔兰（历史乌尔斯特旗）",
+    "group": "europe",
+    "ratio": 2,
+    "columns": 200
+  },
+  {
+    "id": "gb-sct",
+    "code": "gb-sct",
+    "en": "Scotland",
+    "zh": "苏格兰",
+    "group": "europe",
+    "ratio": 1.6666666666666667,
+    "columns": 40
+  },
+  {
+    "id": "gb-wls",
+    "code": "gb-wls",
+    "en": "Wales",
+    "zh": "威尔士",
+    "group": "europe",
+    "ratio": 1.6666666666666667,
+    "columns": 200
+  },
+  {
+    "id": "gb",
+    "code": "gb",
+    "en": "United Kingdom",
+    "zh": "英国",
+    "group": "europe",
+    "ratio": 2,
+    "columns": 100
+  },
+  {
+    "id": "gd",
+    "code": "gd",
+    "en": "Grenada",
+    "zh": "格林纳达",
+    "group": "americas",
+    "ratio": 1.6666666666666667,
+    "columns": 100
+  },
+  {
+    "id": "ge",
+    "code": "ge",
+    "en": "Georgia",
+    "zh": "格鲁吉亚",
+    "group": "asia",
+    "ratio": 1.5,
+    "columns": 40
+  },
+  {
+    "id": "gf",
+    "code": "gf",
+    "en": "French Guiana",
+    "zh": "法属圭亚那",
+    "group": "americas",
+    "ratio": 1.5,
+    "columns": 200
+  },
+  {
+    "id": "gg",
+    "code": "gg",
+    "en": "Guernsey",
+    "zh": "根西岛",
+    "group": "europe",
+    "ratio": 1.5,
+    "columns": 200
+  },
+  {
+    "id": "gh",
+    "code": "gh",
+    "en": "Ghana",
+    "zh": "加纳",
+    "group": "africa",
+    "ratio": 1.5,
+    "columns": 40
+  },
+  {
+    "id": "gi",
+    "code": "gi",
+    "en": "Gibraltar",
+    "zh": "直布罗陀",
+    "group": "europe",
+    "ratio": 2,
+    "columns": 200
+  },
+  {
+    "id": "gl",
+    "code": "gl",
+    "en": "Greenland",
+    "zh": "格陵兰",
+    "group": "americas",
+    "ratio": 1.5,
+    "columns": 100
+  },
+  {
+    "id": "gm",
+    "code": "gm",
+    "en": "Gambia",
+    "zh": "冈比亚",
+    "group": "africa",
+    "ratio": 1.5,
+    "columns": 40
+  },
+  {
+    "id": "gn",
+    "code": "gn",
+    "en": "Guinea",
+    "zh": "几内亚",
+    "group": "africa",
+    "ratio": 1.5,
+    "columns": 40
+  },
+  {
+    "id": "gp",
+    "code": "gp",
+    "en": "Guadeloupe",
+    "zh": "瓜德罗普",
+    "group": "americas",
+    "ratio": 1.5,
+    "columns": 200
+  },
+  {
+    "id": "gq",
+    "code": "gq",
+    "en": "Equatorial Guinea",
+    "zh": "赤道几内亚",
+    "group": "africa",
+    "ratio": 1.5,
+    "columns": 200
+  },
+  {
+    "id": "gr",
+    "code": "gr",
+    "en": "Greece",
+    "zh": "希腊",
+    "group": "europe",
+    "ratio": 1.5,
+    "columns": 40
+  },
+  {
+    "id": "gs",
+    "code": "gs",
+    "en": "South Georgia & South Sandwich Islands",
+    "zh": "南乔治亚和南桑威奇群岛",
+    "group": "americas",
+    "ratio": 2,
+    "columns": 200
+  },
+  {
+    "id": "gt",
+    "code": "gt",
+    "en": "Guatemala",
+    "zh": "危地马拉",
+    "group": "americas",
+    "ratio": 1.6,
+    "columns": 200
+  },
+  {
+    "id": "gu",
+    "code": "gu",
+    "en": "Guam",
+    "zh": "关岛",
+    "group": "oceania",
+    "ratio": 1.863636527624139,
+    "columns": 200
+  },
+  {
+    "id": "gw",
+    "code": "gw",
+    "en": "Guinea-Bissau",
+    "zh": "几内亚比绍",
+    "group": "africa",
+    "ratio": 2,
+    "columns": 40
+  },
+  {
+    "id": "gy",
+    "code": "gy",
+    "en": "Guyana",
+    "zh": "圭亚那",
+    "group": "americas",
+    "ratio": 1.6666666666666667,
+    "columns": 100
+  },
+  {
+    "id": "hk",
+    "code": "hk",
+    "en": "Hong Kong SAR China",
+    "zh": "中国香港特别行政区",
+    "group": "asia",
+    "ratio": 1.5,
+    "columns": 100
+  },
+  {
+    "id": "hm",
+    "code": "hm",
+    "en": "Heard & McDonald Islands",
+    "zh": "赫德岛和麦克唐纳群岛",
+    "group": "oceania",
+    "ratio": 2,
+    "columns": 200
+  },
+  {
+    "id": "hn",
+    "code": "hn",
+    "en": "Honduras",
+    "zh": "洪都拉斯",
+    "group": "americas",
+    "ratio": 2,
+    "columns": 40
+  },
+  {
+    "id": "hr",
+    "code": "hr",
+    "en": "Croatia",
+    "zh": "克罗地亚",
+    "group": "europe",
+    "ratio": 2,
+    "columns": 200
+  },
+  {
+    "id": "ht",
+    "code": "ht",
+    "en": "Haiti",
+    "zh": "海地",
+    "group": "americas",
+    "ratio": 1.6666666666666667,
+    "columns": 200
+  },
+  {
+    "id": "hu",
+    "code": "hu",
+    "en": "Hungary",
+    "zh": "匈牙利",
+    "group": "europe",
+    "ratio": 2,
+    "columns": 40
+  },
+  {
+    "id": "id",
+    "code": "id",
+    "en": "Indonesia",
+    "zh": "印度尼西亚",
+    "group": "asia",
+    "ratio": 1.5,
+    "columns": 40
+  },
+  {
+    "id": "ie",
+    "code": "ie",
+    "en": "Ireland",
+    "zh": "爱尔兰",
+    "group": "europe",
+    "ratio": 2,
+    "columns": 40
+  },
+  {
+    "id": "il",
+    "code": "il",
+    "en": "Israel",
+    "zh": "以色列",
+    "group": "asia",
+    "ratio": 1.375,
+    "columns": 40
+  },
+  {
+    "id": "im",
+    "code": "im",
+    "en": "Isle of Man",
+    "zh": "马恩岛",
+    "group": "europe",
+    "ratio": 2,
+    "columns": 200
+  },
+  {
+    "id": "in",
+    "code": "in",
+    "en": "India",
+    "zh": "印度",
+    "group": "asia",
+    "ratio": 1.5,
+    "columns": 100
+  },
+  {
+    "id": "io",
+    "code": "io",
+    "en": "British Indian Ocean Territory",
+    "zh": "英属印度洋领地",
+    "group": "asia",
+    "ratio": 2,
+    "columns": 200
+  },
+  {
+    "id": "iq",
+    "code": "iq",
+    "en": "Iraq",
+    "zh": "伊拉克",
+    "group": "asia",
+    "ratio": 1.5,
+    "columns": 200
+  },
+  {
+    "id": "ir",
+    "code": "ir",
+    "en": "Iran",
+    "zh": "伊朗",
+    "group": "asia",
+    "ratio": 1.75,
+    "columns": 200
+  },
+  {
+    "id": "is",
+    "code": "is",
+    "en": "Iceland",
+    "zh": "冰岛",
+    "group": "europe",
+    "ratio": 1.3888888888888888,
+    "columns": 40
+  },
+  {
+    "id": "it",
+    "code": "it",
+    "en": "Italy",
+    "zh": "意大利",
+    "group": "europe",
+    "ratio": 1.5,
+    "columns": 40
+  },
+  {
+    "id": "je",
+    "code": "je",
+    "en": "Jersey",
+    "zh": "泽西岛",
+    "group": "europe",
+    "ratio": 1.6666666666666667,
+    "columns": 200
+  },
+  {
+    "id": "jm",
+    "code": "jm",
+    "en": "Jamaica",
+    "zh": "牙买加",
+    "group": "americas",
+    "ratio": 2,
+    "columns": 40
+  },
+  {
+    "id": "jo",
+    "code": "jo",
+    "en": "Jordan",
+    "zh": "约旦",
+    "group": "asia",
+    "ratio": 2,
+    "columns": 40
+  },
+  {
+    "id": "japan",
+    "code": "jp",
+    "en": "Japan",
+    "zh": "日本",
+    "group": "asia",
+    "ratio": 1.5,
+    "columns": 40
+  },
+  {
+    "id": "ke",
+    "code": "ke",
+    "en": "Kenya",
+    "zh": "肯尼亚",
+    "group": "africa",
+    "ratio": 1.5,
+    "columns": 100
+  },
+  {
+    "id": "kg",
+    "code": "kg",
+    "en": "Kyrgyzstan",
+    "zh": "吉尔吉斯斯坦",
+    "group": "asia",
+    "ratio": 1.6666666666666667,
+    "columns": 100
+  },
+  {
+    "id": "kh",
+    "code": "kh",
+    "en": "Cambodia",
+    "zh": "柬埔寨",
+    "group": "asia",
+    "ratio": 1.5625,
+    "columns": 100
+  },
+  {
+    "id": "ki",
+    "code": "ki",
+    "en": "Kiribati",
+    "zh": "基里巴斯",
+    "group": "oceania",
+    "ratio": 2,
+    "columns": 100
+  },
+  {
+    "id": "km",
+    "code": "km",
+    "en": "Comoros",
+    "zh": "科摩罗",
+    "group": "africa",
+    "ratio": 1.6666666666666667,
+    "columns": 100
+  },
+  {
+    "id": "kn",
+    "code": "kn",
+    "en": "St. Kitts & Nevis",
+    "zh": "圣基茨和尼维斯",
+    "group": "americas",
+    "ratio": 1.5,
+    "columns": 100
+  },
+  {
+    "id": "kp",
+    "code": "kp",
+    "en": "North Korea",
+    "zh": "朝鲜",
+    "group": "asia",
+    "ratio": 2,
+    "columns": 100
+  },
+  {
+    "id": "kr",
+    "code": "kr",
+    "en": "South Korea",
+    "zh": "韩国",
+    "group": "asia",
+    "ratio": 1.5,
+    "columns": 100
+  },
+  {
+    "id": "kw",
+    "code": "kw",
+    "en": "Kuwait",
+    "zh": "科威特",
+    "group": "asia",
+    "ratio": 2,
+    "columns": 100
+  },
+  {
+    "id": "ky",
+    "code": "ky",
+    "en": "Cayman Islands",
+    "zh": "开曼群岛",
+    "group": "americas",
+    "ratio": 2,
+    "columns": 200
+  },
+  {
+    "id": "kz",
+    "code": "kz",
+    "en": "Kazakhstan",
+    "zh": "哈萨克斯坦",
+    "group": "asia",
+    "ratio": 2,
+    "columns": 100
+  },
+  {
+    "id": "la",
+    "code": "la",
+    "en": "Laos",
+    "zh": "老挝",
+    "group": "asia",
+    "ratio": 1.5,
+    "columns": 40
+  },
+  {
+    "id": "lb",
+    "code": "lb",
+    "en": "Lebanon",
+    "zh": "黎巴嫩",
+    "group": "asia",
+    "ratio": 1.5,
+    "columns": 40
+  },
+  {
+    "id": "lc",
+    "code": "lc",
+    "en": "St. Lucia",
+    "zh": "圣卢西亚",
+    "group": "americas",
+    "ratio": 2,
+    "columns": 100
+  },
+  {
+    "id": "li",
+    "code": "li",
+    "en": "Liechtenstein",
+    "zh": "列支敦士登",
+    "group": "europe",
+    "ratio": 1.6666666666666667,
+    "columns": 200
+  },
+  {
+    "id": "lk",
+    "code": "lk",
+    "en": "Sri Lanka",
+    "zh": "斯里兰卡",
+    "group": "asia",
+    "ratio": 2,
+    "columns": 200
+  },
+  {
+    "id": "lr",
+    "code": "lr",
+    "en": "Liberia",
+    "zh": "利比里亚",
+    "group": "africa",
+    "ratio": 1.9,
+    "columns": 40
+  },
+  {
+    "id": "ls",
+    "code": "ls",
+    "en": "Lesotho",
+    "zh": "莱索托",
+    "group": "africa",
+    "ratio": 1.5,
+    "columns": 100
+  },
+  {
+    "id": "lt",
+    "code": "lt",
+    "en": "Lithuania",
+    "zh": "立陶宛",
+    "group": "europe",
+    "ratio": 1.6666666666666667,
+    "columns": 40
+  },
+  {
+    "id": "lu",
+    "code": "lu",
+    "en": "Luxembourg",
+    "zh": "卢森堡",
+    "group": "europe",
+    "ratio": 1.6666666666666667,
+    "columns": 40
+  },
+  {
+    "id": "lv",
+    "code": "lv",
+    "en": "Latvia",
+    "zh": "拉脱维亚",
+    "group": "europe",
+    "ratio": 2,
+    "columns": 40
+  },
+  {
+    "id": "ly",
+    "code": "ly",
+    "en": "Libya",
+    "zh": "利比亚",
+    "group": "africa",
+    "ratio": 2,
+    "columns": 40
+  },
+  {
+    "id": "ma",
+    "code": "ma",
+    "en": "Morocco",
+    "zh": "摩洛哥",
+    "group": "africa",
+    "ratio": 1.5,
+    "columns": 200
+  },
+  {
+    "id": "mc",
+    "code": "mc",
+    "en": "Monaco",
+    "zh": "摩纳哥",
+    "group": "europe",
+    "ratio": 1.25,
+    "columns": 40
+  },
+  {
+    "id": "md",
+    "code": "md",
+    "en": "Moldova",
+    "zh": "摩尔多瓦",
+    "group": "europe",
+    "ratio": 2,
+    "columns": 200
+  },
+  {
+    "id": "me",
+    "code": "me",
+    "en": "Montenegro",
+    "zh": "黑山",
+    "group": "europe",
+    "ratio": 2,
+    "columns": 200
+  },
+  {
+    "id": "medical",
+    "code": "medical",
+    "en": "Medical / hospital",
+    "zh": "医疗／医院",
+    "group": "themes",
+    "ratio": 1.5,
+    "columns": 40
+  },
+  {
+    "id": "mf",
+    "code": "mf",
+    "en": "St. Martin",
+    "zh": "法属圣马丁",
+    "group": "americas",
+    "ratio": 1.5,
+    "columns": 200
+  },
+  {
+    "id": "mg",
+    "code": "mg",
+    "en": "Madagascar",
+    "zh": "马达加斯加",
+    "group": "africa",
+    "ratio": 1.5,
+    "columns": 40
+  },
+  {
+    "id": "mh",
+    "code": "mh",
+    "en": "Marshall Islands",
+    "zh": "马绍尔群岛",
+    "group": "oceania",
+    "ratio": 1.9,
+    "columns": 200
+  },
+  {
+    "id": "mk",
+    "code": "mk",
+    "en": "North Macedonia",
+    "zh": "北马其顿",
+    "group": "europe",
+    "ratio": 2,
+    "columns": 100
+  },
+  {
+    "id": "ml",
+    "code": "ml",
+    "en": "Mali",
+    "zh": "马里",
+    "group": "africa",
+    "ratio": 1.5,
+    "columns": 40
+  },
+  {
+    "id": "mm",
+    "code": "mm",
+    "en": "Myanmar (Burma)",
+    "zh": "缅甸",
+    "group": "asia",
+    "ratio": 1.5,
+    "columns": 200
+  },
+  {
+    "id": "mn",
+    "code": "mn",
+    "en": "Mongolia",
+    "zh": "蒙古",
+    "group": "asia",
+    "ratio": 2,
+    "columns": 100
+  },
+  {
+    "id": "mo",
+    "code": "mo",
+    "en": "Macao SAR China",
+    "zh": "中国澳门特别行政区",
+    "group": "asia",
+    "ratio": 1.5,
+    "columns": 100
+  },
+  {
+    "id": "mp",
+    "code": "mp",
+    "en": "Northern Mariana Islands",
+    "zh": "北马里亚纳群岛",
+    "group": "oceania",
+    "ratio": 2,
+    "columns": 200
+  },
+  {
+    "id": "mq",
+    "code": "mq",
+    "en": "Martinique",
+    "zh": "马提尼克",
+    "group": "americas",
+    "ratio": 1.5,
+    "columns": 200
+  },
+  {
+    "id": "mr",
+    "code": "mr",
+    "en": "Mauritania",
+    "zh": "毛里塔尼亚",
+    "group": "africa",
+    "ratio": 1.5,
+    "columns": 40
+  },
+  {
+    "id": "ms",
+    "code": "ms",
+    "en": "Montserrat",
+    "zh": "蒙特塞拉特",
+    "group": "americas",
+    "ratio": 2,
+    "columns": 200
+  },
+  {
+    "id": "mt",
+    "code": "mt",
+    "en": "Malta",
+    "zh": "马耳他",
+    "group": "europe",
+    "ratio": 1.5,
+    "columns": 200
+  },
+  {
+    "id": "mu",
+    "code": "mu",
+    "en": "Mauritius",
+    "zh": "毛里求斯",
+    "group": "africa",
+    "ratio": 1.5,
+    "columns": 40
+  },
+  {
+    "id": "mv",
+    "code": "mv",
+    "en": "Maldives",
+    "zh": "马尔代夫",
+    "group": "asia",
+    "ratio": 1.5,
+    "columns": 40
+  },
+  {
+    "id": "mw",
+    "code": "mw",
+    "en": "Malawi",
+    "zh": "马拉维",
+    "group": "africa",
+    "ratio": 1.5,
+    "columns": 200
+  },
+  {
+    "id": "mx",
+    "code": "mx",
+    "en": "Mexico",
+    "zh": "墨西哥",
+    "group": "americas",
+    "ratio": 1.75,
+    "columns": 200
+  },
+  {
+    "id": "my",
+    "code": "my",
+    "en": "Malaysia",
+    "zh": "马来西亚",
+    "group": "asia",
+    "ratio": 2,
+    "columns": 100
+  },
+  {
+    "id": "mz",
+    "code": "mz",
+    "en": "Mozambique",
+    "zh": "莫桑比克",
+    "group": "africa",
+    "ratio": 1.5,
+    "columns": 200
+  },
+  {
+    "id": "na",
+    "code": "na",
+    "en": "Namibia",
+    "zh": "纳米比亚",
+    "group": "africa",
+    "ratio": 1.5,
+    "columns": 40
+  },
+  {
+    "id": "nato",
+    "code": "nato",
+    "en": "NATO",
+    "zh": "北约",
+    "group": "organizations",
+    "ratio": 1.3333333333333333,
+    "columns": 200
+  },
+  {
+    "id": "nc",
+    "code": "nc",
+    "en": "New Caledonia",
+    "zh": "新喀里多尼亚",
+    "group": "oceania",
+    "ratio": 1.5,
+    "columns": 100
+  },
+  {
+    "id": "ne",
+    "code": "ne",
+    "en": "Niger",
+    "zh": "尼日尔",
+    "group": "africa",
+    "ratio": 1.1666666666666667,
+    "columns": 40
+  },
+  {
+    "id": "nf",
+    "code": "nf",
+    "en": "Norfolk Island",
+    "zh": "诺福克岛",
+    "group": "oceania",
+    "ratio": 2,
+    "columns": 200
+  },
+  {
+    "id": "ng",
+    "code": "ng",
+    "en": "Nigeria",
+    "zh": "尼日利亚",
+    "group": "africa",
+    "ratio": 2,
+    "columns": 40
+  },
+  {
+    "id": "ni",
+    "code": "ni",
+    "en": "Nicaragua",
+    "zh": "尼加拉瓜",
+    "group": "americas",
+    "ratio": 1.6666666666666667,
+    "columns": 40
+  },
+  {
+    "id": "nl",
+    "code": "nl",
+    "en": "Netherlands",
+    "zh": "荷兰",
+    "group": "europe",
+    "ratio": 1.5,
+    "columns": 40
+  },
+  {
+    "id": "no",
+    "code": "no",
+    "en": "Norway",
+    "zh": "挪威",
+    "group": "europe",
+    "ratio": 1.375,
+    "columns": 40
+  },
+  {
+    "id": "np",
+    "code": "np",
+    "en": "Nepal",
+    "zh": "尼泊尔",
+    "group": "asia",
+    "ratio": 0.8203356027783509,
+    "columns": 100,
+    "outline": [
+      [
+        0,
+        1
+      ],
+      [
+        0,
+        0.0016025641025640969
+      ],
+      [
+        0.9609375,
+        0.0016025641025640969
+      ],
+      [
+        0.37109375,
+        0.48557692307692313
+      ],
+      [
+        0.998046875,
+        0.4871794871794872
+      ],
+      [
+        0.001953125,
+        1
+      ]
+    ]
+  },
+  {
+    "id": "nr",
+    "code": "nr",
+    "en": "Nauru",
+    "zh": "瑙鲁",
+    "group": "oceania",
+    "ratio": 2,
+    "columns": 40
+  },
+  {
+    "id": "nu",
+    "code": "nu",
+    "en": "Niue",
+    "zh": "纽埃",
+    "group": "oceania",
+    "ratio": 2,
+    "columns": 200
+  },
+  {
+    "id": "nz",
+    "code": "nz",
+    "en": "New Zealand",
+    "zh": "新西兰",
+    "group": "oceania",
+    "ratio": 2,
+    "columns": 100
+  },
+  {
+    "id": "om",
+    "code": "om",
+    "en": "Oman",
+    "zh": "阿曼",
+    "group": "asia",
+    "ratio": 2,
+    "columns": 40
+  },
+  {
+    "id": "pa",
+    "code": "pa",
+    "en": "Panama",
+    "zh": "巴拿马",
+    "group": "americas",
+    "ratio": 1.5,
+    "columns": 40
+  },
+  {
+    "id": "pe",
+    "code": "pe",
+    "en": "Peru",
+    "zh": "秘鲁",
+    "group": "americas",
+    "ratio": 1.5,
+    "columns": 40
+  },
+  {
+    "id": "peace",
+    "code": "peace",
+    "en": "Peace",
+    "zh": "和平",
+    "group": "themes",
+    "ratio": 1.5,
+    "columns": 60
+  },
+  {
+    "id": "pf",
+    "code": "pf",
+    "en": "French Polynesia",
+    "zh": "法属波利尼西亚",
+    "group": "oceania",
+    "ratio": 1.5,
+    "columns": 200
+  },
+  {
+    "id": "pg",
+    "code": "pg",
+    "en": "Papua New Guinea",
+    "zh": "巴布亚新几内亚",
+    "group": "oceania",
+    "ratio": 1.3333333333333333,
+    "columns": 200
+  },
+  {
+    "id": "ph",
+    "code": "ph",
+    "en": "Philippines",
+    "zh": "菲律宾",
+    "group": "asia",
+    "ratio": 2,
+    "columns": 100
+  },
+  {
+    "id": "pk",
+    "code": "pk",
+    "en": "Pakistan",
+    "zh": "巴基斯坦",
+    "group": "asia",
+    "ratio": 1.5,
+    "columns": 100
+  },
+  {
+    "id": "pl",
+    "code": "pl",
+    "en": "Poland",
+    "zh": "波兰",
+    "group": "europe",
+    "ratio": 1.6,
+    "columns": 40
+  },
+  {
+    "id": "pm",
+    "code": "pm",
+    "en": "St. Pierre & Miquelon",
+    "zh": "圣皮埃尔和密克隆群岛",
+    "group": "americas",
+    "ratio": 1.5,
+    "columns": 200
+  },
+  {
+    "id": "pn",
+    "code": "pn",
+    "en": "Pitcairn Islands",
+    "zh": "皮特凯恩群岛",
+    "group": "oceania",
+    "ratio": 2,
+    "columns": 200
+  },
+  {
+    "id": "pr",
+    "code": "pr",
+    "en": "Puerto Rico",
+    "zh": "波多黎各",
+    "group": "americas",
+    "ratio": 1.5,
+    "columns": 200
+  },
+  {
+    "id": "ps",
+    "code": "ps",
+    "en": "Palestinian Territories",
+    "zh": "巴勒斯坦领土",
+    "group": "asia",
+    "ratio": 2,
+    "columns": 40
+  },
+  {
+    "id": "pt",
+    "code": "pt",
+    "en": "Portugal",
+    "zh": "葡萄牙",
+    "group": "europe",
+    "ratio": 1.5,
+    "columns": 100
+  },
+  {
+    "id": "pw",
+    "code": "pw",
+    "en": "Palau",
+    "zh": "帕劳",
+    "group": "oceania",
+    "ratio": 1.6,
+    "columns": 100
+  },
+  {
+    "id": "py",
+    "code": "py",
+    "en": "Paraguay",
+    "zh": "巴拉圭",
+    "group": "americas",
+    "ratio": 1.8181818181818181,
+    "columns": 200
+  },
+  {
+    "id": "qa",
+    "code": "qa",
+    "en": "Qatar",
+    "zh": "卡塔尔",
+    "group": "asia",
+    "ratio": 2.5454545454545454,
+    "columns": 40
+  },
+  {
+    "id": "rainbow",
+    "code": "rainbow",
+    "en": "Rainbow pride",
+    "zh": "彩虹骄傲旗",
+    "group": "themes",
+    "ratio": 1.5,
+    "columns": 40
+  },
+  {
+    "id": "re",
+    "code": "re",
+    "en": "Réunion",
+    "zh": "留尼汪",
+    "group": "africa",
+    "ratio": 1.5,
+    "columns": 200
+  },
+  {
+    "id": "red-crescent",
+    "code": "red-crescent",
+    "en": "Red Crescent",
+    "zh": "红新月",
+    "group": "themes",
+    "ratio": 1.5,
+    "columns": 60
+  },
+  {
+    "id": "red-cross",
+    "code": "red-cross",
+    "en": "Red Cross",
+    "zh": "红十字",
+    "group": "themes",
+    "ratio": 1.5,
+    "columns": 40
+  },
+  {
+    "id": "red-crystal",
+    "code": "red-crystal",
+    "en": "Red Crystal",
+    "zh": "红水晶",
+    "group": "themes",
+    "ratio": 1.5,
+    "columns": 60
+  },
+  {
+    "id": "ro",
+    "code": "ro",
+    "en": "Romania",
+    "zh": "罗马尼亚",
+    "group": "europe",
+    "ratio": 1.5,
+    "columns": 40
+  },
+  {
+    "id": "rs",
+    "code": "rs",
+    "en": "Serbia",
+    "zh": "塞尔维亚",
+    "group": "europe",
+    "ratio": 1.4999900811363052,
+    "columns": 200
+  },
+  {
+    "id": "ru",
+    "code": "ru",
+    "en": "Russia",
+    "zh": "俄罗斯",
+    "group": "europe",
+    "ratio": 1.5,
+    "columns": 40
+  },
+  {
+    "id": "rw",
+    "code": "rw",
+    "en": "Rwanda",
+    "zh": "卢旺达",
+    "group": "africa",
+    "ratio": 1.5,
+    "columns": 40
+  },
+  {
+    "id": "sa",
+    "code": "sa",
+    "en": "Saudi Arabia",
+    "zh": "沙特阿拉伯",
+    "group": "asia",
+    "ratio": 1.5,
+    "columns": 200
+  },
+  {
+    "id": "sb",
+    "code": "sb",
+    "en": "Solomon Islands",
+    "zh": "所罗门群岛",
+    "group": "oceania",
+    "ratio": 2,
+    "columns": 100
+  },
+  {
+    "id": "sc",
+    "code": "sc",
+    "en": "Seychelles",
+    "zh": "塞舌尔",
+    "group": "africa",
+    "ratio": 2,
+    "columns": 40
+  },
+  {
+    "id": "sd",
+    "code": "sd",
+    "en": "Sudan",
+    "zh": "苏丹",
+    "group": "africa",
+    "ratio": 2,
+    "columns": 40
+  },
+  {
+    "id": "se",
+    "code": "se",
+    "en": "Sweden",
+    "zh": "瑞典",
+    "group": "europe",
+    "ratio": 1.6,
+    "columns": 40
+  },
+  {
+    "id": "sg",
+    "code": "sg",
+    "en": "Singapore",
+    "zh": "新加坡",
+    "group": "asia",
+    "ratio": 1.5,
+    "columns": 40
+  },
+  {
+    "id": "sh",
+    "code": "sh",
+    "en": "St. Helena",
+    "zh": "圣赫勒拿",
+    "group": "africa",
+    "ratio": 2,
+    "columns": 200
+  },
+  {
+    "id": "si",
+    "code": "si",
+    "en": "Slovenia",
+    "zh": "斯洛文尼亚",
+    "group": "europe",
+    "ratio": 2,
+    "columns": 40
+  },
+  {
+    "id": "sj",
+    "code": "sj",
+    "en": "Svalbard & Jan Mayen",
+    "zh": "斯瓦尔巴和扬马延",
+    "group": "europe",
+    "ratio": 1.375,
+    "columns": 200
+  },
+  {
+    "id": "sk",
+    "code": "sk",
+    "en": "Slovakia",
+    "zh": "斯洛伐克",
+    "group": "europe",
+    "ratio": 1.5,
+    "columns": 100
+  },
+  {
+    "id": "sl",
+    "code": "sl",
+    "en": "Sierra Leone",
+    "zh": "塞拉利昂",
+    "group": "africa",
+    "ratio": 1.5,
+    "columns": 40
+  },
+  {
+    "id": "sm",
+    "code": "sm",
+    "en": "San Marino",
+    "zh": "圣马力诺",
+    "group": "europe",
+    "ratio": 1.3333333333333333,
+    "columns": 100
+  },
+  {
+    "id": "sn",
+    "code": "sn",
+    "en": "Senegal",
+    "zh": "塞内加尔",
+    "group": "africa",
+    "ratio": 1.5,
+    "columns": 40
+  },
+  {
+    "id": "so",
+    "code": "so",
+    "en": "Somalia",
+    "zh": "索马里",
+    "group": "africa",
+    "ratio": 1.5,
+    "columns": 40
+  },
+  {
+    "id": "sr",
+    "code": "sr",
+    "en": "Suriname",
+    "zh": "苏里南",
+    "group": "americas",
+    "ratio": 1.5,
+    "columns": 40
+  },
+  {
+    "id": "ss",
+    "code": "ss",
+    "en": "South Sudan",
+    "zh": "南苏丹",
+    "group": "africa",
+    "ratio": 2,
+    "columns": 40
+  },
+  {
+    "id": "st",
+    "code": "st",
+    "en": "São Tomé & Príncipe",
+    "zh": "圣多美和普林西比",
+    "group": "africa",
+    "ratio": 2,
+    "columns": 40
+  },
+  {
+    "id": "sv",
+    "code": "sv",
+    "en": "El Salvador",
+    "zh": "萨尔瓦多",
+    "group": "americas",
+    "ratio": 1.7724867724867726,
+    "columns": 200
+  },
+  {
+    "id": "sx",
+    "code": "sx",
+    "en": "Sint Maarten",
+    "zh": "荷属圣马丁",
+    "group": "americas",
+    "ratio": 1.5,
+    "columns": 200
+  },
+  {
+    "id": "sy",
+    "code": "sy",
+    "en": "Syria",
+    "zh": "叙利亚",
+    "group": "asia",
+    "ratio": 1.5,
+    "columns": 40
+  },
+  {
+    "id": "sz",
+    "code": "sz",
+    "en": "Eswatini",
+    "zh": "斯威士兰",
+    "group": "africa",
+    "ratio": 1.5,
+    "columns": 100
+  },
+  {
+    "id": "tc",
+    "code": "tc",
+    "en": "Turks & Caicos Islands",
+    "zh": "特克斯和凯科斯群岛",
+    "group": "americas",
+    "ratio": 2,
+    "columns": 200
+  },
+  {
+    "id": "td",
+    "code": "td",
+    "en": "Chad",
+    "zh": "乍得",
+    "group": "africa",
+    "ratio": 1.5,
+    "columns": 40
+  },
+  {
+    "id": "tf",
+    "code": "tf",
+    "en": "French Southern Territories",
+    "zh": "法属南部领地",
+    "group": "polar",
+    "ratio": 1.5,
+    "columns": 200
+  },
+  {
+    "id": "tg",
+    "code": "tg",
+    "en": "Togo",
+    "zh": "多哥",
+    "group": "africa",
+    "ratio": 1.618,
+    "columns": 40
+  },
+  {
+    "id": "th",
+    "code": "th",
+    "en": "Thailand",
+    "zh": "泰国",
+    "group": "asia",
+    "ratio": 1.5,
+    "columns": 40
+  },
+  {
+    "id": "tj",
+    "code": "tj",
+    "en": "Tajikistan",
+    "zh": "塔吉克斯坦",
+    "group": "asia",
+    "ratio": 2,
+    "columns": 200
+  },
+  {
+    "id": "tk",
+    "code": "tk",
+    "en": "Tokelau",
+    "zh": "托克劳",
+    "group": "oceania",
+    "ratio": 2,
+    "columns": 200
+  },
+  {
+    "id": "tl",
+    "code": "tl",
+    "en": "Timor-Leste",
+    "zh": "东帝汶",
+    "group": "asia",
+    "ratio": 2,
+    "columns": 100
+  },
+  {
+    "id": "tm",
+    "code": "tm",
+    "en": "Turkmenistan",
+    "zh": "土库曼斯坦",
+    "group": "asia",
+    "ratio": 1.5,
+    "columns": 200
+  },
+  {
+    "id": "tn",
+    "code": "tn",
+    "en": "Tunisia",
+    "zh": "突尼斯",
+    "group": "africa",
+    "ratio": 1.5,
+    "columns": 40
+  },
+  {
+    "id": "to",
+    "code": "to",
+    "en": "Tonga",
+    "zh": "汤加",
+    "group": "oceania",
+    "ratio": 2,
+    "columns": 100
+  },
+  {
+    "id": "tr",
+    "code": "tr",
+    "en": "Türkiye",
+    "zh": "土耳其",
+    "group": "asia",
+    "ratio": 1.5,
+    "columns": 40
+  },
+  {
+    "id": "transgender",
+    "code": "transgender",
+    "en": "Transgender pride",
+    "zh": "跨性别骄傲旗",
+    "group": "themes",
+    "ratio": 1.5,
+    "columns": 40
+  },
+  {
+    "id": "tt",
+    "code": "tt",
+    "en": "Trinidad & Tobago",
+    "zh": "特立尼达和多巴哥",
+    "group": "americas",
+    "ratio": 1.6666666666666667,
+    "columns": 40
+  },
+  {
+    "id": "tv",
+    "code": "tv",
+    "en": "Tuvalu",
+    "zh": "图瓦卢",
+    "group": "oceania",
+    "ratio": 2,
+    "columns": 100
+  },
+  {
+    "id": "tw",
+    "code": "tw",
+    "en": "Taiwan",
+    "zh": "台湾",
+    "group": "asia",
+    "ratio": 1.5,
+    "columns": 200
+  },
+  {
+    "id": "tz",
+    "code": "tz",
+    "en": "Tanzania",
+    "zh": "坦桑尼亚",
+    "group": "africa",
+    "ratio": 1.5,
+    "columns": 100
+  },
+  {
+    "id": "ua",
+    "code": "ua",
+    "en": "Ukraine",
+    "zh": "乌克兰",
+    "group": "europe",
+    "ratio": 1.5,
+    "columns": 40
+  },
+  {
+    "id": "ug",
+    "code": "ug",
+    "en": "Uganda",
+    "zh": "乌干达",
+    "group": "africa",
+    "ratio": 1.5,
+    "columns": 100
+  },
+  {
+    "id": "um",
+    "code": "um",
+    "en": "U.S. Outlying Islands",
+    "zh": "美国本土外小岛屿",
+    "group": "oceania",
+    "ratio": 1.9,
+    "columns": 200
+  },
+  {
+    "id": "un",
+    "code": "un",
+    "en": "United Nations",
+    "zh": "联合国",
+    "group": "organizations",
+    "ratio": 1.5,
+    "columns": 220
+  },
+  {
+    "id": "us",
+    "code": "us",
+    "en": "United States",
+    "zh": "美国",
+    "group": "americas",
+    "ratio": 1.9,
+    "columns": 200
+  },
+  {
+    "id": "uy",
+    "code": "uy",
+    "en": "Uruguay",
+    "zh": "乌拉圭",
+    "group": "americas",
+    "ratio": 1.5,
+    "columns": 100
+  },
+  {
+    "id": "uz",
+    "code": "uz",
+    "en": "Uzbekistan",
+    "zh": "乌兹别克斯坦",
+    "group": "asia",
+    "ratio": 2,
+    "columns": 100
+  },
+  {
+    "id": "va",
+    "code": "va",
+    "en": "Vatican City",
+    "zh": "梵蒂冈",
+    "group": "europe",
+    "ratio": 1,
+    "columns": 100
+  },
+  {
+    "id": "vc",
+    "code": "vc",
+    "en": "St. Vincent & Grenadines",
+    "zh": "圣文森特和格林纳丁斯",
+    "group": "americas",
+    "ratio": 1.5,
+    "columns": 100
+  },
+  {
+    "id": "ve",
+    "code": "ve",
+    "en": "Venezuela",
+    "zh": "委内瑞拉",
+    "group": "americas",
+    "ratio": 1.5,
+    "columns": 40
+  },
+  {
+    "id": "vg",
+    "code": "vg",
+    "en": "British Virgin Islands",
+    "zh": "英属维尔京群岛",
+    "group": "americas",
+    "ratio": 2,
+    "columns": 200
+  },
+  {
+    "id": "vi",
+    "code": "vi",
+    "en": "U.S. Virgin Islands",
+    "zh": "美属维尔京群岛",
+    "group": "americas",
+    "ratio": 1.5,
+    "columns": 200
+  },
+  {
+    "id": "vn",
+    "code": "vn",
+    "en": "Vietnam",
+    "zh": "越南",
+    "group": "asia",
+    "ratio": 1.5,
+    "columns": 40
+  },
+  {
+    "id": "vu",
+    "code": "vu",
+    "en": "Vanuatu",
+    "zh": "瓦努阿图",
+    "group": "oceania",
+    "ratio": 1.6666666666666667,
+    "columns": 200
+  },
+  {
+    "id": "wf",
+    "code": "wf",
+    "en": "Wallis & Futuna",
+    "zh": "瓦利斯和富图纳",
+    "group": "oceania",
+    "ratio": 1.5,
+    "columns": 200
+  },
+  {
+    "id": "white",
+    "code": "white",
+    "en": "White flag",
+    "zh": "白旗",
+    "group": "themes",
+    "ratio": 1.5,
+    "columns": 40
+  },
+  {
+    "id": "who",
+    "code": "who",
+    "en": "World Health Organization",
+    "zh": "世界卫生组织",
+    "group": "organizations",
+    "ratio": 1.5,
+    "columns": 220
+  },
+  {
+    "id": "ws",
+    "code": "ws",
+    "en": "Samoa",
+    "zh": "萨摩亚",
+    "group": "oceania",
+    "ratio": 2,
+    "columns": 100
+  },
+  {
+    "id": "wto",
+    "code": "wto",
+    "en": "World Trade Organization (emblem on white)",
+    "zh": "世界贸易组织（白底徽标）",
+    "group": "organizations",
+    "ratio": 1.5,
+    "columns": 200
+  },
+  {
+    "id": "xk",
+    "code": "xk",
+    "en": "Kosovo",
+    "zh": "科索沃",
+    "group": "europe",
+    "ratio": 1.4,
+    "columns": 100
+  },
+  {
+    "id": "ye",
+    "code": "ye",
+    "en": "Yemen",
+    "zh": "也门",
+    "group": "asia",
+    "ratio": 1.5,
+    "columns": 40
+  },
+  {
+    "id": "yt",
+    "code": "yt",
+    "en": "Mayotte",
+    "zh": "马约特",
+    "group": "africa",
+    "ratio": 1.5,
+    "columns": 200
+  },
+  {
+    "id": "za",
+    "code": "za",
+    "en": "South Africa",
+    "zh": "南非",
+    "group": "africa",
+    "ratio": 1.5,
+    "columns": 40
+  },
+  {
+    "id": "zm",
+    "code": "zm",
+    "en": "Zambia",
+    "zh": "赞比亚",
+    "group": "africa",
+    "ratio": 1.5,
+    "columns": 200
+  },
+  {
+    "id": "zw",
+    "code": "zw",
+    "en": "Zimbabwe",
+    "zh": "津巴布韦",
+    "group": "africa",
+    "ratio": 2,
+    "columns": 200
+  }
+]

@@ -6,6 +6,7 @@ import { Btn, Section } from "../components/common";
 import { ControlList } from "../controls/Controls";
 import { FloralPatternEditor } from "../components/FloralPatternEditor";
 import { FloralPartitionFill } from "../components/FloralPartitionFill";
+import { FlagPicker } from "../components/FlagPicker";
 import { usePicker, useAssetList } from "../components/picker";
 import s from "../components/floral.module.scss";
 
@@ -39,7 +40,7 @@ export const FlowerDesignStage = ({ catalog, design, state }: {catalog: Catalog;
             <div className={s.hint}>{t("FlowerPainter.UI.Flowers.CurveMaterialsTip", "Curves use their own flowers, independently of the fill. Select a pattern to override its flower.")}</div>
             <ControlList step={step} layer={layer} state={state} flat only={["curvePalette"]} />
         </Section> : null}
-        {flag ? <Section title={t("FlowerPainter.UI.Flags.Template","Flag template")} testId="flag-templates"><ControlList step={step} layer={layer} state={state} flat only={["flagTemplate"]} /><div className={s.hint}>{t("FlowerPainter.UI.Flags.Tip","Flowers follow the flag colours. The 3:2 design fits inside your frame.")}</div></Section> : !compose ? <Section title={t("FlowerPainter.UI.Flowers.CarpetPattern","Fill pattern")}><div className={s.buttons}>
+        {flag ? <Section title={t("FlowerPainter.UI.Flags.Template","Flag template")} testId="flag-templates"><FlagPicker step={step}/></Section> : !compose ? <Section title={t("FlowerPainter.UI.Flowers.CarpetPattern","Fill pattern")}><div className={s.buttons}>
             {["flow","islands"].map(k=><Btn key={k} selected={step.values.shape===k} label={labels[k]} onClick={()=>act.setValue(step.path,"shape",k)} testId={`carpet-${k}`} />)}
         </div></Section> : !fillingPartitions ? <FloralPatternEditor step={step} state={state} /> : null}
         {partition && !fillingPartitions ? <Btn variant="accent" label={t("FlowerPainter.UI.Partitions.DoneDrawing", "Finish boundaries → select regions")} onClick={()=>act.selectFloralPattern(step.path,-2)} testId="partition-finish-boundaries" /> : null}

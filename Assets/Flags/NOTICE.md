@@ -1,0 +1,15 @@
+# Flag artwork and generated maps
+
+Country/territory SVGs: [hampusborgos/country-flags](https://github.com/hampusborgos/country-flags), pinned revision `c09927e63705529bbf59ca6684cd9b23225dddad`, retrieved 2026-10-26. The upstream README identifies the artwork as public domain, originally from Wikimedia Commons and contributors. Source SVGs, including their embedded credits, are preserved here. The upstream README is included as `country-flags-README.md`.
+
+Additional artwork is individually identified in `extra-sources.json` with its authoring organization, Commons description page, download URL and public-domain declaration. UN / WHO: PD-US-no notice-UN; NATO: PD-US-not renewed; African Union: PD-self / PD-ineligible; WTO emblem: PD-textlogo; Afghanistan script vector: PD-script (Lexicon). These are artwork copyright declarations, not endorsements or trademark permissions.
+
+The WTO template is our composition of its emblem on a white 3:2 field; it is labelled accordingly, not described as an official flag. Medical and theme vectors are geometric drawings authored for FlowerPainter under the project's GPL-3.0 license. Red Cross, Red Crescent and Red Crystal are specifically named protective emblems, not generic hospital logos. The separate green first-aid cross and blue hospital H are provided for ordinary medical landscaping. Organization and protected-emblem templates are decorative depictions and do not indicate affiliation.
+
+Afghanistan's 2021 white flag and the Republic's 2004–2021 tricolour are separate, explicitly labelled entries. Northern Ireland's Ulster Banner is labelled historical. The geographical browsing groups are navigation categories, not statements about sovereignty. The catalogue includes territories and constituent-country designs in addition to the 193 UN members and two observer states.
+
+`tools/flags/build.cjs` rasterizes vectors to 512-column maps with the existing twelve blossom colours (indices 4–15); nearest-colour mapping, flower spacing and petals intentionally produce a floral interpretation rather than a printed reproduction. Alpha is retained; Nepal's outline also clips the green base and foliage. UI thumbnails are made from the same quantized maps, so their colour substitutions agree with planted flowers. Generated RLE maps and thumbnails inherit their corresponding source artwork terms.
+
+To rebuild offline: `node tools/flags/build.cjs`, then `python tools/flags/finish-metadata.py`. Requires the existing UI Playwright Chromium installation. `import-sources.py` documents the initial network import; normal builds never fetch artwork.
+
+See `CATALOG.md` for every template, ratio and suggested size. Size tiers (40 / 60 / 100 / 200 columns, UN and WHO 220) are conservative visual guidance for broad shapes, symbols and detailed emblems respectively. They are not a promise of legible small text. A smaller flag remains allowed and raises a non-blocking warning. A nonrectangular selection may clip the flag and is reported separately.

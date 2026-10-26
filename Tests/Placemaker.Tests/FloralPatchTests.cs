@@ -74,5 +74,50 @@ namespace FlowerPainter.Tests
             var sparse=Plan(s=>s.Values["bloomSpacing"]=.5);
             Assert.True(sparse.Objects.Sum(o=>o.FlowerPatch.Flowers)<first.Objects.Sum(o=>o.FlowerPatch.Flowers)/2);
         }
+        [Fact] public void CatalogueCoversEveryUNMemberAndObserverAndAllMapsDecode()
+        {
+            // 193 member states + Holy See and Palestine; territories are additional entries.
+            var nations="af al dz ad ao ag ar am au at az bs bh bd bb by be bz bj bt bo ba bw br bn bg bf bi cv kh cm ca cf td cl cn co km cg cd cr ci hr cu cy cz dk dj dm do ec eg sv gq er ee sz et fj fi fr ga gm ge de gh gr gd gt gn gw gy ht hn hu is in id ir iq ie il it jm jp jo kz ke ki kp kr kw kg la lv lb ls lr ly li lt lu mg mw my mv ml mt mh mr mu mx fm md mc mn me ma mz mm na nr np nl nz ni ne ng mk no om pk pw pa pg py pe ph pl pt qa ro ru rw kn lc vc ws sm st sa sn rs sc sl sg sk si sb so za ss es lk sd sr se ch sy tj tz th tl tg to tt tn tr tm tv ug ua ae gb us uy uz vu ve vn ye zm zw va ps".Split(' ');
+            Assert.Equal(195,nations.Length);
+            var ids=FlagCatalog.All.Select(f=>f.Id).ToArray();Assert.Equal(ids.Length,ids.Distinct().Count());
+            foreach(var code in nations)Assert.Contains(code=="cn"?"china":code=="jp"?"japan":code=="fr"?"france":code,ids);
+            foreach(var code in new[]{"un","who","wto","eu","nato","au-union","red-cross","red-crescent","red-crystal","first-aid","medical","peace","rainbow","checkered"})Assert.Contains(code,ids);
+            foreach(var f in FlagCatalog.All) {
+                Assert.InRange(f.Ratio,.5f,3f);bool visible=false;
+                for(int y=0;y<32;y++)for(int x=0;x<32;x++) {int c=f.Color(new float2((x+.5f)/32,(y+.5f)/32));Assert.True(c==-1||c>=4&&c<16);visible|=c>=0;}
+                Assert.True(visible,f.Id);Assert.Equal(-1,f.Color(new float2(-.1f,.5f)));
+            }
+        }
+        [Fact] public void FlagsKeepSquareWideAndNonRectangularOutlines()
+        {
+            Assert.Equal(new float2(20,20),FlagCatalog.Get("ch").Fit(new float2(30,20)));
+            Assert.Equal(new float2(30,15),FlagCatalog.Get("gb").Fit(new float2(30,20)));
+            Assert.Equal(-1,FlagCatalog.Get("np").Color(new float2(.95f,.8f)));
+            var plan=Plan(s=>{s.Values["shape"]="flag";s.Values["flagTemplate"]="np";});
+            var template=FlagCatalog.Get("np");var size=template.Fit(new float2(30,20));var min=new float2(15,10)-size/2;
+            var region=new Region(template.Outline.Select(p=>min+p*size).ToArray());
+            Assert.NotEmpty(plan.Objects);
+            foreach(var obj in plan.Objects)foreach(var v in obj.FlowerPatch.Vertices) {
+                var p=(obj.Position+v).xz;Assert.True(region.Contains(p)||region.DistanceToBoundary(p)<.003f);
+            }
+        }
+        [Fact] public void SizeAdviceTracksTemplateDetailAndSpacingWithoutBlockingSmallFlags()
+        {
+            var small=Plan(s=>{s.Values["shape"]="flag";s.Values["flagTemplate"]="us";},10,8);
+            Assert.NotEmpty(small.Objects);Assert.Contains(small.Issues,i=>i.Key=="FlowerPainter.Floral.Issue.FlagSmall");
+            Assert.DoesNotContain(small.Issues,i=>i.Severity==IssueSeverity.Error);
+            var dense=Plan(s=>{s.Values["shape"]="flag";s.Values["flagTemplate"]="us";s.Values["bloomSpacing"]=.22;},10,8);
+            Assert.True(dense.Facts["floral.flagRecommendedWidth"]<small.Facts["floral.flagRecommendedWidth"]);
+            var simple=Plan(s=>{s.Values["shape"]="flag";s.Values["flagTemplate"]="france";},20,15);
+            Assert.DoesNotContain(simple.Issues,i=>i.Key=="FlowerPainter.Floral.Issue.FlagSmall");
+        }
+        [Theory]
+        [InlineData("kr")][InlineData("us")][InlineData("br")][InlineData("un")][InlineData("wto")][InlineData("who")][InlineData("red-cross")]
+        public void DetailedAndThemeFlagsActuallyProducePatchGeometry(string flag)
+        {
+            var plan=Plan(s=>{s.Values["shape"]="flag";s.Values["flagTemplate"]=flag;},12,10);
+            Assert.NotEmpty(plan.Objects);Assert.True(plan.Objects.Sum(o=>o.FlowerPatch.Flowers)>500);
+            Assert.True(plan.Objects.SelectMany(o=>o.FlowerPatch.UV).Select(p=>(int)(p.x*16)).Where(c=>c>=4).Distinct().Count()>=2);
+        }
     }
 }
