@@ -20,7 +20,7 @@
 #    closes, quits its game when the user starts theirs, per-type ETA.
 # 4: the game host is the dispatcher's own copy of Run-Suite.ps1 and ModsInstall.ps1 (a request's frozen build gives
 #    only the mod and the game's inputs), only CS2's Paradox launcher counts, the plan no longer decides the real order.
-$script:QVersion = 4
+$script:QVersion = 5
 $script:QRoot = if ($env:FLOWERPAINTER_GAME_QUEUE) { $env:FLOWERPAINTER_GAME_QUEUE } elseif ($env:FLOWERPAINTER_QUEUE_ROOT) { $env:FLOWERPAINTER_QUEUE_ROOT } else { Join-Path $env:USERPROFILE '.flowerpainter\game-queue' }
 # tests only: a fake game host script instead of Run-Suite, and only with a stand-in queue root (never on the real line)
 $script:QFake = if ($env:FLOWERPAINTER_GAME_QUEUE) { $env:FLOWERPAINTER_GAME_QUEUE_FAKE } else { '' }

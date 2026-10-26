@@ -453,6 +453,9 @@ function D-Overdue($a, [datetime]$now) {
         $est = Q-RowSec ([int]$rp[$k]) ([bool]@($a.req.rowLand)[$k]) $rates "$(@($a.req.rowType)[$k])"
         if ($k -eq 0) { $est += $rates.overhead + [int]$a.req.land * $rates.land }   # the first build also waits for the request's land
         $limit = [math]::Max(360, 5 * $est)
+        # An explicit budget also covers a single long build (for example first-time flower
+        # mesh imports). The request deadline above still bounds the complete run.
+        if ([int]$a.req.timeoutMin -gt 0) { $limit = [math]::Max($limit, 60 * [int]$a.req.timeoutMin) }
         $since = ($now - $a.rowAt).TotalSeconds
         if ($since -gt $limit) { return "build $($k + 1) of $($rp.Count) made no progress for $(Q-Duration $since) (5 times its estimate, at least 6 min)" }
     }

@@ -310,7 +310,7 @@ namespace FlowerPainter.Game.Suite
         private bool PlanReady() => _tool.Shape == null || (!_tool.Planning && _tool.Plan != null && _tool.PlanRevision == _tool.InputRevision);
 
         /// <summary>The plan for the current input revision is finished. At "user" pace a person does not wait: a few frames only.</summary>
-        private IEnumerator WaitPlan(ScenarioState st, JObject rec, float timeout = 240f, bool always = false)
+        private IEnumerator WaitPlan(ScenarioState st, JObject rec, float timeout = 600f, bool always = false)
         {
             yield return Frames(2);   // the change reaches the planner's input revision on the next tool update
             if (st != null && st.Pace == "user" && !always) { yield return Frames(4); rec["planWait"] = "skipped (user pace)"; yield break; }
