@@ -17,9 +17,9 @@ namespace FlowerPainter.Core.Layers.Types.Floral
             bool flag=shape=="flag";
             if(shape=="partition") {
                 var map=new FloralPartitions(frame,motifs,ctx.Cancel);
-                var choices=new Dictionary<int,FloralFill>();
-                foreach(var f in fills) {int id=map.At(origin+new float2(f.X,f.Z));if(id>0)choices[id]=f;}
-                for(int i=0;i<map.Regions.Count;i++) if(choices.TryGetValue(i+1,out var fill)&&fill.Style!="empty") regions.Add((map.Regions[i],fill));
+                var partitionChoices=new Dictionary<int,FloralFill>();
+                foreach(var f in fills) {int id=map.At(origin+new float2(f.X,f.Z));if(id>0)partitionChoices[id]=f;}
+                for(int i=0;i<map.Regions.Count;i++) if(partitionChoices.TryGetValue(i+1,out var fill)&&fill.Style!="empty") regions.Add((map.Regions[i],fill));
                 if(regions.Count==0){ctx.Issue(IssueSeverity.Info,"FlowerPainter.Floral.Issue.FillPartition");return;}
             } else regions.Add((new Region(frame.Ring),null));
             var palette=ctx.L("flowerPalette");if(palette.Length==0)palette=new[]{"Red","Yellow","White"};
@@ -46,13 +46,38 @@ namespace FlowerPainter.Core.Layers.Types.Floral
                 if(regions.Sum(r=>r.region.Area)<flagRegion.Area*.98f)
                     ctx.Issue(IssueSeverity.Warning,"FlowerPainter.Floral.Issue.FlagClipped");
             }
+            bool collage=shape=="collage";
+            var regionMap=collage && fills.Count>0 ? new FloralRegions(frame,motifs,ctx.Cancel) : null;
+            var choices=new Dictionary<int,FloralFill>();
+            if(regionMap!=null)foreach(var fill in fills) {
+                int label=regionMap.At(origin+new float2(fill.X,fill.Z));
+                if(label>0)choices[label]=fill;
+            }
+            var curvePalette=ctx.L("curvePalette");
+            if(curvePalette.Length==0)curvePalette=FloralAssets.CurveDefaults(ctx.Site);
+            var fillPatterns=new Dictionary<FloralFill,FloralCarpet.Pattern>();
+            foreach(var fill in choices.Values) {
+                int count=fill.Flowers.Length>0?fill.Flowers.Length:palette.Length;
+                fillPatterns[fill]=new FloralCarpet.Pattern(frame,fill.Style,ctx.F("bandWidth"),ctx.F("rotation"),ctx.Seed,count);
+            }
             foreach(var item in regions) {
                 var selected=item.fill?.Flowers.Length>0?item.fill.Flowers:item.fill?.Style=="single"&&!string.IsNullOrEmpty(item.fill.Flower)?new[]{item.fill.Flower}:palette;
-                string style=item.fill?.Style??(shape=="islands"?"islands":"flow");
+                string style=item.fill?.Style??(collage?ctx.S("gapStyle"):(shape=="islands"?"islands":"flow"));
                 var pattern=new FloralCarpet.Pattern(frame,style,ctx.F("bandWidth"),ctx.F("rotation"),ctx.Seed,selected.Length);
                 int Color(float2 p) {
                     if(ctx.Input.Reserved?.Blocks(p,0.05f)??false)return -1;
                     if(flag)return template.Color((p-flagMin)/dimensions);
+                    if(collage) {
+                        for(int i=motifs.Count-1;i>=0;i--)if(motifs[i].Covers(p,origin))
+                            return FlowerPatchMesh.ColorOf(string.IsNullOrEmpty(motifs[i].Flower)?curvePalette[i%curvePalette.Length]:motifs[i].Flower);
+                        FloralFill fill=null;
+                        if(regionMap!=null)choices.TryGetValue(regionMap.At(p),out fill);
+                        if(fill?.Style=="empty" || (fill==null&&!ctx.B("fillGaps")))return -1;
+                        if(fill!=null) {
+                            var colors=fill.Flowers.Length>0?fill.Flowers:fill.Style=="single"&&!string.IsNullOrEmpty(fill.Flower)?new[]{fill.Flower}:palette;
+                            return FlowerPatchMesh.ColorOf(colors[fill.Style=="single"?0:fillPatterns[fill].Slot(p)]);
+                        }
+                    }
                     return FlowerPatchMesh.ColorOf(selected[style=="single"?0:pattern.Slot(p)]);
                 }
                 var region=item.region;
@@ -71,7 +96,7 @@ namespace FlowerPainter.Core.Layers.Types.Floral
                     if(pieces.Count==0)continue;
                     var pos=new float3(x,ctx.H(new float2(x,z)),z);
                     FlowerPatchMesh mesh;
-                    mesh=FlowerPatchMesh.Make(pieces,pos,pitch,height,density,Color,ctx.H,Clearance,ctx.Cancel,meshes,flag);
+                    mesh=FlowerPatchMesh.Make(pieces,pos,pitch,height,density,Color,ctx.H,Clearance,ctx.Cancel,meshes,true);
                     if(mesh.Indices.Length==0)continue;
                     var obj=ctx.Object(pos.xz,0,ObjectRole.Planter,new AssetRef(mesh.Name),0,-1,AssetCategories.Flower);
                     obj.Position=pos;obj.Control="plantingSystem";obj.FlowerPatch=mesh;

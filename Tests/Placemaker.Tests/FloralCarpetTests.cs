@@ -26,7 +26,7 @@ namespace FlowerPainter.Tests
 
         private static AreaInput Input(string mode, string shape = "l")
         {
-            var settings = new FloralLayer().Defaults();
+            var settings = new FloralLayer().Defaults(); settings.Values["plantingSystem"]="props";
             settings.Values["shape"] = mode;
             settings.Values["bandWidth"] = 6.0;
             return new AreaInput { Shape = new AreaShape { Ring = Outline(shape), Source = AreaSource.Drawn }, Settings = settings,

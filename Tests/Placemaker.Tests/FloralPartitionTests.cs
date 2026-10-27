@@ -19,7 +19,7 @@ namespace FlowerPainter.Tests
         private static FloralPartitions Map(params FloralMotif[] cuts) => new FloralPartitions(LayerRegion.From(Frame), cuts.ToList(), CancellationToken.None);
         private static AreaInput Input(params FloralMotif[] cuts)
         {
-            var settings = new FloralLayer().Defaults();
+            var settings = new FloralLayer().Defaults(); settings.Values["plantingSystem"]="props";
             settings.Values["shape"] = "partition";
             settings.Values["motifs"] = cuts.Select(m=>m.Encode()).ToArray();
             settings.Values["fillGaps"] = true; // A previous ribbon-mode setting cannot fill new subdivisions automatically.

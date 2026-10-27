@@ -23,7 +23,7 @@ namespace FlowerPainter.Core.Layers.Types.Floral
 
         protected override void DefineControls(ControlSet c)
         {
-            c.Choice("plantingSystem", "props", ControlTier.Essential, "flowers", "props", "patch").Tip();
+            c.Choice("plantingSystem", "patch", ControlTier.Essential, "flowers", "props", "patch").Tip();
             c.Slider("bloomSpacing", 0.28, 0.22, 0.5, 0.02, "m", ControlTier.Essential, "flowers").Tip();
             c.Slider("flowerDensity", 4, 1, 4, 1, "", ControlTier.Essential, "flowers").Tip();
             c.Slider("patchHeight", 0.24, 0.12, 0.6, 0.02, "m", ControlTier.Essential, "flowers").Tip();
@@ -99,7 +99,7 @@ namespace FlowerPainter.Core.Layers.Types.Floral
 
         protected override void PlanCore(LayerContext ctx)
         {
-            if(ctx.S("shape")=="flag" || (ctx.S("plantingSystem")=="patch" && (ctx.S("shape")=="partition" || ctx.S("shape")=="flow" || ctx.S("shape")=="islands"))) { FlowerPatchPlanner.Plan(ctx); return; }
+            if(ctx.S("shape")=="flag" || (ctx.S("plantingSystem")=="patch" && (ctx.S("shape")=="partition" || ctx.S("shape")=="collage" || ctx.S("shape")=="flow" || ctx.S("shape")=="islands"))) { FlowerPatchPlanner.Plan(ctx); return; }
             float scale = math.clamp(ctx.F("flowerScale"), 0.25f, 1.2f);
             var selected = new List<string>();
             foreach (var id in ctx.L("flowerPalette"))

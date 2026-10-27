@@ -103,6 +103,7 @@ test("curve flowers and fill flowers remain independent", async ({page}) => {
 
 test("overlap is editable in both planting modes and independent of prop size", async ({page}) => {
     await flowers(page);
+    await page.getByTestId("planting-props").click();
     await expect(page.getByTestId("slider-overlap-input")).toHaveValue("0");
     const size = await page.getByTestId("slider-flowerScale-input").inputValue();
     await page.getByTestId("slider-overlap-input").fill("70");
@@ -177,6 +178,8 @@ test("partition workflow selects first and applies independent props and styles"
     await page.getByTestId("partition-select-1").click();
     await expect(page.getByTestId("fill-style-single")).toHaveAttribute("aria-pressed","true");
     await expect(page.getByTestId("partition-props")).toContainText("Sample A");
+    await expect(page.getByTestId("slider-flowerDensity-input")).toHaveValue("4");
+    await page.getByTestId("planting-props").click();
     await expect(page.getByTestId("slider-overlap-input")).toHaveValue("0");
     expect(await page.getByTestId("flowerpainter-panel").evaluate(e=>e.scrollWidth>e.clientWidth+1)).toBe(false);
     await panelShot(page,"flowers-select-then-fill");

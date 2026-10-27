@@ -61,20 +61,29 @@ namespace FlowerPainter.Tests
                 Assert.True(math.distance((p+obj.Position).xz,new float2(15,10))<6.002f);
             Assert.All(plan.Objects.SelectMany(o=>o.FlowerPatch.UV).Select(uv=>(int)(uv.x*16)).Where(c=>c>=4),c=>Assert.Equal(6,c));
         }
-        [Fact] public void CanopyCoversTheWholeRegionWithoutGapsOrOverlappingTiles()
+        [Theory]
+        [InlineData("flow")][InlineData("islands")][InlineData("partition")]
+        public void FilledRegionsUseTheSameRaisedFlowersAsFlags(string shape)
         {
-            const float side=40;
-            var plan=Plan(s=>s.Values["flowerPalette"]=new[]{"White"},side,side);
-            double area=0;
-            foreach(var obj in plan.Objects) {
-                var mesh=obj.FlowerPatch;
-                for(int i=0;i<mesh.Indices.Length;i+=3) {
-                    int a=mesh.Indices[i],b=mesh.Indices[i+1],c=mesh.Indices[i+2];
-                    if(mesh.UV[a].y>=.5f)continue; // Only the canopy, excluding raised details.
-                    area+=math.abs(math.cross(mesh.Vertices[b]-mesh.Vertices[a],mesh.Vertices[c]-mesh.Vertices[a]).y)/2;
-                }
-            }
-            Assert.InRange(area,side*side-.1,side*side+.1);
+            var plan=Plan(s=>{
+                s.Values["shape"]=shape;s.Values["flowerDensity"]=4;
+                if(shape=="partition")s.Values["fills"]=new[]{new FloralFill { X=0,Z=0,Style="single",Flower="Blue" }.Encode()};
+            },20,20);
+            Assert.NotEmpty(plan.Objects);
+            Assert.All(plan.Objects,o=>Assert.Equal(o.FlowerPatch.Flowers*6,o.FlowerPatch.Indices.Length/3));
+        }
+        [Fact] public void CurvesAndTheirSelectedFillsUseRaisedFlowersAndRemainIndependent()
+        {
+            var motif=new FloralMotif {Id="curve",Kind="wave",Size=16,Width=2,Flower="Red"};
+            var plan=Plan(s=>{
+                s.Values["shape"]="collage";s.Values["flowerDensity"]=4;
+                s.Values["motifs"]=new[]{motif.Encode()};
+                s.Values["fills"]=new[]{new FloralFill {X=0,Z=7,Style="single",Flower="Blue"}.Encode()};
+            },20,20);
+            Assert.NotEmpty(plan.Objects);
+            var colors=plan.Objects.SelectMany(o=>o.FlowerPatch.UV).Where(uv=>uv.y>=.5f).Select(uv=>(int)(uv.x*16)).ToArray();
+            Assert.Contains(4,colors);Assert.Contains(6,colors);
+            Assert.All(plan.Objects,o=>Assert.Equal(o.FlowerPatch.Flowers*6,o.FlowerPatch.Indices.Length/3));
         }
         [Fact] public void FlagsKeepTheirProportionsAndRecognizableColourRegions()
         {

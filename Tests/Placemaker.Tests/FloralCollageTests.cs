@@ -15,7 +15,7 @@ namespace FlowerPainter.Tests
     {
         private static AreaInput Input(params FloralMotif[] motifs)
         {
-            var s = new FloralLayer().Defaults(); s.Values["shape"]="collage";
+            var s = new FloralLayer().Defaults(); s.Values["plantingSystem"]="props"; s.Values["shape"]="collage";
             s.Values["motifs"] = motifs.Select(m => m.Encode()).ToArray();
             s.Values["flowerPalette"] = new[] { "GapFlowerA", "GapFlowerB", "GapFlowerC" };
             return new AreaInput { Settings = s, Seed = 455,

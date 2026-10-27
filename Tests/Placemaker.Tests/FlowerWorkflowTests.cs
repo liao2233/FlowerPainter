@@ -44,7 +44,7 @@ namespace FlowerPainter.Tests
             Assert.True(m.Covers(new float2(-10,50),new float2(50,50)));
         }
         [Fact] public void PerRegionSolidFillPreservesTheRibbonAndClipsPlantsToTheFrame() {
-            var layer=new FloralLayer();var settings=layer.Defaults();settings.Values["shape"]="collage";
+            var layer=new FloralLayer();var settings=layer.Defaults();settings.Values["plantingSystem"]="props";settings.Values["shape"]="collage";
             settings.Values["motifs"]=new[]{new FloralMotif{Kind="ring",Id="circle",Size=50,Width=4,Flower="Ribbon"}.Encode()};
             settings.Values["fills"]=new[]{new FloralFill{X=0,Z=0,Style="single",Flower="Inside"}.Encode(),new FloralFill{X=-40,Z=-40,Style="empty"}.Encode()};
             var input=new AreaInput{Shape=new AreaShape{Ring=Frame()},Settings=settings,Site=new SiteContext{HeightAt=p=>0},Seed=42};
@@ -54,7 +54,7 @@ namespace FlowerPainter.Tests
             Assert.All(plan.Objects.Where(o=>o.Asset.Id=="Inside"),o=>Assert.True(math.distance(o.Position.xz,origin)<25));
         }
         [Fact] public void AutomaticCurvesUseAnIndependentPaletteAndRespectPerCurveOverrides() {
-            var layer = new FloralLayer(); var settings = layer.Defaults();
+            var layer = new FloralLayer(); var settings = layer.Defaults(); settings.Values["plantingSystem"]="props";
             settings.Values["shape"] = "collage"; settings.Values["fillGaps"] = true;
             settings.Values["curvePalette"] = new[] { "WhiteRibbon" };
             settings.Values["flowerPalette"] = new[] { "RedFill" };
