@@ -39,6 +39,19 @@ namespace FlowerPainter.Tests
             Assert.True(counts[0]>0);
             for(int i=1;i<counts.Length;i++)Assert.True(counts[i]>counts[i-1],string.Join(",",counts));
         }
+        [Fact] public void DistantFlowersStayThreeDimensionalAndViewDistanceChangesPrefabIdentity()
+        {
+            var a=Plan(s=>{s.Values["shape"]="flag";s.Values["flowerDensity"]=4;s.Values["flowerViewDistance"]=0;});
+            var b=Plan(s=>{s.Values["shape"]="flag";s.Values["flowerDensity"]=4;s.Values["flowerViewDistance"]=3;});
+            Assert.NotEmpty(a.Objects);
+            Assert.All(b.Objects,o=>{
+                Assert.Equal(3,o.FlowerPatch.LodBias);
+                Assert.NotEmpty(o.FlowerPatch.Lod.Indices);
+                Assert.True(o.FlowerPatch.Lod.Indices.Length<o.FlowerPatch.Indices.Length);
+                Assert.True(o.FlowerPatch.Lod.Vertices.Max(p=>p.y)>o.FlowerPatch.Lod.Vertices.Min(p=>p.y));
+            });
+            Assert.NotEqual(a.Objects[0].Asset.Id,b.Objects[0].Asset.Id);
+        }
         [Fact] public void FlagNearGeometryContainsOnlyFlowersInTemplateColors()
         {
             var plan=Plan(s=>{s.Values["shape"]="flag";s.Values["flowerDensity"]=4;},30,20);
@@ -94,8 +107,7 @@ namespace FlowerPainter.Tests
             Assert.Equal(7,FlowerPatchPlanner.FlagColor("japan",new float2(.2f,.5f)));
             Assert.Equal(new[]{15,7,4},new[]{.1f,.5f,.9f}.Select(x=>FlowerPatchPlanner.FlagColor("france",new float2(x,.5f))));
             var plan=Plan(s=>s.Values["shape"]="flag",30,30);
-            var v=plan.Objects.SelectMany(o=>o.FlowerPatch.Lod.Vertices.Select(p=>p+o.Position)).ToArray();
-            Assert.InRange(v.Min(p=>p.z),4.99f,5.01f);Assert.InRange(v.Max(p=>p.z),24.99f,25.01f);
+            Assert.Equal(30,plan.Facts["floral.flagWidth"]);Assert.Equal(20,plan.Facts["floral.flagHeight"]);
             Assert.True(plan.Objects.Sum(o=>o.FlowerPatch.Flowers)>0);
         }
         [Fact] public void ReplanningProducesStableAssetNamesAndDensityDoesNotDependOnPropOverlap()

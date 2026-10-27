@@ -145,7 +145,8 @@
           "paint",
           "paintAnything",
           "nodes",
-          "perimeter"
+          "perimeter",
+          "flag"
         ]
       }
     },
@@ -176,7 +177,9 @@
         "fresh"
       ]
     },
-    "saveReload": { "keys": [] },
+    "saveReload": {
+      "keys": []
+    },
     "preset": {
       "keys": [
         "layer",

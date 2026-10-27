@@ -26,6 +26,7 @@ namespace FlowerPainter.Core.Layers.Types.Floral
         // Non-null => shape=flag albedo mesh; PrefabSystem binds FlagId's RGBA texture.
         public string FlagId;
         public int UsedMaterialVersion;
+        public float LodBias;
         public static readonly string[] Hex = { "193D17", "326329", "487F32", "E3B832", "D8202F", "FFD338", "2352B4", "F5F0E4", "F288B2", "78399D", "F17D25", "B72A74", "201D2D", "168242", "48B5CD", "182D68" };
         public static int ColorOf(string asset)
         {
@@ -54,7 +55,7 @@ namespace FlowerPainter.Core.Layers.Types.Floral
         }
         internal static FlowerPatchMesh Make(List<Region> pieces,float3 origin,float pitch,float height,int density,
             Func<float2,int> colorAt,Func<float2,float> terrain,Func<float2,float> clearance,System.Threading.CancellationToken cancel,
-            Dictionary<string,FlowerPatchMesh> cache,bool flowersOnly=false)
+            Dictionary<string,FlowerPatchMesh> cache,bool flowersOnly=false,float lodBias=0)
         {
             var near=new Builder();var far=new Builder();int flowers=0;
             var originCell=(int2)math.round(origin.xz/pitch);
@@ -118,35 +119,43 @@ namespace FlowerPainter.Core.Layers.Types.Floral
                     for(int z=(int)math.floor(min.y/cell+.001f);z*cell<max.y-.001f;z++)
                         for(int x=(int)math.floor(min.x/cell+.001f);x*cell<max.x-.001f;x++)Cell(target,new float2(x*cell,z*cell),cell,distant);
                 }
-                if(!flowersOnly)Cover(near,4,false);Cover(far,8,true);
-                // Raised flowers share the patch mesh; density controls their spacing.
-                float detailStep=(density==0?0:(16 >> density))*pitch;
-                if(density>0)
-                for(int z=(int)math.floor(min.y/detailStep);z*detailStep<max.y;z++)for(int x=(int)math.floor(min.x/detailStep);x*detailStep<max.x;x++) {
-                    cancel.ThrowIfCancellationRequested();uint seed=Hashing.Mix(1987u,(x%4+4)%4,(z%4+4)%4);
-                    var local=new float2(x+.5f,z+.5f)*detailStep-origin.xz;
-                    local+=new float2((seed&255)/255f-.5f,((seed>>8)&255)/255f-.5f)*detailStep*.5f;
-                    var p=origin.xz+local;
-                    if(!region.Contains(p))continue;
-                    float radius=math.min(pitch*.6f,clearance(p)/1.03f);int color=colorAt(p);
-                    if(radius<.025f||color<0)continue;
-                    var center=Ground(p,height*1.02f);center.x=(float)Math.Round(local.x,3);center.z=(float)Math.Round(local.y,3);
-                    float rotation=(seed%360)*math.PI/180;
-                    for(int k=0;k<5;k++) {
-                        float angle=rotation+k*math.PI*.4f;
-                        var left=center+new float3(math.cos(angle-.5f)*radius,-height*.08f,math.sin(angle-.5f)*radius);
-                        var right=center+new float3(math.cos(angle+.5f)*radius,-height*.08f,math.sin(angle+.5f)*radius);
-                        near.Top(center,left,right,color,1+k%3);
+                if(!flowersOnly)Cover(near,4,false);
+                void AddFlowers(Builder target,int level,bool distant) {
+                    float detailStep=(16 >> level)*pitch;
+                    float flowerSize=distant && level<density ? 2f : 1f;
+                    for(int z=(int)math.floor(min.y/detailStep);z*detailStep<max.y;z++)for(int x=(int)math.floor(min.x/detailStep);x*detailStep<max.x;x++) {
+                        cancel.ThrowIfCancellationRequested();uint seed=Hashing.Mix(1987u,(x%4+4)%4,(z%4+4)%4);
+                        var local=new float2(x+.5f,z+.5f)*detailStep-origin.xz;
+                        local+=new float2((seed&255)/255f-.5f,((seed>>8)&255)/255f-.5f)*detailStep*.5f;
+                        var p=origin.xz+local;
+                        if(!region.Contains(p))continue;
+                        float radius=math.min(pitch*.6f*flowerSize,clearance(p)/1.03f);int color=colorAt(p);
+                        if(radius<.025f||color<0)continue;
+                        var center=Ground(p,height*1.02f);center.x=(float)Math.Round(local.x,3);center.z=(float)Math.Round(local.y,3);
+                        float rotation=(seed%360)*math.PI/180;
+                        int petals=distant?3:5;
+                        for(int k=0;k<petals;k++) {
+                            float angle=rotation+k*math.PI*2f/petals;
+                            float spread=distant?1.05f:.5f;
+                            var left=center+new float3(math.cos(angle-spread)*radius,-height*.08f,math.sin(angle-spread)*radius);
+                            var right=center+new float3(math.cos(angle+spread)*radius,-height*.08f,math.sin(angle+spread)*radius);
+                            target.Top(center,left,right,color,1+k%3);
+                        }
+                        if(!distant) {
+                            float core=radius*.16f;
+                            target.Top(center+new float3(-core,.008f,-core),center+new float3(core,.008f,-core),center+new float3(0,.012f,core),3);
+                            flowers++;
+                        }
                     }
-                    float core=radius*.16f;
-                    near.Top(center+new float3(-core,.008f,-core),center+new float3(core,.008f,-core),center+new float3(0,.012f,core),3);
-                    flowers++;
                 }
+                AddFlowers(near,density,false);
+                AddFlowers(far,math.max(1,density-1),true);
             }
             var mesh=near.Finish();mesh.Lod=far.Finish();mesh.Flowers=flowers;
-            mesh.UsedMaterialVersion=MaterialVersion;mesh.FlagId=null;
+            if(mesh.Lod.Indices.Length==0)mesh.Lod=mesh;
+            mesh.UsedMaterialVersion=MaterialVersion;mesh.FlagId=null;mesh.LodBias=lodBias;
             using var stream=new MemoryStream();using var writer=new BinaryWriter(stream);
-            writer.Write(5);writer.Write(MaterialVersion);
+            writer.Write(5);writer.Write(MaterialVersion);writer.Write(lodBias);
             foreach(var part in new[]{mesh,mesh.Lod}) {
                 writer.Write(part.Vertices.Length);
                 for(int i=0;i<part.Vertices.Length;i++) {

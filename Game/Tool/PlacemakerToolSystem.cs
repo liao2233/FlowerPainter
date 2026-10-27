@@ -270,6 +270,7 @@ namespace FlowerPainter.Game.Tool
                 else if (_stage == ToolStage.Building) { /* input ignored while building */ }
                 else if (_markerKind != null) UpdateMarkers();
                 else if (_stage == ToolStage.Manage) UpdateManage();
+                else if (_placingFlag) UpdateFlagPlacement();
                 else if (UpdateBuiltBrush()) { }
                 else if (UpdateFloralPatterns()) { }
                 else
@@ -368,6 +369,7 @@ namespace FlowerPainter.Game.Tool
 
         private void Escape()
         {
+            if (_placingFlag) { _placingFlag=false; Touch(); return; }
             if (FloralEditing && _gesture == Gesture.None) { SelectFloralPattern("", -1); return; }
             switch (StageMachine.Escape(_stage, Facts()))
             {
@@ -475,6 +477,7 @@ namespace FlowerPainter.Game.Tool
 
         public void SetAreaMode(SelectionMode mode)
         {
+            if (_placingFlag) { _placingFlag=false; Touch(); }
             if (mode == _mode) return;
             CancelGesture();
             ExitMarkerMode();

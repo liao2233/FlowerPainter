@@ -26,6 +26,7 @@ namespace FlowerPainter.Game.Assets
             public float[] Min, Max;
             public int Vertices, Indices, LodVertices, LodIndices;
             public int MaterialVersion;
+            public float LodBias;
             // Non-empty => albedo flag surface (MaterialVersion >= FlagMaterialVersion).
             public string FlagId;
         }
@@ -107,7 +108,7 @@ namespace FlowerPainter.Game.Assets
                         var saved=new SavedPatch {Name=name,Min=new[]{min.x,min.y,min.z},Max=new[]{max.x,max.y,max.z},
                             Vertices=mesh.Vertices.Length,Indices=mesh.Indices.Length,LodVertices=mesh.Lod.Vertices.Length,LodIndices=mesh.Lod.Indices.Length,
                             MaterialVersion=mesh.UsedMaterialVersion>0?mesh.UsedMaterialVersion:FlowerPatchMesh.MaterialVersion,
-                            FlagId=mesh.FlagId};
+                            FlagId=mesh.FlagId,LodBias=mesh.LodBias};
                         Register(saved);_saved[name]=saved;_dirty=true;
                     }
                 } catch(Exception e) {_failed.Add(name);Mod.Log.Error(e,"Flower patch creation failed: "+name);}
@@ -153,7 +154,7 @@ namespace FlowerPainter.Game.Assets
             var far=Render(" LOD",saved.LodVertices,saved.LodIndices);AssetCatalogSystem.AddOwnPrefab(_prefabs,far);
             var near=Render("",saved.Vertices,saved.Indices);
             // Canopies can switch to solid-colour coverage at distance; legacy petals keep their bias.
-            var lod=near.AddComponent<LodProperties>();lod.m_LodMeshes=new[]{far};lod.m_Bias=canopyOrFlag?0:-3;lod.m_ShadowBias=1;
+            var lod=near.AddComponent<LodProperties>();lod.m_LodMeshes=new[]{far};lod.m_Bias=canopyOrFlag?-saved.LodBias:-3;lod.m_ShadowBias=1;
             AssetCatalogSystem.AddOwnPrefab(_prefabs,near);
             var prop=ScriptableObject.CreateInstance<StaticObjectPrefab>();prop.name=saved.Name;
             prop.m_Meshes=new[]{new ObjectMeshInfo {m_Mesh=near,m_Position=Vector3.zero,m_Rotation=Quaternion.identity}};

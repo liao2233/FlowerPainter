@@ -61,6 +61,7 @@ namespace FlowerPainter.Game.UI
             Trigger<string>("setBrushRules", json => _tool.SetBrushRules(UiModels.ParseBrushRules(json, _tool.BrushRules)));
             Trigger("resetBrushRules", () => _tool.ResetBrushRules());
             Trigger("clearArea", () => _tool.ClearArea());
+            Trigger("placeFlag", () => _tool.BeginFlagPlacement());
 
             Trigger<string>("selectRecipe", id => _tool.SelectRecipe(id));
             Trigger<string>("focusStep", p => _tool.FocusStep(p));

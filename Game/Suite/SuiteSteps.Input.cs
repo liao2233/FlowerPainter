@@ -221,6 +221,15 @@ namespace FlowerPainter.Game.Suite
             }
             switch (tool)
             {
+                case "flag":
+                {
+                    yield return UiAct(st,rec,"place flag","place-flag",null,null,()=>_tool.StateInput().PlacingFlag,null);
+                    RaycastHit? hit=null;
+                    yield return Press(st,rec,P3(Pt(step["at"],b,abs)),false,h=>hit=h);
+                    if(!hit.HasValue || !_tool.SuiteHasSelection) {rec["error"]="flag was not placed";st.Result["status"]="no-outline";yield break;}
+                    rec["clicks"]=1;
+                    break;
+                }
                 case "bucket":
                 case "block":
                 {

@@ -20,5 +20,12 @@
   "FlowerPainter.Floral.Issue.FlagSmall": "This flag is {0} × {1} m. At this flower spacing, try {2} × {3} m or larger to retain its main details. Small emblems and lettering may still be simplified.",
   "FlowerPainter.Floral.Issue.FlagClipped": "The selection clips part of this flag. Use a rectangular selection to preserve the complete design.",
   "FlowerPainter.Floral.flowerDensity": "3D flower density",
-  "FlowerPainter.Floral.flowerDensity.Tooltip": "Higher values add more flowers and cost more performance. Flags are arranged from flowers."
+  "FlowerPainter.Floral.flowerDensity.Tooltip": "Higher values add more flowers and cost more performance. Flags are arranged from flowers.",
+  "FlowerPainter.Floral.flagWidth": "Flag width",
+  "FlowerPainter.Floral.flagWidth.Tooltip": "Set the width; height follows the template proportions.",
+  "FlowerPainter.Floral.flowerViewDistance": "3D flower view distance",
+  "FlowerPainter.Floral.flowerViewDistance.Tooltip": "Higher values keep 3D flowers visible farther away, at greater rendering cost.",
+  "FlowerPainter.UI.Flags.Place": "Place a flag",
+  "FlowerPainter.UI.Flags.PlaceHint": "Click the ground to place a flag.",
+  "FlowerPainter.UI.Flags.DirectTip": "The template keeps its proportions. Set the flag width below."
 }

@@ -21,6 +21,7 @@ namespace FlowerPainter.Game.Tool
 
         private void DesignChanged(bool preview = false)
         {
+            SyncDirectFlagShape();
             _designVersion++;
             _inputRevision++;
             _lastInputChange = UnityEngine.Time.realtimeSinceStartup;

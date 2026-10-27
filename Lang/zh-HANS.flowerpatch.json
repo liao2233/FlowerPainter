@@ -40,5 +40,12 @@
   "FlowerPainter.UI.Flags.RecommendedSize": "按当前花头间距，建议 {0} × {1} 米或更大",
   "FlowerPainter.UI.Flags.SizeTip": "小旗帜仍可种植，但星徽、文字和细小图案可能丢失。这是辨识参考，不是硬性限制。",
   "FlowerPainter.Floral.flowerDensity": "立体花密度",
-  "FlowerPainter.Floral.flowerDensity.Tooltip": "数值越高，小花越密，也越消耗性能。旗帜由小花排列而成。"
+  "FlowerPainter.Floral.flowerDensity.Tooltip": "数值越高，小花越密，也越消耗性能。旗帜由小花排列而成。",
+  "FlowerPainter.Floral.flagWidth": "旗帜宽度",
+  "FlowerPainter.Floral.flagWidth.Tooltip": "调整旗帜的宽度，高度按模板比例自动计算。",
+  "FlowerPainter.Floral.flowerViewDistance": "立体花显示距离",
+  "FlowerPainter.Floral.flowerViewDistance.Tooltip": "数值越高，立体花保留到更远处，可能增加渲染开销。",
+  "FlowerPainter.UI.Flags.Place": "直接放置旗帜",
+  "FlowerPainter.UI.Flags.PlaceHint": "点击地面放置旗帜。",
+  "FlowerPainter.UI.Flags.DirectTip": "旗帜按模板比例生成，可在下方调整宽度。"
 }

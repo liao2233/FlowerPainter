@@ -96,7 +96,7 @@ namespace FlowerPainter.Core.Layers.Types.Floral
                     if(pieces.Count==0)continue;
                     var pos=new float3(x,ctx.H(new float2(x,z)),z);
                     FlowerPatchMesh mesh;
-                    mesh=FlowerPatchMesh.Make(pieces,pos,pitch,height,density,Color,ctx.H,Clearance,ctx.Cancel,meshes,true);
+                    mesh=FlowerPatchMesh.Make(pieces,pos,pitch,height,density,Color,ctx.H,Clearance,ctx.Cancel,meshes,true,math.clamp(ctx.F("flowerViewDistance"),0,5));
                     if(mesh.Indices.Length==0)continue;
                     var obj=ctx.Object(pos.xz,0,ObjectRole.Planter,new AssetRef(mesh.Name),0,-1,AssetCategories.Flower);
                     obj.Position=pos;obj.Control="plantingSystem";obj.FlowerPatch=mesh;

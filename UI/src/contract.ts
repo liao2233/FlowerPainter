@@ -107,6 +107,7 @@ export interface ToolState {
   /** Stages the player may jump to right now (others are greyed). */
   reachable: Stage[];
   areaMode: AreaMode;
+  placingFlag?: boolean;
   /** rules: sent by s11+ C# (absent = older DLL). */
   brush: { shape: BrushShape; size: number; angle: number; rules?: BrushRules };
   area: AreaInfo;
@@ -538,6 +539,7 @@ export const Triggers = {
   undo: "undo",                             // ()
   redo: "redo",                             // ()
 
+  placeFlag: "placeFlag",
   setAreaMode: "setAreaMode",               // (mode: AreaMode)
   setBrush: "setBrush",                     // (shape: BrushShape, size: number, angle: number)
   setBrushRules: "setBrushRules",           // (json: Partial<BrushRules> as a JSON string) — s11

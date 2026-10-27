@@ -324,6 +324,7 @@ export const act = {
     primary: () => fire(Triggers.primary),
     undo: () => fire(Triggers.undo),
     redo: () => fire(Triggers.redo),
+    placeFlag: () => fire(Triggers.placeFlag),
     setAreaMode: (mode: AreaMode) => fire(Triggers.setAreaMode, mode),
     setBrush: (shape: BrushShape, size: number, angle: number) => fire(Triggers.setBrush, shape, size, angle),
     setBrushRules: (rules: Partial<Omit<BrushRules, "walls">> & { walls?: Partial<BucketWalls> }) => fire(Triggers.setBrushRules, JSON.stringify(rules)),

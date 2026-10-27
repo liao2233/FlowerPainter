@@ -41,6 +41,7 @@ namespace FlowerPainter.Game.Tool
         public List<HintInfo> Hints()
         {
             var h = new List<HintInfo>(8);
+            if (_placingFlag) { h.Add(new HintInfo("FlowerPainter.UI.Flags.PlaceHint")); h.Add(new HintInfo("FlowerPainter.Hint.Back", "Esc")); return h; }
             if (FloralEditing) { h.Add(new HintInfo(_floralIndex == -2 ? FloralPartitioning ? "FlowerPainter.UI.Partitions.SelectTip" : "FlowerPainter.UI.Flowers.RegionTip" : FloralPartitioning ? "FlowerPainter.Floral.UI.PartitionDragHint" : "FlowerPainter.Floral.UI.DragHint")); h.Add(new HintInfo("FlowerPainter.Hint.Back", "Esc")); return h; }
             var flash = FlashText;
             if (flash != null) h.Add(new HintInfo(flash.Key) { Text = flash });
@@ -150,6 +151,7 @@ namespace FlowerPainter.Game.Tool
                 Stage = _stage,
                 Reachable = StageMachine.Reachable(facts),
                 Mode = _mode,
+                PlacingFlag = _placingFlag,
                 BrushSquare = _brushSquare,
                 BrushSize = _brushSize,
                 BrushAngle = _brushAngle,

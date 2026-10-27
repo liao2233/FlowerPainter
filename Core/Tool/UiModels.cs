@@ -42,6 +42,7 @@ namespace FlowerPainter.Core.Tool
         public ToolStage Stage;
         public List<ToolStage> Reachable = new List<ToolStage>();
         public SelectionMode Mode;
+        public bool PlacingFlag;
         public bool BrushSquare;
         public float BrushSize = 150f;
         public float BrushAngle;
@@ -136,6 +137,7 @@ namespace FlowerPainter.Core.Tool
             foreach (var st in s.Reachable) reach.Add(StageMachine.Id(st));
             o.Set("reachable", reach);
             o.Set("areaMode", SelectionModes.Id(s.Mode));
+            o.Set("placingFlag",s.PlacingFlag);
             var brush = JsonValue.Obj().Set("shape", s.BrushSquare ? "square" : "round").Set("size", Round(s.BrushSize, 1)).Set("angle", Round(s.BrushAngle, 1));
             if (s.BrushRules != null) brush.Set("rules", BrushRulesJson(s.BrushRules));
             o.Set("brush", brush);
