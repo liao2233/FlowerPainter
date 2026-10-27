@@ -21,7 +21,7 @@
     "id": "af-republic",
     "code": "af-republic",
     "en": "Afghanistan (Republic, 2004–2021)",
-    "zh": "阿富汗（共和国，2004—2021）",
+    "zh": "阿富汗伊斯兰共和国（2004–2021）",
     "group": "asia",
     "ratio": 1.5,
     "columns": 200
@@ -408,7 +408,7 @@
     "id": "checkered",
     "code": "checkered",
     "en": "Racing / checkered",
-    "zh": "赛车／方格旗",
+    "zh": "赛车方格旗",
     "group": "themes",
     "ratio": 1.5,
     "columns": 40
@@ -741,7 +741,7 @@
     "id": "gb-nir",
     "code": "gb-nir",
     "en": "Northern Ireland (Ulster Banner, historical)",
-    "zh": "北爱尔兰（历史乌尔斯特旗）",
+    "zh": "北爱尔兰（历史性阿尔斯特旗）",
     "group": "europe",
     "ratio": 2,
     "columns": 200

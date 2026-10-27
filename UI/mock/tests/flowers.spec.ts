@@ -5,9 +5,13 @@ test("flower patches and flags expose their own planting controls",async({page})
     await flowers(page,1280,720);
     await page.getByTestId("planting-patch").click();
     await expect(page.getByTestId("slider-bloomSpacing-input")).toHaveValue("0.28");
+    await expect(page.getByTestId("slider-flowerDensity-input")).toHaveValue("4");
     await expect(page.getByTestId("slider-overlap-input")).toHaveCount(0);
     await page.getByTestId("flower-mode-flag").click();
     await expect(page.getByTestId("flag-templates")).toBeVisible();
+    await page.getByTestId("slider-flowerDensity-input").fill("3");
+    await page.getByTestId("slider-flowerDensity-input").press("Enter");
+    await expect.poll(()=>page.evaluate(()=>(window as any).pm.backend.root.values.flowerDensity)).toBe(3);
     await expect(page.getByTestId("assetmulti-add-flowerPalette")).toHaveCount(0);
     await expect(page.getByTestId("flower-mode-carpet")).toHaveAttribute("aria-pressed","false");
     await expect(page.getByTestId("flag-list").locator("button")).toHaveCount(271);

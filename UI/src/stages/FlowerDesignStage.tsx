@@ -56,7 +56,7 @@ export const FlowerDesignStage = ({ catalog, design, state }: {catalog: Catalog;
         {!flag && (!compose || fillingPartitions) ? <Section title={t("FlowerPainter.Floral.plantingSystem","Flower models")}><div className={s.buttons}>{["props","patch"].map(k=><Btn key={k} label={t("FlowerPainter.Floral.plantingSystem."+k,k)} selected={(step.values.plantingSystem || "props")===k} onClick={()=>act.setValue(step.path,"plantingSystem",k)} testId={`planting-${k}`} />)}</div></Section> : null}
         {!partition || fillingPartitions ? <Section title={partition ? t("FlowerPainter.UI.Partitions.Planting", "Planting spacing and size (all regions)") : compose ? t("FlowerPainter.UI.Flowers.FillMaterials","Fill flowers and planting") : t("FlowerPainter.UI.Flowers.Materials","Flowers and planting")}>
             {patch && (!compose || partition) ? <div className={s.hint}>{t("FlowerPainter.UI.Patches.Tip","Flower patches follow the terrain and region boundary. Blossom spacing controls their density; choose the FlowerPainter colour props to set fill colours.")}</div> : null}
-            <ControlList step={step} layer={layer} state={state} flat only={[...(!partition && !flag?["flowerPalette"]:[]),...(patch && (!compose || partition)?["bloomSpacing","patchHeight"]:["spacing","overlap","flowerScale"]),...(!flag && (!compose || partition)?["bandWidth","rotation"]:[])]} />
+            <ControlList step={step} layer={layer} state={state} flat only={[...(!partition && !flag?["flowerPalette"]:[]),...(patch && (!compose || partition)?["bloomSpacing","flowerDensity","patchHeight"]:["spacing","overlap","flowerScale"]),...(!flag && (!compose || partition)?["bandWidth","rotation"]:[])]} />
         </Section> : null}
     </div>;
 };

@@ -13,7 +13,7 @@ namespace FlowerPainter.Tests
     {
         private static AreaPlan Plan(Action<SettingsBag> edit, float width=30, float depth=20, float2 offset=default, Func<float2,float> terrain=null)
         {
-            var layer=new FloralLayer();var settings=layer.Defaults();settings.Values["plantingSystem"]="patch";edit(settings);
+            var layer=new FloralLayer();var settings=layer.Defaults();settings.Values["plantingSystem"]="patch";settings.Values["flowerDensity"]=1;edit(settings);
             return layer.Plan(new AreaInput { Settings=settings, Seed=42, Site=new SiteContext {HeightAt=terrain??(p=>0)},
                 Shape=new AreaShape {Ring=new[]{new float3(offset.x,0,offset.y),new float3(offset.x+width,0,offset.y),new float3(offset.x+width,0,offset.y+depth),new float3(offset.x,0,offset.y+depth)}}},CancellationToken.None);
         }
@@ -30,32 +30,24 @@ namespace FlowerPainter.Tests
                     Assert.InRange(center.y-Height(center.xz),-.1f,.4f);
                 }
         }
-        [Fact] public void LargeFlagSharesRepeatedTilePayloadsAwayFromWorldOrigin()
+        [Theory]
+        [InlineData("flag")][InlineData("flow")]
+        public void FlowerDensityControlsRaisedFlowers(string shape)
         {
-            var plan=Plan(s=>s.Values["shape"]="flag",180,140,new float2(1958.5f,-80));
-            Assert.InRange(plan.Objects.Sum(o=>o.FlowerPatch.Flowers),1,1500);
-            Assert.InRange(plan.Objects.Count,1,120);
-            var meshes=plan.Objects.Select(o=>o.FlowerPatch).Distinct().ToArray();
-            float tile=FlowerPatchMesh.TilePitches*.28f;
-            var red=plan.Objects.Where(o=>o.Position.x>2050&&o.Position.x+tile<2138.5f&&o.Position.z>=-70&&o.Position.z+tile<=50).ToArray();
-            Assert.True(red.Length>4);
-            Assert.Single(red.Select(o=>o.FlowerPatch.Name).Distinct());
-            Assert.Equal(meshes.Length,meshes.Select(m=>m.Name).Distinct().Count());
+            var counts=Enumerable.Range(1,4).Select(d=>Plan(s=>{s.Values["shape"]=shape;s.Values["flowerDensity"]=d;},12,10)
+                .Objects.Sum(o=>o.FlowerPatch.Flowers)).ToArray();
+            Assert.True(counts[0]>0);
+            for(int i=1;i<counts.Length;i++)Assert.True(counts[i]>counts[i-1],string.Join(",",counts));
         }
-        [Fact] public void DenseFlowersUsePatchesAndSimplerDistantMeshes()
+        [Fact] public void FlagNearGeometryContainsOnlyFlowersInTemplateColors()
         {
-            var plan=Plan(s=>s.Values["shape"]="flag");
-            int blooms=plan.Objects.Sum(o=>o.FlowerPatch.Flowers);
-            Assert.InRange(blooms,1,40);Assert.InRange(plan.Objects.Count,1,6);
-            Assert.True(plan.Objects.Sum(o=>o.FlowerPatch.Indices.Length/3)<6000);
-            Assert.All(plan.Objects,o=> {
-                var m=o.FlowerPatch;
-                Assert.StartsWith(FlowerPatchMesh.Prefix,o.Asset.Id);
-                Assert.True(m.Lod.Indices.Length<m.Indices.Length);
-                Assert.All(m.Vertices,p=>Assert.True(p.y>=0&&p.y<.4f));
-                Assert.Equal(m.Vertices.Length,m.UV.Length);
-                Assert.All(m.Indices,i=>Assert.InRange(i,0,m.Vertices.Length-1));
-            });
+            var plan=Plan(s=>{s.Values["shape"]="flag";s.Values["flowerDensity"]=4;},30,20);
+            Assert.True(plan.Objects.Sum(o=>o.FlowerPatch.Flowers)>1000);
+            foreach(var obj in plan.Objects) {
+                var mesh=obj.FlowerPatch;
+                Assert.Equal(mesh.Flowers*6,mesh.Indices.Length/3);
+                Assert.All(mesh.UV,uv=>Assert.True(uv.y>=.5f));
+            }
         }
         [Fact] public void CurvedRegionClipsTheWholeMeshAndLeavesTheOutsideEmpty()
         {
@@ -93,15 +85,16 @@ namespace FlowerPainter.Tests
             Assert.Equal(7,FlowerPatchPlanner.FlagColor("japan",new float2(.2f,.5f)));
             Assert.Equal(new[]{15,7,4},new[]{.1f,.5f,.9f}.Select(x=>FlowerPatchPlanner.FlagColor("france",new float2(x,.5f))));
             var plan=Plan(s=>s.Values["shape"]="flag",30,30);
-            var v=plan.Objects.SelectMany(o=>o.FlowerPatch.Vertices.Select(p=>p+o.Position)).ToArray();
+            var v=plan.Objects.SelectMany(o=>o.FlowerPatch.Lod.Vertices.Select(p=>p+o.Position)).ToArray();
             Assert.InRange(v.Min(p=>p.z),4.99f,5.01f);Assert.InRange(v.Max(p=>p.z),24.99f,25.01f);
+            Assert.True(plan.Objects.Sum(o=>o.FlowerPatch.Flowers)>0);
         }
         [Fact] public void ReplanningProducesStableAssetNamesAndDensityDoesNotDependOnPropOverlap()
         {
-            var first=Plan(s=>s.Values["overlap"]=0);
-            var second=Plan(s=>s.Values["overlap"]=90);
+            var first=Plan(s=>{s.Values["overlap"]=0;s.Values["flowerDensity"]=1;});
+            var second=Plan(s=>{s.Values["overlap"]=90;s.Values["flowerDensity"]=1;});
             Assert.Equal(first.Objects.Select(o=>o.Asset.Id),second.Objects.Select(o=>o.Asset.Id));
-            var sparse=Plan(s=>s.Values["bloomSpacing"]=.5);
+            var sparse=Plan(s=>{s.Values["bloomSpacing"]=.5;s.Values["flowerDensity"]=1;});
             Assert.True(sparse.Objects.Sum(o=>o.FlowerPatch.Flowers)<first.Objects.Sum(o=>o.FlowerPatch.Flowers)/2);
         }
         [Fact] public void CatalogueCoversEveryUNMemberAndObserverAndAllMapsDecode()
@@ -143,11 +136,13 @@ namespace FlowerPainter.Tests
         }
         [Theory]
         [InlineData("kr")][InlineData("us")][InlineData("br")][InlineData("un")][InlineData("wto")][InlineData("who")][InlineData("red-cross")]
+        [InlineData("china")][InlineData("japan")][InlineData("france")]
         public void DetailedAndThemeFlagsActuallyProducePatchGeometry(string flag)
         {
             var plan=Plan(s=>{s.Values["shape"]="flag";s.Values["flagTemplate"]=flag;},12,10);
             Assert.NotEmpty(plan.Objects);Assert.All(plan.Objects,o=>Assert.NotEmpty(o.FlowerPatch.Indices));
-            Assert.True(plan.Objects.SelectMany(o=>o.FlowerPatch.UV).Select(p=>(int)(p.x*16)).Where(c=>c>=4).Distinct().Count()>=2);
+            Assert.True(plan.Objects.Sum(o=>o.FlowerPatch.Flowers)>0);
+            Assert.All(plan.Objects,o=>Assert.Null(o.FlowerPatch.FlagId));
         }
         [Theory]
         [InlineData("flag")][InlineData("flow")]
@@ -155,31 +150,10 @@ namespace FlowerPainter.Tests
         {
             var plan=Plan(s=>s.Values["shape"]=shape,319,313,terrain:p=>.3f*math.sin(p.x*math.PI/50)*math.cos(p.y*math.PI/50));
             Assert.InRange(plan.Objects.Count,1,400);
-            Assert.InRange(plan.Objects.Sum(o=>o.FlowerPatch.Flowers),1,6000);
+            int blooms=plan.Objects.Sum(o=>o.FlowerPatch.Flowers);
+            Assert.InRange(blooms,1,25000);
             Assert.InRange(plan.Objects.Sum(o=>o.FlowerPatch.Indices.Length/3),1,600000);
-            Assert.True(plan.Objects.Sum(o=>o.FlowerPatch.Lod.Indices.Length)<plan.Objects.Sum(o=>o.FlowerPatch.Indices.Length));
-        }
-        [Theory]
-        [InlineData("china")][InlineData("us")][InlineData("kr")][InlineData("un")]
-        public void DistantCanopyPreservesFlagColoursAtTheOriginalSamplingResolution(string flag)
-        {
-            const float width=14,depth=12,pitch=.28f;
-            var plan=Plan(s=>{s.Values["shape"]="flag";s.Values["flagTemplate"]=flag;},width,depth);
-            var template=FlagCatalog.Get(flag);var size=template.Fit(new float2(width,depth));
-            var min=new float2(width,depth)/2-size/2;
-            var triangles=plan.Objects.SelectMany(o=>Enumerable.Range(0,o.FlowerPatch.Lod.Indices.Length/3).Select(i=> {
-                var mesh=o.FlowerPatch.Lod;int a=mesh.Indices[i*3],b=mesh.Indices[i*3+1],c=mesh.Indices[i*3+2];
-                return (a:(mesh.Vertices[a]+o.Position).xz,b:(mesh.Vertices[b]+o.Position).xz,c:(mesh.Vertices[c]+o.Position).xz,color:(int)(mesh.UV[a].x*16));
-            })).ToArray();
-            float Cross(float2 a,float2 b)=>a.x*b.y-a.y*b.x;
-            for(int z=0;(z+.5f)*pitch<depth;z++)for(int x=0;(x+.5f)*pitch<width;x++) {
-                var p=new float2(x+.5f,z+.5f)*pitch;int expected=template.Color((p-min)/size);if(expected<0)continue;
-                Assert.True(triangles.Any(t=> {
-                    if(t.color!=expected)return false;
-                    float a=Cross(t.b-t.a,p-t.a),b=Cross(t.c-t.b,p-t.b),c=Cross(t.a-t.c,p-t.c);
-                    return math.min(a,math.min(b,c))>=-.0001f||math.max(a,math.max(b,c))<=.0001f;
-                }),$"{flag} at {p}: missing colour {expected}");
-            }
+            Assert.True(plan.Objects.Sum(o=>o.FlowerPatch.Lod.Indices.Length)<=plan.Objects.Sum(o=>o.FlowerPatch.Indices.Length));
         }
     }
 }

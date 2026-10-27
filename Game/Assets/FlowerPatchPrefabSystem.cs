@@ -26,11 +26,14 @@ namespace FlowerPainter.Game.Assets
             public float[] Min, Max;
             public int Vertices, Indices, LodVertices, LodIndices;
             public int MaterialVersion;
+            // Non-empty => albedo flag surface (MaterialVersion >= FlagMaterialVersion).
+            public string FlagId;
         }
         private PrefabSystem _prefabs;
         private StaticObjectPrefab _source;
         private SurfaceAsset _surface;
         private SurfaceAsset _canopySurface;
+        private readonly Dictionary<string, SurfaceAsset> _flagSurfaces = new Dictionary<string, SurfaceAsset>(StringComparer.Ordinal);
         private readonly Queue<FlowerPatchMesh> _pending = new Queue<FlowerPatchMesh>();
         private readonly HashSet<string> _requested = new HashSet<string>();
         private readonly Dictionary<string, Entity> _entities = new Dictionary<string, Entity>();
@@ -103,7 +106,8 @@ namespace FlowerPainter.Game.Assets
                         var max=mesh.Vertices.Aggregate(new float3(float.MinValue),math.max);
                         var saved=new SavedPatch {Name=name,Min=new[]{min.x,min.y,min.z},Max=new[]{max.x,max.y,max.z},
                             Vertices=mesh.Vertices.Length,Indices=mesh.Indices.Length,LodVertices=mesh.Lod.Vertices.Length,LodIndices=mesh.Lod.Indices.Length,
-                            MaterialVersion=FlowerPatchMesh.MaterialVersion};
+                            MaterialVersion=mesh.UsedMaterialVersion>0?mesh.UsedMaterialVersion:FlowerPatchMesh.MaterialVersion,
+                            FlagId=mesh.FlagId};
                         Register(saved);_saved[name]=saved;_dirty=true;
                     }
                 } catch(Exception e) {_failed.Add(name);Mod.Log.Error(e,"Flower patch creation failed: "+name);}
@@ -127,22 +131,29 @@ namespace FlowerPainter.Game.Assets
             // the import buffers without marking that loader state; release them after saving.
             asset.Unload(true);
         }
+        private SurfaceAsset ResolveSurface(SavedPatch saved) {
+            if(!string.IsNullOrEmpty(saved.FlagId) && saved.MaterialVersion>=FlowerPatchMesh.FlagMaterialVersion)
+                return FlagSurface(saved.FlagId);
+            return saved.MaterialVersion>=3?(_canopySurface??(_canopySurface=MakeSurface(true))):_surface;
+        }
         private void Register(SavedPatch saved) {
             var bounds=new Bounds3(new float3(saved.Min[0],saved.Min[1],saved.Min[2]),new float3(saved.Max[0],saved.Max[1],saved.Max[2]));
             // Old saved flower geometry keeps its original UV layout and material.
-            var surface=saved.MaterialVersion>=3?(_canopySurface??(_canopySurface=MakeSurface(true))):_surface;
+            // Flag albedo meshes (v6+) use a per-flag BaseColorMap; canopy atlas stays for non-flag patches.
+            var surface=ResolveSurface(saved);
+            bool canopyOrFlag=saved.MaterialVersion>=3;
             RenderPrefab Render(string suffix,int vertices,int indices) {
                 var geometry=AssetDatabase.global.GetAsset<GeometryAsset>(Id(saved.Name+suffix));
                 if(geometry==null)throw new FileNotFoundException("Flower patch geometry missing: "+saved.Name+suffix);
                 var render=ScriptableObject.CreateInstance<RenderPrefab>();render.name=saved.Name+suffix+" mesh";render.geometryAsset=geometry;
                 render.surfaceAssets=new[]{surface};render.bounds=bounds;render.vertexCount=vertices;render.indexCount=indices;render.meshCount=1;
-                render.surfaceArea=saved.MaterialVersion>=3?math.max(1,(bounds.max.x-bounds.min.x)*(bounds.max.z-bounds.min.z)):16;
+                render.surfaceArea=canopyOrFlag?math.max(1,(bounds.max.x-bounds.min.x)*(bounds.max.z-bounds.min.z)):16;
                 return render;
             }
             var far=Render(" LOD",saved.LodVertices,saved.LodIndices);AssetCatalogSystem.AddOwnPrefab(_prefabs,far);
             var near=Render("",saved.Vertices,saved.Indices);
             // Canopies can switch to solid-colour coverage at distance; legacy petals keep their bias.
-            var lod=near.AddComponent<LodProperties>();lod.m_LodMeshes=new[]{far};lod.m_Bias=saved.MaterialVersion>=3?0:-3;lod.m_ShadowBias=1;
+            var lod=near.AddComponent<LodProperties>();lod.m_LodMeshes=new[]{far};lod.m_Bias=canopyOrFlag?0:-3;lod.m_ShadowBias=1;
             AssetCatalogSystem.AddOwnPrefab(_prefabs,near);
             var prop=ScriptableObject.CreateInstance<StaticObjectPrefab>();prop.name=saved.Name;
             prop.m_Meshes=new[]{new ObjectMeshInfo {m_Mesh=near,m_Position=Vector3.zero,m_Rotation=Quaternion.identity}};
@@ -151,16 +162,52 @@ namespace FlowerPainter.Game.Assets
             if(!AssetCatalogSystem.AddOwnPrefab(_prefabs,prop))throw new InvalidOperationException("Cannot register "+prop.name);
             _entities[prop.name]=_prefabs.GetEntity(prop);_createdAt[prop.name]=UnityEngine.Time.frameCount;
         }
+        private SurfaceAsset FlagSurface(string flagId) {
+            if(_flagSurfaces.TryGetValue(flagId,out var existing))return existing;
+            string name="FlowerPainter Flag Albedo "+flagId+" v6-readable";
+            var cached=AssetDatabase.global.GetAsset<SurfaceAsset>(Id(name));
+            if(cached!=null){cached.LoadProperties(false);_flagSurfaces[flagId]=cached;return cached;}
+            byte[] png;
+            using(var stream=FlagCatalog.Resource("textures."+flagId+".png"))
+            using(var memory=new MemoryStream()){stream.CopyTo(memory);png=memory.ToArray();}
+            var albedo=new Texture2D(4,4,TextureFormat.RGBA32,true,false){
+                name=name+" base",filterMode=FilterMode.Trilinear,anisoLevel=4,wrapMode=TextureWrapMode.Clamp
+            };
+            if(!ImageConversion.LoadImage(albedo,png,false))throw new InvalidDataException("Flag albedo decode failed: "+flagId);
+            var material=new Material(AssetDatabase.global.resources.materialLibrary.GetMaterial(0)){name=name};
+            foreach(var property in material.GetTexturePropertyNames()) material.SetTexture(property,null);
+            Texture2D Solid(string label,Color color) {
+                var texture=new Texture2D(4,4,TextureFormat.RGBA32,false,true){name=name+label};
+                texture.SetPixels(Enumerable.Repeat(color,16).ToArray());texture.Apply();return texture;
+            }
+            material.SetTexture("_BaseColorMap",albedo);material.SetColor("_BaseColor",Color.white);
+            material.SetTexture("_ControlMask",Solid(" control",Color.black));
+            material.SetTexture("_MaskMap",Solid(" mask",new Color(0,1,0,.12f)));
+            material.SetTexture("_NormalMap",Solid(" normal",new Color(.5f,.5f,1,1)));
+            material.SetTexture("_EmissiveColorMap",Solid(" emission",Color.black));
+            material.SetColor("_EmissiveColor",Color.black);
+            material.SetFloat("_Metallic",0);material.SetFloat("_Smoothness",.18f);material.SetFloat("_CoatStrength",0);
+            material.SetFloat("_UseStack0",0);material.SetFloat("_UseStack1",0);material.DisableKeyword("ENABLE_VT");
+            // Alpha-tested cutout for non-rectangular flags (e.g. Nepal) once those textures carry transparency.
+            if(albedo.format==TextureFormat.RGBA32||albedo.format==TextureFormat.ARGB32) {
+                // Keep opaque blend for china/japan/france; transparent pixels stay cleared in the PNG.
+            }
+            var asset=AssetDatabase.user.AddAsset<SurfaceAsset>(AssetDataPath.Create(AssetFolder,name,EscapeStrategy.None),Id(name));
+            asset.SetData(material);
+            foreach(var texture in asset.textures.Values) Directory.CreateDirectory(Path.GetDirectoryName(texture.path));
+            asset.Save(0,true,true,false);
+            _flagSurfaces[flagId]=asset;return asset;
+        }
         private static SurfaceAsset MakeSurface(bool canopy=false) {
-            string name=canopy?"FlowerPainter Patch Canopy Atlas v5":"FlowerPainter Patch Atlas v2";
+            string name=canopy?"FlowerPainter Patch Canopy Atlas v5-fullmips":"FlowerPainter Patch Atlas v2";
             var existing=AssetDatabase.global.GetAsset<SurfaceAsset>(Id(name));if(existing!=null){existing.LoadProperties(false);return existing;}
             var material=new Material(AssetDatabase.global.resources.materialLibrary.GetMaterial(0)){name=name};
             // The template contains GPU-only default textures. Import only our readable textures.
             foreach(var property in material.GetTexturePropertyNames()) material.SetTexture(property,null);
             int width=canopy?8192:128,atlasHeight=canopy?256:32;
             // Each 128 px tile contains a 64 px flower texture with duplicated edge gutters.
-            // Seven levels retain two texels per tile, keeping filtered samples inside their own colour.
-            var atlas=new Texture2D(width,atlasHeight,TextureFormat.RGBA32,canopy?7:1,false){name=name,filterMode=canopy?FilterMode.Trilinear:FilterMode.Point,anisoLevel=canopy?4:1,wrapMode=TextureWrapMode.Clamp};
+            // The game asset loader expects a complete mip chain when it reloads this texture.
+            var atlas=new Texture2D(width,atlasHeight,TextureFormat.RGBA32,canopy?true:false,false){name=name,filterMode=canopy?FilterMode.Trilinear:FilterMode.Point,anisoLevel=canopy?4:1,wrapMode=TextureWrapMode.Clamp};
             var palette=FlowerPatchMesh.Hex.Select(hex=>{ColorUtility.TryParseHtmlString("#"+hex,out var c);return c;}).ToArray();
             var averages=new Color[palette.Length];
             if(canopy)for(int color=0;color<palette.Length;color++) {
