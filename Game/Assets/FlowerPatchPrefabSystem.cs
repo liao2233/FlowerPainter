@@ -25,10 +25,12 @@ namespace FlowerPainter.Game.Assets
             public string Name;
             public float[] Min, Max;
             public int Vertices, Indices, LodVertices, LodIndices;
+            public int MaterialVersion;
         }
         private PrefabSystem _prefabs;
         private StaticObjectPrefab _source;
         private SurfaceAsset _surface;
+        private SurfaceAsset _canopySurface;
         private readonly Queue<FlowerPatchMesh> _pending = new Queue<FlowerPatchMesh>();
         private readonly HashSet<string> _requested = new HashSet<string>();
         private readonly Dictionary<string, Entity> _entities = new Dictionary<string, Entity>();
@@ -100,7 +102,8 @@ namespace FlowerPainter.Game.Assets
                         var min=mesh.Vertices.Aggregate(new float3(float.MaxValue),math.min);
                         var max=mesh.Vertices.Aggregate(new float3(float.MinValue),math.max);
                         var saved=new SavedPatch {Name=name,Min=new[]{min.x,min.y,min.z},Max=new[]{max.x,max.y,max.z},
-                            Vertices=mesh.Vertices.Length,Indices=mesh.Indices.Length,LodVertices=mesh.Lod.Vertices.Length,LodIndices=mesh.Lod.Indices.Length};
+                            Vertices=mesh.Vertices.Length,Indices=mesh.Indices.Length,LodVertices=mesh.Lod.Vertices.Length,LodIndices=mesh.Lod.Indices.Length,
+                            MaterialVersion=FlowerPatchMesh.MaterialVersion};
                         Register(saved);_saved[name]=saved;_dirty=true;
                     }
                 } catch(Exception e) {_failed.Add(name);Mod.Log.Error(e,"Flower patch creation failed: "+name);}
@@ -126,17 +129,20 @@ namespace FlowerPainter.Game.Assets
         }
         private void Register(SavedPatch saved) {
             var bounds=new Bounds3(new float3(saved.Min[0],saved.Min[1],saved.Min[2]),new float3(saved.Max[0],saved.Max[1],saved.Max[2]));
+            // Old saved flower geometry keeps its original UV layout and material.
+            var surface=saved.MaterialVersion>=3?(_canopySurface??(_canopySurface=MakeSurface(true))):_surface;
             RenderPrefab Render(string suffix,int vertices,int indices) {
                 var geometry=AssetDatabase.global.GetAsset<GeometryAsset>(Id(saved.Name+suffix));
                 if(geometry==null)throw new FileNotFoundException("Flower patch geometry missing: "+saved.Name+suffix);
                 var render=ScriptableObject.CreateInstance<RenderPrefab>();render.name=saved.Name+suffix+" mesh";render.geometryAsset=geometry;
-                render.surfaceAssets=new[]{_surface};render.bounds=bounds;render.vertexCount=vertices;render.indexCount=indices;render.meshCount=1;render.surfaceArea=16;
+                render.surfaceAssets=new[]{surface};render.bounds=bounds;render.vertexCount=vertices;render.indexCount=indices;render.meshCount=1;
+                render.surfaceArea=saved.MaterialVersion>=3?math.max(1,(bounds.max.x-bounds.min.x)*(bounds.max.z-bounds.min.z)):16;
                 return render;
             }
             var far=Render(" LOD",saved.LodVertices,saved.LodIndices);AssetCatalogSystem.AddOwnPrefab(_prefabs,far);
             var near=Render("",saved.Vertices,saved.Indices);
-            // Fine petals need to survive beyond the game's default triangle-density cutoff.
-            var lod=near.AddComponent<LodProperties>();lod.m_LodMeshes=new[]{far};lod.m_Bias=-3;lod.m_ShadowBias=1;
+            // Canopies can switch to solid-colour coverage at distance; legacy petals keep their bias.
+            var lod=near.AddComponent<LodProperties>();lod.m_LodMeshes=new[]{far};lod.m_Bias=saved.MaterialVersion>=3?0:-3;lod.m_ShadowBias=1;
             AssetCatalogSystem.AddOwnPrefab(_prefabs,near);
             var prop=ScriptableObject.CreateInstance<StaticObjectPrefab>();prop.name=saved.Name;
             prop.m_Meshes=new[]{new ObjectMeshInfo {m_Mesh=near,m_Position=Vector3.zero,m_Rotation=Quaternion.identity}};
@@ -145,17 +151,30 @@ namespace FlowerPainter.Game.Assets
             if(!AssetCatalogSystem.AddOwnPrefab(_prefabs,prop))throw new InvalidOperationException("Cannot register "+prop.name);
             _entities[prop.name]=_prefabs.GetEntity(prop);_createdAt[prop.name]=UnityEngine.Time.frameCount;
         }
-        private static SurfaceAsset MakeSurface() {
-            const string name="FlowerPainter Patch Atlas v2";
+        private static SurfaceAsset MakeSurface(bool canopy=false) {
+            string name=canopy?"FlowerPainter Patch Canopy Atlas v5":"FlowerPainter Patch Atlas v2";
             var existing=AssetDatabase.global.GetAsset<SurfaceAsset>(Id(name));if(existing!=null){existing.LoadProperties(false);return existing;}
             var material=new Material(AssetDatabase.global.resources.materialLibrary.GetMaterial(0)){name=name};
             // The template contains GPU-only default textures. Import only our readable textures.
             foreach(var property in material.GetTexturePropertyNames()) material.SetTexture(property,null);
-            var atlas=new Texture2D(128,32,TextureFormat.RGBA32,false){name=name,filterMode=FilterMode.Point,wrapMode=TextureWrapMode.Clamp};
-            var pixels=new Color[128*32];
-            for(int y=0;y<32;y++)for(int x=0;x<128;x++) {
-                ColorUtility.TryParseHtmlString("#"+FlowerPatchMesh.Hex[x/8],out var c);float shade=.78f+.075f*(y/8);
-                pixels[y*128+x]=new Color(c.r*shade,c.g*shade,c.b*shade,1);
+            int width=canopy?8192:128,atlasHeight=canopy?256:32;
+            // Each 128 px tile contains a 64 px flower texture with duplicated edge gutters.
+            // Seven levels retain two texels per tile, keeping filtered samples inside their own colour.
+            var atlas=new Texture2D(width,atlasHeight,TextureFormat.RGBA32,canopy?7:1,false){name=name,filterMode=canopy?FilterMode.Trilinear:FilterMode.Point,anisoLevel=canopy?4:1,wrapMode=TextureWrapMode.Clamp};
+            var palette=FlowerPatchMesh.Hex.Select(hex=>{ColorUtility.TryParseHtmlString("#"+hex,out var c);return c;}).ToArray();
+            var averages=new Color[palette.Length];
+            if(canopy)for(int color=0;color<palette.Length;color++) {
+                var sum=Color.clear;
+                for(int y=0;y<64;y++)for(int x=0;x<64;x++)sum+=CanopyPixel(palette,color,4,(x+.5f)/64,(y+.5f)/64);
+                averages[color]=sum/(64*64);
+            }
+            var pixels=new Color[width*atlasHeight];
+            for(int y=0;y<atlasHeight;y++)for(int x=0;x<width;x++) {
+                int color=x/(canopy?512:8);var c=palette[color];
+                if(canopy&&y<128) c=CanopyPixel(palette,color,(x/128)%4+1,(math.clamp(x%128-32,0,63)+.5f)/64,(math.clamp(y-32,0,63)+.5f)/64);
+                else if(canopy&&y>=248)c=averages[color];
+                else {float shade=.78f+.075f*(canopy?(y-128)/32:y/8);c=new Color(c.r*shade,c.g*shade,c.b*shade,1);}
+                pixels[y*width+x]=c;
             }
             atlas.SetPixels(pixels);atlas.Apply();
             Texture2D Solid(string label,Color color) {
@@ -174,6 +193,22 @@ namespace FlowerPainter.Game.Assets
             asset.SetData(material);
             foreach(var texture in asset.textures.Values) Directory.CreateDirectory(Path.GetDirectoryName(texture.path));
             asset.Save(0,true,true,false);return asset;
+        }
+        private static Color CanopyPixel(Color[] palette,int color,int density,float u,float v) {
+            float fx=u*density,fz=v*density;
+            var result=Color.Lerp(palette[1],palette[2],.5f+.35f*math.sin(fx*17+fz*13));
+            for(int dz=-1;dz<=1;dz++)for(int dx=-1;dx<=1;dx++) {
+                int x=(int)math.floor(fx)+dx,z=(int)math.floor(fz)+dz;
+                int sx=(x%density+density)%density,sz=(z%density+density)%density;
+                uint seed=Core.Layers.Common.Hashing.Mix(7351u,sx,sz);
+                float px=fx-x-.5f-((seed&255)/255f-.5f)*.18f;
+                float pz=fz-z-.5f-((seed>>8&255)/255f-.5f)*.18f;
+                float r=math.sqrt(px*px+pz*pz),angle=math.atan2(pz,px)+(seed%31);
+                if(r>.53f+.065f*math.cos(angle*5))continue;
+                if(r<.065f)result=palette[3];
+                else {float shade=.88f+.1f*math.cos(angle)+.08f*(1-r);var c=palette[color];result=new Color(c.r*shade,c.g*shade,c.b*shade,1);}
+            }
+            return result;
         }
     }
 }

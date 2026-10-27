@@ -235,7 +235,7 @@
   "FlowerPainter.UI.Partitions.SelectTip": "Click a region on the map or in the list. Selecting it does not plant flowers.",
   "FlowerPainter.UI.Partitions.Settings": "3 · Fill region {0}",
   "FlowerPainter.UI.Partitions.Unfilled": "Empty",
-  "FlowerPainter.UI.Patches.Tip": "Dense flower clusters share one model per patch. For ordinary fills, choose the FlowerPainter colour props to set blossom colours.",
+  "FlowerPainter.UI.Patches.Tip": "Flower patches follow the terrain and region boundary. Blossom spacing controls their density; choose the FlowerPainter colour props to set fill colours.",
   "FlowerPainter.UI.PerMonth": "/mo",
   "FlowerPainter.UI.PickRecipe": "Pick a type",
   "FlowerPainter.UI.Picker.All": "All ({0})",

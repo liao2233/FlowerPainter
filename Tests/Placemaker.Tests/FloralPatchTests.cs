@@ -33,21 +33,25 @@ namespace FlowerPainter.Tests
         [Fact] public void LargeFlagSharesRepeatedTilePayloadsAwayFromWorldOrigin()
         {
             var plan=Plan(s=>s.Values["shape"]="flag",180,140,new float2(1958.5f,-80));
-            Assert.InRange(plan.Objects.Sum(o=>o.FlowerPatch.Flowers),270000,280000);
+            Assert.InRange(plan.Objects.Sum(o=>o.FlowerPatch.Flowers),1,1500);
+            Assert.InRange(plan.Objects.Count,1,120);
             var meshes=plan.Objects.Select(o=>o.FlowerPatch).Distinct().ToArray();
-            Assert.True(meshes.Length<plan.Objects.Count/3,$"{meshes.Length} meshes for {plan.Objects.Count} tiles");
+            float tile=FlowerPatchMesh.TilePitches*.28f;
+            var red=plan.Objects.Where(o=>o.Position.x>2050&&o.Position.x+tile<2138.5f&&o.Position.z>=-70&&o.Position.z+tile<=50).ToArray();
+            Assert.True(red.Length>4);
+            Assert.Single(red.Select(o=>o.FlowerPatch.Name).Distinct());
             Assert.Equal(meshes.Length,meshes.Select(m=>m.Name).Distinct().Count());
         }
         [Fact] public void DenseFlowersUsePatchesAndSimplerDistantMeshes()
         {
             var plan=Plan(s=>s.Values["shape"]="flag");
             int blooms=plan.Objects.Sum(o=>o.FlowerPatch.Flowers);
-            Assert.InRange(blooms,7000,8000);Assert.InRange(plan.Objects.Count,35,70);
-            Assert.True(blooms>100*plan.Objects.Count);
+            Assert.InRange(blooms,1,40);Assert.InRange(plan.Objects.Count,1,6);
+            Assert.True(plan.Objects.Sum(o=>o.FlowerPatch.Indices.Length/3)<6000);
             Assert.All(plan.Objects,o=> {
                 var m=o.FlowerPatch;
                 Assert.StartsWith(FlowerPatchMesh.Prefix,o.Asset.Id);
-                Assert.True(m.Lod.Indices.Length<m.Indices.Length/2);
+                Assert.True(m.Lod.Indices.Length<m.Indices.Length);
                 Assert.All(m.Vertices,p=>Assert.True(p.y>=0&&p.y<.4f));
                 Assert.Equal(m.Vertices.Length,m.UV.Length);
                 Assert.All(m.Indices,i=>Assert.InRange(i,0,m.Vertices.Length-1));
@@ -65,15 +69,20 @@ namespace FlowerPainter.Tests
                 Assert.True(math.distance((p+obj.Position).xz,new float2(15,10))<6.002f);
             Assert.All(plan.Objects.SelectMany(o=>o.FlowerPatch.UV).Select(uv=>(int)(uv.x*16)).Where(c=>c>=4),c=>Assert.Equal(6,c));
         }
-        [Fact] public void ChunkEdgesDoNotShrinkFlowersOrDuplicateCentres()
+        [Fact] public void CanopyCoversTheWholeRegionWithoutGapsOrOverlappingTiles()
         {
-            var plan=Plan(s=>s.Values["flowerPalette"]=new[]{"White"},15.68f,15.68f);
-            // 56 x 56 world-aligned blossom cells, including those alongside internal tile edges.
-            Assert.Equal(56*56,plan.Objects.Sum(o=>o.FlowerPatch.Flowers));
-            var full=plan.Objects.Where(o=>o.Position.x>0&&o.Position.x<8&&o.Position.z>0&&o.Position.z<8).ToArray();
-            Assert.NotEmpty(full);
-            Assert.All(full,o=>Assert.Equal(196,o.FlowerPatch.Flowers));
-            Assert.Single(full.Select(o=>o.FlowerPatch.Name).Distinct());
+            const float side=40;
+            var plan=Plan(s=>s.Values["flowerPalette"]=new[]{"White"},side,side);
+            double area=0;
+            foreach(var obj in plan.Objects) {
+                var mesh=obj.FlowerPatch;
+                for(int i=0;i<mesh.Indices.Length;i+=3) {
+                    int a=mesh.Indices[i],b=mesh.Indices[i+1],c=mesh.Indices[i+2];
+                    if(mesh.UV[a].y>=.5f)continue; // Only the canopy, excluding raised details.
+                    area+=math.abs(math.cross(mesh.Vertices[b]-mesh.Vertices[a],mesh.Vertices[c]-mesh.Vertices[a]).y)/2;
+                }
+            }
+            Assert.InRange(area,side*side-.1,side*side+.1);
         }
         [Fact] public void FlagsKeepTheirProportionsAndRecognizableColourRegions()
         {
@@ -137,8 +146,40 @@ namespace FlowerPainter.Tests
         public void DetailedAndThemeFlagsActuallyProducePatchGeometry(string flag)
         {
             var plan=Plan(s=>{s.Values["shape"]="flag";s.Values["flagTemplate"]=flag;},12,10);
-            Assert.NotEmpty(plan.Objects);Assert.True(plan.Objects.Sum(o=>o.FlowerPatch.Flowers)>500);
+            Assert.NotEmpty(plan.Objects);Assert.All(plan.Objects,o=>Assert.NotEmpty(o.FlowerPatch.Indices));
             Assert.True(plan.Objects.SelectMany(o=>o.FlowerPatch.UV).Select(p=>(int)(p.x*16)).Where(c=>c>=4).Distinct().Count()>=2);
+        }
+        [Theory]
+        [InlineData("flag")][InlineData("flow")]
+        public void LargeCanopiesAvoidMillionFlowerGeometry(string shape)
+        {
+            var plan=Plan(s=>s.Values["shape"]=shape,319,313,terrain:p=>.3f*math.sin(p.x*math.PI/50)*math.cos(p.y*math.PI/50));
+            Assert.InRange(plan.Objects.Count,1,400);
+            Assert.InRange(plan.Objects.Sum(o=>o.FlowerPatch.Flowers),1,6000);
+            Assert.InRange(plan.Objects.Sum(o=>o.FlowerPatch.Indices.Length/3),1,600000);
+            Assert.True(plan.Objects.Sum(o=>o.FlowerPatch.Lod.Indices.Length)<plan.Objects.Sum(o=>o.FlowerPatch.Indices.Length));
+        }
+        [Theory]
+        [InlineData("china")][InlineData("us")][InlineData("kr")][InlineData("un")]
+        public void DistantCanopyPreservesFlagColoursAtTheOriginalSamplingResolution(string flag)
+        {
+            const float width=14,depth=12,pitch=.28f;
+            var plan=Plan(s=>{s.Values["shape"]="flag";s.Values["flagTemplate"]=flag;},width,depth);
+            var template=FlagCatalog.Get(flag);var size=template.Fit(new float2(width,depth));
+            var min=new float2(width,depth)/2-size/2;
+            var triangles=plan.Objects.SelectMany(o=>Enumerable.Range(0,o.FlowerPatch.Lod.Indices.Length/3).Select(i=> {
+                var mesh=o.FlowerPatch.Lod;int a=mesh.Indices[i*3],b=mesh.Indices[i*3+1],c=mesh.Indices[i*3+2];
+                return (a:(mesh.Vertices[a]+o.Position).xz,b:(mesh.Vertices[b]+o.Position).xz,c:(mesh.Vertices[c]+o.Position).xz,color:(int)(mesh.UV[a].x*16));
+            })).ToArray();
+            float Cross(float2 a,float2 b)=>a.x*b.y-a.y*b.x;
+            for(int z=0;(z+.5f)*pitch<depth;z++)for(int x=0;(x+.5f)*pitch<width;x++) {
+                var p=new float2(x+.5f,z+.5f)*pitch;int expected=template.Color((p-min)/size);if(expected<0)continue;
+                Assert.True(triangles.Any(t=> {
+                    if(t.color!=expected)return false;
+                    float a=Cross(t.b-t.a,p-t.a),b=Cross(t.c-t.b,p-t.b),c=Cross(t.a-t.c,p-t.c);
+                    return math.min(a,math.min(b,c))>=-.0001f||math.max(a,math.max(b,c))<=.0001f;
+                }),$"{flag} at {p}: missing colour {expected}");
+            }
         }
     }
 }

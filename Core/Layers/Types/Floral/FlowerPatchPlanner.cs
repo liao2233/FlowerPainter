@@ -24,7 +24,7 @@ namespace FlowerPainter.Core.Layers.Types.Floral
             } else regions.Add((new Region(frame.Ring),null));
             var palette=ctx.L("flowerPalette");if(palette.Length==0)palette=new[]{"Red","Yellow","White"};
             float pitch=math.clamp(ctx.F("bloomSpacing"),0.22f,0.5f),height=math.clamp(ctx.F("patchHeight"),0.12f,0.6f);
-            int flowers=0, triangles=0;float tile=14*pitch;
+            int flowers=0, triangles=0,lodTriangles=0;float tile=FlowerPatchMesh.TilePitches*pitch;
             var meshes=new Dictionary<string,FlowerPatchMesh>();
             // Each template retains its own aspect ratio, including square and non-rectangular flags.
             var template=FlagCatalog.Get(ctx.S("flagTemplate"));
@@ -70,16 +70,16 @@ namespace FlowerPainter.Core.Layers.Types.Floral
                     if(pieces.Count==0)continue;
                     var pos=new float3(x,ctx.H(new float2(x,z)),z);
                     var mesh=FlowerPatchMesh.Make(pieces,pos,pitch,height,Color,ctx.H,Clearance,ctx.Cancel,meshes);
-                    if(mesh.Flowers==0)continue;
+                    if(mesh.Indices.Length==0)continue;
                     var obj=ctx.Object(pos.xz,0,ObjectRole.Planter,new AssetRef(mesh.Name),0,-1,AssetCategories.Flower);
                     obj.Position=pos;obj.Control="plantingSystem";obj.FlowerPatch=mesh;
-                    flowers+=mesh.Flowers;triangles+=mesh.Indices.Length/3;
+                    flowers+=mesh.Flowers;triangles+=mesh.Indices.Length/3;lodTriangles+=mesh.Lod.Indices.Length/3;
                 }
             }
-            ctx.Stat("FlowerPainter.Floral.Stat.PatchFlowers",flowers,Keys.UnitCount);
             ctx.Stat("FlowerPainter.Floral.Stat.Patches",ctx.Plan.Objects.Count,Keys.UnitCount);
             ctx.Plan.Facts["floral.patchFlowers"]=flowers;ctx.Plan.Facts["floral.patches"]=ctx.Plan.Objects.Count;
             ctx.Plan.Facts["floral.patchTriangles"]=triangles;ctx.Plan.Facts["floral.overlap"]=0;
+            ctx.Plan.Facts["floral.patchLodTriangles"]=lodTriangles;
         }
         private static float2[] Rect(float2 a,float2 b)=>new[]{a,new float2(b.x,a.y),b,new float2(a.x,b.y)};
 
