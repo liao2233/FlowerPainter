@@ -26,6 +26,20 @@
           "value": 45
         },
         {
+          "do": "area",
+          "tool": "flag",
+          "move": true,
+          "at": [
+            12,
+            8
+          ]
+        },
+        {
+          "do": "value",
+          "id": "flagAngle",
+          "value": 45
+        },
+        {
           "do": "value",
           "id": "flowerViewDistance",
           "value": 3

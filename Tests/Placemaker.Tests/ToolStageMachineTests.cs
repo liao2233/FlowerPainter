@@ -27,6 +27,15 @@ namespace FlowerPainter.Tests
         };
 
         [Fact]
+        public void FloralDesignCanOpenBeforeTheAreaIsPlaced()
+        {
+            var f=new StageFacts { HasRecipe=true,CanDesignWithoutArea=true };
+            Assert.Contains(ToolStage.Design,StageMachine.Reachable(f));
+            Assert.Equal(ToolStage.Design,StageMachine.Normalize(ToolStage.Design,f));
+            Assert.False(StageMachine.Primary(ToolStage.Design,f).Enabled);
+        }
+
+        [Fact]
         public void NothingSelectedOnlyAreaAndManageReachable()
         {
             var r = StageMachine.Reachable(new StageFacts());

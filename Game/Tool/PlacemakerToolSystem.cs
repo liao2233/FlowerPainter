@@ -271,6 +271,9 @@ namespace FlowerPainter.Game.Tool
                 else if (_markerKind != null) UpdateMarkers();
                 else if (_stage == ToolStage.Manage) UpdateManage();
                 else if (_placingFlag) UpdateFlagPlacement();
+                else if (_stage == ToolStage.Design && _shape != null && _recipe?.Root?.Layer == "floral"
+                    && _recipe.Root.Settings.S("shape", "") == "flag" && _recipe.Root.Settings.B("flagDirect", false))
+                { _cursorValid = _in.HasHit; if (_in.HasHit) _cursor = _in.Hit; }
                 else if (UpdateBuiltBrush()) { }
                 else if (UpdateFloralPatterns()) { }
                 else

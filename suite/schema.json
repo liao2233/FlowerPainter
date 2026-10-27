@@ -133,7 +133,8 @@
         "angle",
         "nodes",
         "abs",
-        "cameraDistance"
+        "cameraDistance",
+        "move"
       ],
       "enums": {
         "tool": [

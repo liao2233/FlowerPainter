@@ -27,5 +27,8 @@
   "FlowerPainter.Floral.flowerViewDistance.Tooltip": "Higher values keep 3D flowers visible farther away, at greater rendering cost.",
   "FlowerPainter.UI.Flags.Place": "Place a flag",
   "FlowerPainter.UI.Flags.PlaceHint": "Click the ground to place a flag.",
-  "FlowerPainter.UI.Flags.DirectTip": "The template keeps its proportions. Set the flag width below."
+  "FlowerPainter.UI.Flags.DirectTip": "The template keeps its proportions. Set the flag width below.",
+  "FlowerPainter.Floral.flagAngle": "Flag rotation",
+  "FlowerPainter.Floral.flagAngle.Tooltip": "Change the direction the flag faces.",
+  "FlowerPainter.UI.Flags.Move": "Move flag"
 }

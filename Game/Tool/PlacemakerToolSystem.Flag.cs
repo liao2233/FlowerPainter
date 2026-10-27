@@ -10,7 +10,7 @@ namespace FlowerPainter.Game.Tool
 
         public void BeginFlagPlacement()
         {
-            if (_stage != ToolStage.Area || _building) return;
+            if (_stage != ToolStage.Design || _building || _recipe?.Root?.Layer != "floral" || _recipe.Root.Settings.S("shape", "") != "flag") return;
             CancelGesture();
             _placingFlag = true;
             Touch();
@@ -24,10 +24,13 @@ namespace FlowerPainter.Game.Tool
             if (!_in.HasHit || !_in.OverWorld || !_in.LeftPressed) return;
             var center=_in.Hit.xz;
             _placingFlag=false;
-            ClearSelectionState();
+            bool moving=_shape != null && _recipe.Root.Settings.B("flagDirect",false);
+            if (!moving) {
+                ClearSelectionState();
+                _mode=SelectionMode.Draw;
+                SetValue("0","flagDirect","true");
+            }
             _mode=SelectionMode.Draw;
-            SelectPreset("floral","flag-china");
-            SetValue("0","flagDirect","true");
             SetDirectFlagRing(center);
             ShapeChanged();
             RebuildShapeIfDirty(true);
@@ -38,28 +41,36 @@ namespace FlowerPainter.Game.Tool
         {
             var step=_recipe?.Root;
             if (_shape == null || step?.Layer != "floral" || step.Settings.S("shape","") != "flag" || !step.Settings.B("flagDirect",false)) return;
-            var ring=_shape.Ring;
-            if (ring == null || ring.Length < 3) return;
-            float2 lo=new float2(float.MaxValue),hi=new float2(float.MinValue);
-            foreach(var point in ring) { lo=math.min(lo,point.xz);hi=math.max(hi,point.xz); }
-            float width=math.clamp(step.Settings.F("flagWidth",30),5,200);
-            float height=width/FlagCatalog.Get(step.Settings.S("flagTemplate","china")).Ratio;
-            if (math.abs((hi.x-lo.x)-width)<.01f && math.abs((hi.y-lo.y)-height)<.01f) return;
+            var ring=_draw.Points;
+            if (ring.Count != 4) return;
+            float2 center=float2.zero;
+            foreach(var point in ring) center+=point.xz;
+            center*=.25f;
+            var expected=DirectFlagCorners(center);
+            bool same=true;
+            for(int i=0;i<4;i++) if(math.distance(ring[i].xz,expected[i])>.01f) {same=false;break;}
+            if (same) return;
             _mode=SelectionMode.Draw;
-            SetDirectFlagRing((lo+hi)*.5f);
+            SetDirectFlagRing(center);
             ShapeChanged();
             RebuildShapeIfDirty(true);
         }
 
-        private void SetDirectFlagRing(float2 center)
+        private float2[] DirectFlagCorners(float2 center)
         {
             var settings=_recipe.Root.Settings;
             float width=math.clamp(settings.F("flagWidth",30),5,200);
             float height=width/FlagCatalog.Get(settings.S("flagTemplate","china")).Ratio;
-            var lo=center-new float2(width,height)*.5f;
-            var hi=center+new float2(width,height)*.5f;
+            math.sincos(math.radians(settings.F("flagAngle",0)),out float sin,out float cos);
+            float2 World(float2 p)=>center+new float2(p.x*cos-p.y*sin,p.x*sin+p.y*cos);
+            return new[]{World(new float2(-width,-height)*.5f),World(new float2(width,-height)*.5f),World(new float2(width,height)*.5f),World(new float2(-width,height)*.5f)};
+        }
+
+        private void SetDirectFlagRing(float2 center)
+        {
             float3 P(float2 p)=>new float3(p.x,_site.SampleHeight(p),p.y);
-            _draw.SetRing(new[]{P(lo),P(new float2(hi.x,lo.y)),P(hi),P(new float2(lo.x,hi.y))});
+            var ring=DirectFlagCorners(center);
+            _draw.SetRing(new[]{P(ring[0]),P(ring[1]),P(ring[2]),P(ring[3])});
         }
     }
 }

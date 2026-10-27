@@ -29,11 +29,19 @@ namespace FlowerPainter.Core.Layers.Types.Floral
             var meshes=new Dictionary<string,FlowerPatchMesh>();
             // Each template retains its own aspect ratio, including square and non-rectangular flags.
             var template=FlagCatalog.Get(ctx.S("flagTemplate"));
-            var dimensions=template.Fit(frame.Max-frame.Min);float flagW=dimensions.x,flagH=dimensions.y;
+            bool direct=flag && ctx.B("flagDirect");
+            float angle=direct?math.radians(ctx.F("flagAngle")):0;
+            math.sincos(angle,out float sin,out float cos);
+            float2 Rotate(float2 p)=>new float2(p.x*cos-p.y*sin,p.x*sin+p.y*cos);
+            float2 Unrotate(float2 p)=>new float2(p.x*cos+p.y*sin,-p.x*sin+p.y*cos);
+            var dimensions=direct?new float2(math.clamp(ctx.F("flagWidth"),5,200),math.clamp(ctx.F("flagWidth"),5,200)/template.Ratio):template.Fit(frame.Max-frame.Min);
+            float flagW=dimensions.x,flagH=dimensions.y;
             var flagMin=origin-new float2(flagW,flagH)*0.5f;
+            float2 World(float2 uv)=>origin+Rotate((uv-.5f)*dimensions);
+            float2 FlagUv(float2 p)=>Unrotate(p-origin)/dimensions+.5f;
             Region flagRegion=null;
             if(flag) {
-                flagRegion=new Region(template.Outline.Length>0?template.Outline.Select(p=>flagMin+p*dimensions).ToArray():Rect(flagMin,flagMin+dimensions));
+                flagRegion=new Region(template.Outline.Length>0?template.Outline.Select(World).ToArray():new[]{World(new float2(0,0)),World(new float2(1,0)),World(new float2(1,1)),World(new float2(0,1))});
                 regions=Poly.Boolean(regions.Select(r=>r.region).ToArray(),new[]{flagRegion},BoolOp.Intersection)
                     .Select(r=>(r,(FloralFill)null)).ToList();
                 float recommended=template.RecommendedColumns*pitch;
@@ -66,7 +74,7 @@ namespace FlowerPainter.Core.Layers.Types.Floral
                 var pattern=new FloralCarpet.Pattern(frame,style,ctx.F("bandWidth"),ctx.F("rotation"),ctx.Seed,selected.Length);
                 int Color(float2 p) {
                     if(ctx.Input.Reserved?.Blocks(p,0.05f)??false)return -1;
-                    if(flag)return template.Color((p-flagMin)/dimensions);
+                    if(flag)return template.Color(FlagUv(p));
                     if(collage) {
                         for(int i=motifs.Count-1;i>=0;i--)if(motifs[i].Covers(p,origin))
                             return FlowerPatchMesh.ColorOf(string.IsNullOrEmpty(motifs[i].Flower)?curvePalette[i%curvePalette.Length]:motifs[i].Flower);
@@ -83,7 +91,7 @@ namespace FlowerPainter.Core.Layers.Types.Floral
                 var region=item.region;
                 float Clearance(float2 p) {
                     float d=region.DistanceToBoundary(p);
-                    if(flag) d=math.min(d,math.cmin(math.min(p-flagMin,flagMin+new float2(flagW,flagH)-p)));
+                    if(flag) { var local=Unrotate(p-origin); d=math.min(d,math.cmin(dimensions*.5f-math.abs(local))); }
                     return d;
                 }
                 Poly.Bounds(region.Outer,out var min,out var max);
@@ -91,7 +99,7 @@ namespace FlowerPainter.Core.Layers.Types.Floral
                     ctx.Cancel.ThrowIfCancellationRequested();
                     float x=tx*tile,z=tz*tile;
                     var lo=new float2(x,z);var hi=lo+tile;
-                    if(flag){lo=math.max(lo,flagMin);hi=math.min(hi,flagMin+new float2(flagW,flagH));if(math.any(hi<=lo))continue;}
+
                     var pieces=Poly.Boolean(new[]{region},new[]{new Region(Rect(lo,hi))},BoolOp.Intersection);
                     if(pieces.Count==0)continue;
                     var pos=new float3(x,ctx.H(new float2(x,z)),z);

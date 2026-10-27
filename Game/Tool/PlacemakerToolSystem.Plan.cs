@@ -407,6 +407,7 @@ namespace FlowerPainter.Game.Tool
                                  || (_mode == SelectionMode.Perimeter && !_perimeter.Closed && _perimeter.Nodes.Count > 0),
                 AreaProblem = AreaProblem(),
                 HasRecipe = _recipe != null,
+                CanDesignWithoutArea = _recipe?.Root?.Layer == "floral",
                 Planning = Planning,
                 ManualPlanning = true,
                 PlanReady = _plan != null && _planRevision == _inputRevision,

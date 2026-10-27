@@ -28,6 +28,7 @@ namespace FlowerPainter.Core.Layers.Types.Floral
             c.Slider("flowerDensity", 4, 1, 4, 1, "", ControlTier.Essential, "flowers").Tip();
             c.Slider("patchHeight", 0.24, 0.12, 0.6, 0.02, "m", ControlTier.Essential, "flowers").Tip();
             c.Slider("flagWidth", 30, 5, 200, 5, "m", ControlTier.Essential, "layout").Tip();
+            c.Slider("flagAngle", 0, 0, 355, 5, "deg", ControlTier.Essential, "layout").Tip();
             c.Toggle("flagDirect", false, ControlTier.More, "layout");
             c.Slider("flowerViewDistance", 2, 0, 5, 1, "", ControlTier.Essential, "flowers").Tip();
             c.Choice("flagTemplate", "china", ControlTier.Essential, "layout", FlagCatalog.All.Select(f=>f.Id).ToArray()).Tip();
@@ -61,7 +62,7 @@ namespace FlowerPainter.Core.Layers.Types.Floral
             c.Slider("shrubSpacing", 3, 1.5, 8, 0.5, "m", ControlTier.More, "planting").When("shrubs=true");
             c.RandomRange("rotation", 0, 355);
             c.RandomRange("petals", 4, 8);
-            foreach (var key in new[] { "plantingSystem", "bloomSpacing", "flowerDensity", "patchHeight", "flagTemplate", "flagWidth", "flagDirect", "flowerViewDistance", "shape", "size", "bandWidth", "spacing", "overlap", "flowerScale", "palette", "colorPattern", "shrubs", "shrubSpacing", "turns", "curve", "motifs", "fillGaps", "gapStyle" }) c.Fixed(key);
+            foreach (var key in new[] { "plantingSystem", "bloomSpacing", "flowerDensity", "patchHeight", "flagTemplate", "flagWidth", "flagAngle", "flagDirect", "flowerViewDistance", "shape", "size", "bandWidth", "spacing", "overlap", "flowerScale", "palette", "colorPattern", "shrubs", "shrubSpacing", "turns", "curve", "motifs", "fillGaps", "gapStyle" }) c.Fixed(key);
         }
 
         protected override void DefinePresets()

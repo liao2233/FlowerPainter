@@ -28,6 +28,7 @@ namespace FlowerPainter.Core.Tool
         public LocText AreaProblem;
 
         public bool HasRecipe;
+        public bool CanDesignWithoutArea;
         /// <summary>A plan for the current inputs is being computed or is outdated.</summary>
         public bool Planning;
         public bool ManualPlanning;
@@ -114,7 +115,7 @@ namespace FlowerPainter.Core.Tool
             var r = new List<ToolStage>(4);
             if (f.BuildRunning) { r.Add(ToolStage.Building); return r; }
             r.Add(ToolStage.Area);
-            if (f.AreaValid) r.Add(ToolStage.Design);
+            if (f.AreaValid || f.CanDesignWithoutArea) r.Add(ToolStage.Design);
             if (f.AreaValid && f.HasRecipe) r.Add(ToolStage.Review);
             r.Add(ToolStage.Manage);
             return r;
@@ -132,7 +133,7 @@ namespace FlowerPainter.Core.Tool
             if (f.BuildRunning) return ToolStage.Building;
             if (current == ToolStage.Building) return f.AreaValid && f.HasRecipe ? ToolStage.Review : ToolStage.Area;
             if (current == ToolStage.Review && !(f.AreaValid && f.HasRecipe)) current = ToolStage.Design;
-            if (current == ToolStage.Design && !f.AreaValid) current = ToolStage.Area;
+            if (current == ToolStage.Design && !f.AreaValid && !f.CanDesignWithoutArea) current = ToolStage.Area;
             return current;
         }
 

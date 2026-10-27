@@ -322,9 +322,7 @@ export const AreaStage = ({ state }: { state: ToolState }) => {
                     );
                 })}
             </div>
-            <Btn label={t("FlowerPainter.UI.Flags.Place", "Place a flag")} selected={!!state.placingFlag} onClick={()=>act.placeFlag()} testId="place-flag" />
-            {state.placingFlag ? <div className={s.sumHint}>{t("FlowerPainter.UI.Flags.PlaceHint", "Click the ground to place a flag.")}</div> : null}
-            {rules && !state.placingFlag ? (
+            {rules ? (
                 <Row label={t("FlowerPainter.UI.Rules.Force", "Force selection")} tip={t("FlowerPainter.UI.Rules.ForceTip", "Ignore all selection stops. Existing buildings stay protected during construction.")}>
                     <Switch on={!!rules.forceSelection} onChange={(forceSelection) => act.setBrushRules({ forceSelection })} testId="force-selection" />
                 </Row>

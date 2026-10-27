@@ -214,7 +214,7 @@ namespace FlowerPainter.Game.Suite
             yield return CameraTo(FocusOf(b), 25f, 55f, (float?)step["cameraDistance"] ?? lookFrom, crec, null);
             rec["areaCamera"] = crec["camera"];
             if (_tool.Stage == ToolStage.Manage) yield return UiGoToStage(rec, ToolStage.Area);
-            if (_tool.SuiteHasSelection)
+            if (_tool.SuiteHasSelection && !(tool=="flag" && ((bool?)step["move"]??false)))
             {
                 yield return UiAct(st, rec, "clear area", "clear-area", "clearArea", null, () => !_tool.SuiteHasSelection, () => _tool.ClearArea());
                 yield return Frames(2);
@@ -223,10 +223,18 @@ namespace FlowerPainter.Game.Suite
             {
                 case "flag":
                 {
+                    if (_tool.Stage!=ToolStage.Design) yield return UiGoToStage(rec,ToolStage.Design);
+                    yield return Frames(10);
+                    yield return UiAct(st,rec,"flag mode","flower-mode-flag",null,null,()=>((string)_tool.SuiteValue("0","shape"))=="flag",null,mustChange:false);
+                    yield return Frames(10);
                     yield return UiAct(st,rec,"place flag","place-flag",null,null,()=>_tool.StateInput().PlacingFlag,null);
+                    if (!_tool.StateInput().PlacingFlag) {rec["error"]="flag placement did not start";st.Result["status"]="no-outline";yield break;}
                     RaycastHit? hit=null;
                     yield return Press(st,rec,P3(Pt(step["at"],b,abs)),false,h=>hit=h);
-                    if(!hit.HasValue || !_tool.SuiteHasSelection) {rec["error"]="flag was not placed";st.Result["status"]="no-outline";yield break;}
+                    if(!hit.HasValue || _tool.Shape?.Ring == null) {rec["error"]="flag was not placed";st.Result["status"]="no-outline";yield break;}
+                    var actual=_tool.Shape.Ring;
+                    var placed=float2.zero;foreach(var point in actual)placed+=point.xz;placed/=actual.Length;
+                    if(math.distance(placed,hit.Value.m_HitPosition.xz)>1f)rec["error"]="flag did not move to the clicked position";
                     rec["clicks"]=1;
                     break;
                 }

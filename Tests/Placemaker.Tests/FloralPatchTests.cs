@@ -39,6 +39,32 @@ namespace FlowerPainter.Tests
             Assert.True(counts[0]>0);
             for(int i=1;i<counts.Length;i++)Assert.True(counts[i]>counts[i-1],string.Join(",",counts));
         }
+        [Theory]
+        [InlineData(0)][InlineData(45)][InlineData(90)]
+        public void DirectFlagsRotateTheirShapeAndColourPatternTogether(float angle)
+        {
+            const float width=30,height=20;var center=new float2(70,90);
+            math.sincos(math.radians(angle),out float sn,out float cs);
+            float2 Rot(float2 p)=>new float2(p.x*cs-p.y*sn,p.x*sn+p.y*cs);
+            float2 Unrot(float2 p)=>new float2(p.x*cs+p.y*sn,-p.x*sn+p.y*cs);
+            float3 P(float2 p)=>new float3(p.x,0,p.y);
+            var ring=new[]{P(center+Rot(new float2(-15,-10))),P(center+Rot(new float2(15,-10))),P(center+Rot(new float2(15,10))),P(center+Rot(new float2(-15,10)))};
+            var layer=new FloralLayer();var settings=layer.Defaults();
+            settings.Values["shape"]="flag";settings.Values["flagDirect"]=true;settings.Values["flagAngle"]=angle;settings.Values["flagWidth"]=width;
+            var plan=layer.Plan(new AreaInput {Settings=settings,Seed=42,Site=new SiteContext {HeightAt=p=>0},Shape=new AreaShape {Ring=ring}},CancellationToken.None);
+            Assert.NotEmpty(plan.Objects);Assert.Equal(width,plan.Facts["floral.flagWidth"]);Assert.Equal(height,plan.Facts["floral.flagHeight"]);
+            int checkedFlowers=0,mismatched=0;
+            foreach(var obj in plan.Objects) {
+                var mesh=obj.FlowerPatch;
+                for(int i=0;i<mesh.Indices.Length;i+=18) {
+                    int index=mesh.Indices[i];var local=Unrot((mesh.Vertices[index]+obj.Position).xz-center);
+                    Assert.InRange(local.x,-15.01f,15.01f);Assert.InRange(local.y,-10.01f,10.01f);
+                    int expected=FlagCatalog.Get("china").Color(local/new float2(width,height)+.5f);
+                    checkedFlowers++;if(expected!=(int)(mesh.UV[index].x*16))mismatched++;
+                }
+            }
+            Assert.True(mismatched<checkedFlowers/100);
+        }
         [Fact] public void DistantFlowersStayThreeDimensionalAndViewDistanceChangesPrefabIdentity()
         {
             var a=Plan(s=>{s.Values["shape"]="flag";s.Values["flowerDensity"]=4;s.Values["flowerViewDistance"]=0;});

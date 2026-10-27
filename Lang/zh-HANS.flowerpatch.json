@@ -47,5 +47,8 @@
   "FlowerPainter.Floral.flowerViewDistance.Tooltip": "数值越高，立体花保留到更远处，可能增加渲染开销。",
   "FlowerPainter.UI.Flags.Place": "直接放置旗帜",
   "FlowerPainter.UI.Flags.PlaceHint": "点击地面放置旗帜。",
-  "FlowerPainter.UI.Flags.DirectTip": "旗帜按模板比例生成，可在下方调整宽度。"
+  "FlowerPainter.UI.Flags.DirectTip": "旗帜按模板比例生成，可在下方调整宽度。",
+  "FlowerPainter.Floral.flagAngle": "旗帜旋转",
+  "FlowerPainter.Floral.flagAngle.Tooltip": "调整旗帜的朝向。",
+  "FlowerPainter.UI.Flags.Move": "移动旗帜"
 }
