@@ -11,7 +11,9 @@ namespace FlowerPainter.Game.Tool
         private bool _flagMoved;
 
         public bool DirectFlagEditing => _stage == ToolStage.Design && _shape != null && _recipe?.Root?.Layer == "floral"
-            && _recipe.Root.Settings.S("shape", "") == "flag" && _recipe.Root.Settings.B("flagDirect", false);
+            && ArtworkReady && _recipe.Root.Settings.B("flagDirect", false);
+        private bool ArtworkReady => _recipe?.Root?.Settings.S("shape", "") == "flag"
+            || (_recipe?.Root?.Settings.S("shape", "") == "image" && FlowerImage.IsReady(_recipe.Root.Settings));
         public bool FlagDragging => _gesture == Gesture.FlagMove;
 
         private float2 DirectFlagCenter()
@@ -49,7 +51,7 @@ namespace FlowerPainter.Game.Tool
             var delta=_in.Hit.xz-origin;
             math.sincos(math.radians(settings.F("flagAngle",0)),out float sin,out float cos);
             var local=new float2(delta.x*cos+delta.y*sin,-delta.x*sin+delta.y*cos);
-            var template=FlagCatalog.Get(settings.S("flagTemplate","china"));
+            var template=FlowerImage.For(settings);
             float width=math.clamp(settings.F("flagWidth",30),5,200);
             if (template.Color(local/new float2(width,width/template.Ratio)+.5f)<0) return;
             _flagGrab=_in.Hit.xz;
@@ -61,7 +63,7 @@ namespace FlowerPainter.Game.Tool
 
         public void BeginFlagPlacement()
         {
-            if (_stage != ToolStage.Design || _building || _recipe?.Root?.Layer != "floral" || _recipe.Root.Settings.S("shape", "") != "flag") return;
+            if (_stage != ToolStage.Design || _building || _recipe?.Root?.Layer != "floral" || !ArtworkReady) return;
             CancelGesture();
             _placingFlag = true;
             Touch();
@@ -91,7 +93,7 @@ namespace FlowerPainter.Game.Tool
         private void SyncDirectFlagShape()
         {
             var step=_recipe?.Root;
-            if (_shape == null || step?.Layer != "floral" || step.Settings.S("shape","") != "flag" || !step.Settings.B("flagDirect",false)) return;
+            if (_shape == null || step?.Layer != "floral" || !ArtworkReady || !step.Settings.B("flagDirect",false)) return;
             var ring=_draw.Points;
             if (ring.Count != 4) return;
             float2 center=float2.zero;
@@ -111,7 +113,7 @@ namespace FlowerPainter.Game.Tool
         {
             var settings=_recipe.Root.Settings;
             float width=math.clamp(settings.F("flagWidth",30),5,200);
-            float height=width/FlagCatalog.Get(settings.S("flagTemplate","china")).Ratio;
+            float height=width/FlowerImage.For(settings).Ratio;
             math.sincos(math.radians(settings.F("flagAngle",0)),out float sin,out float cos);
             float2 World(float2 p)=>center+new float2(p.x*cos-p.y*sin,p.x*sin+p.y*cos);
             return new[]{World(new float2(-width,-height)*.5f),World(new float2(width,-height)*.5f),World(new float2(width,height)*.5f),World(new float2(-width,height)*.5f)};

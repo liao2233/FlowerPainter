@@ -32,7 +32,7 @@ namespace FlowerPainter.Core.Layers.Types.Floral
             c.Toggle("flagDirect", false, ControlTier.More, "layout");
             c.Slider("flowerViewDistance", 2, 0, 5, 1, "", ControlTier.Essential, "flowers").Tip();
             c.Choice("flagTemplate", "china", ControlTier.Essential, "layout", FlagCatalog.All.Select(f=>f.Id).ToArray()).Tip();
-            c.Choice("shape", "flow", ControlTier.Essential, "layout", "flag", "partition", "collage", "flow", "islands", "ring", "circle", "rosette", "spiral", "heart", "outline", "freeform").Tip();
+            c.Choice("shape", "flow", ControlTier.Essential, "layout", "image", "flag", "partition", "collage", "flow", "islands", "ring", "circle", "rosette", "spiral", "heart", "outline", "freeform").Tip();
             c.Slider("size", 85, 20, 100, 5, "%", ControlTier.Essential, "layout").Tip().When("shape=ring|circle|rosette|spiral|heart|outline|freeform");
             c.Slider("bandWidth", 4, 0.5, 16, 0.5, "m", ControlTier.Essential, "layout").Tip();
             c.Choice("colorPattern", "bands", ControlTier.Essential, "flowers", "bands", "segments", "single").Tip().When("shape=ring|circle|rosette|spiral|heart|outline|freeform");
@@ -88,6 +88,8 @@ namespace FlowerPainter.Core.Layers.Types.Floral
         public override Readiness CheckReady(AreaInput input)
         {
             var settings = Merge(input?.Settings);
+            if (settings.S("shape", "") == "image" && !FlowerImage.IsReady(settings))
+                return new Readiness { Ready = false, MarkerKind = "", NextStepKey = "FlowerPainter.Floral.Issue.ImportImage", ReasonKey = "FlowerPainter.Floral.Issue.ImportImage" };
             if (settings.S("shape", "flow") == "partition" && FloralFill.Read(settings.L("fills")).Count == 0)
                 return new Readiness { Ready = false, MarkerKind = "", NextStepKey = "FlowerPainter.Floral.Issue.FillPartition", ReasonKey = "FlowerPainter.Floral.Issue.FillPartition" };
             bool empty = settings.S("shape", "collage") == "collage" && !settings.B("fillGaps", false) && FloralMotif.Read(settings.L("motifs")).Count == 0 && FloralFill.Read(settings.L("fills")).Count == 0;
@@ -103,7 +105,7 @@ namespace FlowerPainter.Core.Layers.Types.Floral
 
         protected override void PlanCore(LayerContext ctx)
         {
-            if(ctx.S("shape")=="flag" || (ctx.S("plantingSystem")=="patch" && (ctx.S("shape")=="partition" || ctx.S("shape")=="collage" || ctx.S("shape")=="flow" || ctx.S("shape")=="islands"))) { FlowerPatchPlanner.Plan(ctx); return; }
+            if(ctx.S("shape")=="flag" || ctx.S("shape")=="image" || (ctx.S("plantingSystem")=="patch" && (ctx.S("shape")=="partition" || ctx.S("shape")=="collage" || ctx.S("shape")=="flow" || ctx.S("shape")=="islands"))) { FlowerPatchPlanner.Plan(ctx); return; }
             float scale = math.clamp(ctx.F("flowerScale"), 0.25f, 1.2f);
             var selected = new List<string>();
             foreach (var id in ctx.L("flowerPalette"))

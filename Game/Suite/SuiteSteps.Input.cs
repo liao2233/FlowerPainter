@@ -214,7 +214,7 @@ namespace FlowerPainter.Game.Suite
             yield return CameraTo(FocusOf(b), 25f, 55f, (float?)step["cameraDistance"] ?? lookFrom, crec, null);
             rec["areaCamera"] = crec["camera"];
             if (_tool.Stage == ToolStage.Manage) yield return UiGoToStage(rec, ToolStage.Area);
-            if (_tool.SuiteHasSelection && !(tool=="flag" && ((bool?)step["move"]??false)))
+            if (_tool.SuiteHasSelection && !((tool=="flag"||tool=="image") && ((bool?)step["move"]??false)))
             {
                 yield return UiAct(st, rec, "clear area", "clear-area", "clearArea", null, () => !_tool.SuiteHasSelection, () => _tool.ClearArea());
                 yield return Frames(2);
@@ -222,11 +222,12 @@ namespace FlowerPainter.Game.Suite
             switch (tool)
             {
                 case "flag":
+                case "image":
                 {
                     if (_tool.Stage!=ToolStage.Design) yield return UiGoToStage(rec,ToolStage.Design);
                     // The stage state can change before Cohtml has rendered the design panel.
                     yield return Seconds(1f);
-                    yield return UiAct(st,rec,"flag mode","flower-mode-flag",null,null,()=>((string)_tool.SuiteValue("0","shape"))=="flag",null,mustChange:false);
+                    yield return UiAct(st,rec,"artwork mode","flower-mode-"+tool,null,null,()=>((string)_tool.SuiteValue("0","shape"))==tool,null,mustChange:false);
                     yield return Frames(10);
                     if ((bool?)step["move"]??false) {
                         if (!_tool.DirectFlagEditing) {rec["error"]="no placed flag to drag";yield break;}
@@ -236,6 +237,15 @@ namespace FlowerPainter.Game.Suite
                         var target=Pt(step["at"],b,abs);
                         // Grab away from the centre to catch jumps that lose the grab offset.
                         var grab=new float2(1,1);
+                        if(tool=="image") {
+                            // Grab an opaque point of this asymmetric fixture, even after rotation.
+                            var settings=_tool.CurrentRecipe.Root.Settings;
+                            float angle=math.radians(settings.F("flagAngle",0));
+                            math.sincos(angle,out float sn,out float cs);
+                            float width=settings.F("flagWidth",30);
+                            var local=new float2(-width*.25f,width/1.5f*.25f);
+                            grab=new float2(local.x*cs-local.y*sn,local.x*sn+local.y*cs);
+                        }
                         FlowerPainterToolSystem.SuiteDrag(new[]{_tool.FloralGround(start+grab),_tool.FloralGround(target+grab)},12);
                         yield return Feed(rec);
                         var end=float2.zero;
@@ -245,7 +255,7 @@ namespace FlowerPainter.Game.Suite
                         rec["dragFrames"]=14;
                         break;
                     }
-                    yield return UiAct(st,rec,"place flag","place-flag",null,null,()=>_tool.StateInput().PlacingFlag,null);
+                    yield return UiAct(st,rec,"place artwork","place-"+tool,null,null,()=>_tool.StateInput().PlacingFlag,null);
                     if (!_tool.StateInput().PlacingFlag) {rec["error"]="flag placement did not start";st.Result["status"]="no-outline";yield break;}
                     RaycastHit? hit=null;
                     yield return Press(st,rec,P3(Pt(step["at"],b,abs)),false,h=>hit=h);

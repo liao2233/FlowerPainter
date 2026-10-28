@@ -14,7 +14,8 @@ namespace FlowerPainter.Core.Layers.Types.Floral
             var frame=ctx.LayerRegion;var shape=ctx.S("shape");var origin=FloralMotif.Origin(frame);
             var motifs=FloralMotif.Read(ctx.L("motifs"));var fills=FloralFill.Read(ctx.L("fills"));
             var regions=new List<(Region region,FloralFill fill)>();
-            bool flag=shape=="flag";
+            bool image=shape=="image",flag=shape=="flag"||image;
+            if(image && !FlowerImage.IsReady(ctx.Settings)) {ctx.Issue(IssueSeverity.Error,"FlowerPainter.Floral.Issue.ImportImage");return;}
             if(shape=="partition") {
                 var map=new FloralPartitions(frame,motifs,ctx.Cancel);
                 var partitionChoices=new Dictionary<int,FloralFill>();
@@ -28,7 +29,7 @@ namespace FlowerPainter.Core.Layers.Types.Floral
             int flowers=0, triangles=0,lodTriangles=0;float tile=FlowerPatchMesh.TilePitches*pitch;
             var meshes=new Dictionary<string,FlowerPatchMesh>();
             // Each template retains its own aspect ratio, including square and non-rectangular flags.
-            var template=FlagCatalog.Get(ctx.S("flagTemplate"));
+            var template=FlowerImage.For(ctx.Settings);
             bool direct=flag && ctx.B("flagDirect");
             float angle=direct?math.radians(ctx.F("flagAngle")):0;
             math.sincos(angle,out float sin,out float cos);
@@ -49,7 +50,7 @@ namespace FlowerPainter.Core.Layers.Types.Floral
                 ctx.Stat("FlowerPainter.Floral.Stat.FlagHeight",flagH,"m");
                 ctx.Plan.Facts["floral.flagWidth"]=flagW;ctx.Plan.Facts["floral.flagHeight"]=flagH;
                 ctx.Plan.Facts["floral.flagRecommendedWidth"]=recommended;
-                if(flagW<recommended)ctx.Issue(IssueSeverity.Warning,"FlowerPainter.Floral.Issue.FlagSmall",
+                if(!image && flagW<recommended)ctx.Issue(IssueSeverity.Warning,"FlowerPainter.Floral.Issue.FlagSmall",
                     Math.Round(flagW,1),Math.Round(flagH,1),Math.Round(recommended,1),Math.Round(recommended/template.Ratio,1));
                 if(regions.Sum(r=>r.region.Area)<flagRegion.Area*.98f)
                     ctx.Issue(IssueSeverity.Warning,"FlowerPainter.Floral.Issue.FlagClipped");

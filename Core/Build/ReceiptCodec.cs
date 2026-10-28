@@ -278,7 +278,7 @@ namespace FlowerPainter.Core.Build
                     case TagNull: bag.Values[k] = null; break;
                     case TagDouble: bag.Values[k] = rd.ReadDouble(); break;
                     case TagBool: bag.Values[k] = rd.ReadBoolean(); break;
-                    case TagString: bag.Values[k] = Str(rd); break;
+                    case TagString: bag.Values[k] = Str(rd, k=="imageData" ? Layers.Types.Floral.FlowerImage.MaxEncodedLength : MaxStringBytes); break;
                     case TagStringArray:
                         int m = Count(rd);
                         var a = new string[m];
@@ -366,11 +366,11 @@ namespace FlowerPainter.Core.Build
             w.Write(b);
         }
 
-        private static string Str(BinaryReader rd)
+        private static string Str(BinaryReader rd, int maxBytes=MaxStringBytes)
         {
             int len = rd.ReadInt32();
             if (len < 0) return "";
-            if (len > MaxStringBytes) throw new InvalidDataException("string too long");
+            if (len > maxBytes) throw new InvalidDataException("string too long");
             var b = rd.ReadBytes(len);
             if (b.Length != len) throw new EndOfStreamException();
             return Encoding.UTF8.GetString(b);

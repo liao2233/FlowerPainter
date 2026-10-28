@@ -192,3 +192,25 @@ test("partition workflow selects first and applies independent props and styles"
     await expect(page.getByTestId("floral-pattern-editor")).toBeVisible();
     await expect(page.getByTestId("partition-settings")).toHaveCount(0);
 });
+
+
+test("image flowers expose import, fixed-aspect transforms and edit guidance",async({page})=>{
+    await flowers(page);
+    await page.getByTestId("flower-mode-image").click();
+    await expect(page.getByTestId("import-image")).toBeVisible();
+    await expect(page.getByTestId("image-design")).toContainText("TIFF");
+    await expect(page.getByTestId("planting-props")).toHaveCount(0);
+    await expect(page.getByTestId("place-image")).toHaveCount(0);
+    await page.evaluate(()=>{const b=(window as any).pm.backend;
+        Object.assign(b.root.values,{imageData:true,imageName:"garden.png",imageWidth:400,imageHeight:200,flagDirect:true});b.publishAll();});
+    await expect(page.getByTestId("image-name")).toContainText("garden.png");
+    await expect(page.getByTestId("image-drag-tip")).toBeVisible();
+    await expect(page.getByTestId("slider-flagWidth-input")).toBeVisible();
+    await expect(page.getByTestId("slider-flagAngle-input")).toBeVisible();
+    await expect(page.getByTestId("slider-flowerDensity-input")).toBeVisible();
+    await page.getByTestId("slider-flagWidth-input").fill("65");
+    await page.getByTestId("slider-flagWidth-input").press("Enter");
+    await expect.poll(()=>page.evaluate(()=>(window as any).pm.backend.root.values.flagWidth)).toBe(65);
+    await page.getByTestId("flower-mode-flag").click();
+    await expect(page.getByTestId("flag-templates")).toBeVisible();
+});

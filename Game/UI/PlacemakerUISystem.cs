@@ -62,6 +62,7 @@ namespace FlowerPainter.Game.UI
             Trigger("resetBrushRules", () => _tool.ResetBrushRules());
             Trigger("clearArea", () => _tool.ClearArea());
             Trigger("placeFlag", () => _tool.BeginFlagPlacement());
+            Trigger("importImage", () => _tool.BeginImageImport());
 
             Trigger<string>("selectRecipe", id => _tool.SelectRecipe(id));
             Trigger<string>("focusStep", p => _tool.FocusStep(p));

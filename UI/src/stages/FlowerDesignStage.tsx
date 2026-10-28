@@ -16,7 +16,9 @@ export const FlowerDesignStage = ({ catalog, design, state }: {catalog: Catalog;
     if(!step || !layer) return null;
     const partition=step.values.shape==="partition";
     const flag=step.values.shape==="flag";
-    const patch=flag || step.values.plantingSystem==="patch";
+    const image=step.values.shape==="image";
+    const artwork=flag || image;
+    const patch=artwork || step.values.plantingSystem==="patch";
     const compose=step.values.shape==="collage" || partition;
     const fillingPartitions=partition && state.floralEdit?.index===-2;
     const style=String(step.values.activeFillStyle || "single");
@@ -29,18 +31,30 @@ export const FlowerDesignStage = ({ catalog, design, state }: {catalog: Catalog;
     return <div data-testid="stage-design">
         <Section title={t("FlowerPainter.UI.Flowers.Method","How to plant")}>
             <div className={s.buttons}>
-                <Btn label={t("FlowerPainter.UI.Flowers.Carpet","Fill the area")} selected={!compose && !flag} onClick={()=>{act.selectFloralPattern(step.path,-1);act.setValue(step.path,"shape","flow");}} testId="flower-mode-carpet" />
+                <Btn label={t("FlowerPainter.UI.Flowers.Carpet","Fill the area")} selected={!compose && !artwork} onClick={()=>{act.selectFloralPattern(step.path,-1);act.setValue(step.path,"shape","flow");}} testId="flower-mode-carpet" />
                 <Btn label={t("FlowerPainter.UI.Flowers.Partition","Subdivide the frame")} selected={partition} onClick={()=>{act.selectFloralPattern(step.path,-1);act.setValue(step.path,"shape","partition");}} testId="flower-mode-partition" />
                 <Btn label={t("FlowerPainter.UI.Flags.Title","Flags")} selected={flag} onClick={()=>{act.selectFloralPattern(step.path,-1);act.setValue(step.path,"shape","flag");}} testId="flower-mode-flag" />
+                <Btn label={t("FlowerPainter.UI.Images.Title","Image flowers")} selected={image} onClick={()=>{act.selectFloralPattern(step.path,-1);act.setValue(step.path,"shape","image");}} testId="flower-mode-image" />
                 <Btn label={t("FlowerPainter.UI.Flowers.Compose","Curves and patterns")} selected={compose && !partition} onClick={()=>act.setValue(step.path,"shape","collage")} testId="flower-mode-compose" />
             </div>
-            <div className={s.hint}>{t("FlowerPainter.UI.Flowers.Preview","Real flowers update after edits. Only the part inside your frame is planted.")}</div>
+            <div className={s.hint}>{artwork ? t("FlowerPainter.UI.Images.Preview","Place the design directly, then drag, rotate or resize it. Proportions stay fixed.") : t("FlowerPainter.UI.Flowers.Preview","Real flowers update after edits. Only the part inside your frame is planted.")}</div>
         </Section>
         {compose && !partition ? <Section title={t("FlowerPainter.UI.Flowers.CurveMaterials", "Curve flowers")} testId="curve-materials">
             <div className={s.hint}>{t("FlowerPainter.UI.Flowers.CurveMaterialsTip", "Curves use their own flowers, independently of the fill. Select a pattern to override its flower.")}</div>
             <ControlList step={step} layer={layer} state={state} flat only={["curvePalette"]} />
         </Section> : null}
-        {flag ? <Section title={t("FlowerPainter.UI.Flags.Template","Flag template")} testId="flag-templates"><FlagPicker step={step}/>{step.values.flagDirect && state.area.closed ? <div className={s.hint} data-testid="flag-drag-tip">{t("FlowerPainter.UI.Flags.DragTip", "Hold and drag the flag to move it. Release to confirm; right-click or Esc cancels.")}</div> : <Btn label={t("FlowerPainter.UI.Flags.Place", "Place a flag")} selected={!!state.placingFlag} onClick={()=>act.placeFlag()} testId="place-flag" />}{state.placingFlag ? <div className={s.hint}>{t("FlowerPainter.UI.Flags.PlaceHint", "Click the ground to place a flag.")}</div> : null}{step.values.flagDirect ? <ControlList step={step} layer={layer} state={state} flat only={["flagWidth","flagAngle"]} /> : null}</Section> : !compose ? <Section title={t("FlowerPainter.UI.Flowers.CarpetPattern","Fill pattern")}><div className={s.buttons}>
+        {image ? <Section title={t("FlowerPainter.UI.Images.Title","Image flowers")} testId="image-design">
+            <Btn label={state.importingImage ? t("FlowerPainter.UI.Images.Importing","Importing…") : t("FlowerPainter.UI.Images.Import","Import image…")} disabled={!!state.importingImage} onClick={()=>act.importImage()} testId="import-image" />
+            <div className={s.hint}>{t("FlowerPainter.UI.Images.Formats","PNG, JPEG, BMP, GIF, TIFF, ICO, EMF, WMF. Animated images use the first frame.")}</div>
+            <div className={s.hint}>{t("FlowerPainter.UI.Images.Colors","Image colours are matched to flower colours. Transparent areas stay empty. Density controls the number of small flowers.")}</div>
+            {state.imageImportError ? <div role="alert">{t("FlowerPainter.UI.Images.Failed","Import failed. Check the format and try another image.")} {state.imageImportError}</div> : null}
+            {step.values.imageData ? <>
+                <div data-testid="image-name">{String(step.values.imageName || "")} · {String(step.values.imageWidth)} × {String(step.values.imageHeight)}</div>
+                {step.values.flagDirect && state.area.closed ? <div className={s.hint} data-testid="image-drag-tip">{t("FlowerPainter.UI.Images.DragTip","Hold and drag the flowers to move them. Right-click or Esc cancels. Edit a built group to adjust it again.")}</div> : <Btn label={t("FlowerPainter.UI.Images.Place","Place image flowers")} selected={!!state.placingFlag} onClick={()=>act.placeFlag()} testId="place-image" />}
+                {state.placingFlag ? <div className={s.hint}>{t("FlowerPainter.UI.Images.PlaceHint","Click the ground to place the flower design.")}</div> : null}
+                <ControlList step={step} layer={layer} state={state} flat only={["flagWidth","flagAngle"]} />
+            </> : null}
+        </Section> : flag ? <Section title={t("FlowerPainter.UI.Flags.Template","Flag template")} testId="flag-templates"><FlagPicker step={step}/>{step.values.flagDirect && state.area.closed ? <div className={s.hint} data-testid="flag-drag-tip">{t("FlowerPainter.UI.Flags.DragTip", "Hold and drag the flag to move it. Release to confirm; right-click or Esc cancels.")}</div> : <Btn label={t("FlowerPainter.UI.Flags.Place", "Place a flag")} selected={!!state.placingFlag} onClick={()=>act.placeFlag()} testId="place-flag" />}{state.placingFlag ? <div className={s.hint}>{t("FlowerPainter.UI.Flags.PlaceHint", "Click the ground to place a flag.")}</div> : null}{step.values.flagDirect ? <ControlList step={step} layer={layer} state={state} flat only={["flagWidth","flagAngle"]} /> : null}</Section> : !compose ? <Section title={t("FlowerPainter.UI.Flowers.CarpetPattern","Fill pattern")}><div className={s.buttons}>
             {["flow","islands"].map(k=><Btn key={k} selected={step.values.shape===k} label={labels[k]} onClick={()=>act.setValue(step.path,"shape",k)} testId={`carpet-${k}`} />)}
         </div></Section> : !fillingPartitions ? <FloralPatternEditor step={step} state={state} /> : null}
         {partition && !fillingPartitions ? <Btn variant="accent" label={t("FlowerPainter.UI.Partitions.DoneDrawing", "Finish boundaries → select regions")} onClick={()=>act.selectFloralPattern(step.path,-2)} testId="partition-finish-boundaries" /> : null}
@@ -53,10 +67,10 @@ export const FlowerDesignStage = ({ catalog, design, state }: {catalog: Catalog;
             <Btn label={t("FlowerPainter.UI.Flowers.StopRegion","Finish filling")} onClick={()=>act.selectFloralPattern(step.path,-1)} /></div>
             {fills.map((f,i)=><div className={s.patternRow} key={i}><span>{t("FlowerPainter.UI.Flowers.Region","Region {0}",[i+1])} · {labels[f.split("|")[3]]}</span><Btn icon="close" title={t("FlowerPainter.UI.Flowers.RemoveFill","Remove this fill")} onClick={()=>act.setValue(step.path,"fills",fills.filter((_,j)=>i!==j))} testId={`fill-remove-${i}`} /></div>)}
         </Section>:null}
-        {!flag && (!partition || fillingPartitions) ? <Section title={t("FlowerPainter.Floral.plantingSystem","Flower models")}><div className={s.buttons}>{["props","patch"].map(k=><Btn key={k} label={t("FlowerPainter.Floral.plantingSystem."+k,k)} selected={(step.values.plantingSystem || "patch")===k} onClick={()=>act.setValue(step.path,"plantingSystem",k)} testId={`planting-${k}`} />)}</div></Section> : null}
+        {!artwork && (!partition || fillingPartitions) ? <Section title={t("FlowerPainter.Floral.plantingSystem","Flower models")}><div className={s.buttons}>{["props","patch"].map(k=><Btn key={k} label={t("FlowerPainter.Floral.plantingSystem."+k,k)} selected={(step.values.plantingSystem || "patch")===k} onClick={()=>act.setValue(step.path,"plantingSystem",k)} testId={`planting-${k}`} />)}</div></Section> : null}
         {!partition || fillingPartitions ? <Section title={partition ? t("FlowerPainter.UI.Partitions.Planting", "Planting spacing and size (all regions)") : compose ? t("FlowerPainter.UI.Flowers.FillMaterials","Fill flowers and planting") : t("FlowerPainter.UI.Flowers.Materials","Flowers and planting")}>
             {patch ? <div className={s.hint}>{t("FlowerPainter.UI.Patches.Tip","Flower patches follow the terrain and region boundary. Blossom spacing controls their density; choose the FlowerPainter colour props to set fill colours.")}</div> : null}
-            <ControlList step={step} layer={layer} state={state} flat only={[...(!partition && !flag?["flowerPalette"]:[]),...(patch?["bloomSpacing","flowerDensity","patchHeight","flowerViewDistance"]:["spacing","overlap","flowerScale"]),...(!flag && (!compose || partition)?["bandWidth","rotation"]:[])]} />
+            <ControlList step={step} layer={layer} state={state} flat only={[...(!partition && !artwork?["flowerPalette"]:[]),...(patch?["bloomSpacing","flowerDensity","patchHeight","flowerViewDistance"]:["spacing","overlap","flowerScale"]),...(!artwork && (!compose || partition)?["bandWidth","rotation"]:[])]} />
         </Section> : null}
     </div>;
 };

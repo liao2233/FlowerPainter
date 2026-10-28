@@ -147,7 +147,8 @@
           "paintAnything",
           "nodes",
           "perimeter",
-          "flag"
+          "flag",
+          "image"
         ]
       }
     },
@@ -473,6 +474,9 @@
           "empty"
         ]
       }
+    },
+    "importImage": {
+      "keys": []
     }
   },
   "camera": {

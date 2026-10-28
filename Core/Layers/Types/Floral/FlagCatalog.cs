@@ -15,6 +15,7 @@ namespace FlowerPainter.Core.Layers.Types.Floral
         public float2[] Outline;
         private readonly Lazy<(int width,int height,byte[] pixels)> _map;
         public FlagTemplate() { _map=new Lazy<(int,int,byte[])>(ReadMap); }
+        internal FlagTemplate(int width,int height,byte[] pixels) { _map=new Lazy<(int,int,byte[])>(()=>(width,height,pixels)); }
         private (int,int,byte[]) ReadMap()
         {
             using var stream=FlagCatalog.Resource("maps."+Id+".bin");

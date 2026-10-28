@@ -43,6 +43,8 @@ namespace FlowerPainter.Core.Tool
         public List<ToolStage> Reachable = new List<ToolStage>();
         public SelectionMode Mode;
         public bool PlacingFlag;
+        public bool ImportingImage;
+        public string ImageImportError;
         public bool BrushSquare;
         public float BrushSize = 150f;
         public float BrushAngle;
@@ -138,6 +140,8 @@ namespace FlowerPainter.Core.Tool
             o.Set("reachable", reach);
             o.Set("areaMode", SelectionModes.Id(s.Mode));
             o.Set("placingFlag",s.PlacingFlag);
+            o.Set("importingImage",s.ImportingImage);
+            o.Set("imageImportError",s.ImageImportError ?? "");
             var brush = JsonValue.Obj().Set("shape", s.BrushSquare ? "square" : "round").Set("size", Round(s.BrushSize, 1)).Set("angle", Round(s.BrushAngle, 1));
             if (s.BrushRules != null) brush.Set("rules", BrushRulesJson(s.BrushRules));
             o.Set("brush", brush);
@@ -443,7 +447,8 @@ namespace FlowerPainter.Core.Tool
                 keys = new List<string>(shown.Values.Keys);
                 keys.Sort(StringComparer.Ordinal);
             }
-            foreach (var k in keys) values.Set(k, DesignEditor.ToJson(shown.Values[k]));
+            // The native image map is saved with the recipe; the panel only needs its presence.
+            foreach (var k in keys) values.Set(k, k=="imageData" ? JsonValue.Bool(!string.IsNullOrEmpty(shown.S(k,""))) : DesignEditor.ToJson(shown.Values[k]));
             o.Set("values", values);
             var locked = new List<string>(s.Locked);
             locked.Sort(StringComparer.Ordinal);

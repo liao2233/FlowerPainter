@@ -15,7 +15,7 @@ namespace FlowerPainter.Game.Overlay
         {
             if (!_tool.FlagDragging) return;
             var settings=_tool.CurrentRecipe.Root.Settings;
-            var template=FlagCatalog.Get(settings.S("flagTemplate","china"));
+            var template=FlowerImage.For(settings);
             float width=math.clamp(settings.F("flagWidth",30),5,200),height=width/template.Ratio;
             float2 center=float2.zero;
             foreach(var point in _tool.Draw.Points)center+=point.xz;

@@ -1,0 +1,15 @@
+{
+  "FlowerPainter.UI.Images.Title": "图片种花",
+  "FlowerPainter.UI.Images.Import": "导入图片…",
+  "FlowerPainter.UI.Images.Importing": "正在导入…",
+  "FlowerPainter.UI.Images.Formats": "支持 PNG、JPEG、BMP、GIF、TIFF、ICO、EMF、WMF；动图使用第一帧。",
+  "FlowerPainter.UI.Images.Colors": "把图片颜色匹配为花色，用立体小花拼出图案。透明部分留空；花朵密度决定小花数量。",
+  "FlowerPainter.UI.Images.Preview": "直接放置图案，再拖动、旋转或调整大小，始终保持原图比例。",
+  "FlowerPainter.UI.Images.DragTip": "按住花丛拖动位置，右键或 Esc 取消。建造后选中花丛，点“编辑”可继续调整。",
+  "FlowerPainter.UI.Images.Place": "放置图片花丛",
+  "FlowerPainter.UI.Images.PlaceHint": "点击地面放置图片花丛。",
+  "FlowerPainter.UI.Images.Failed": "导入失败，请检查格式或换一张图片。",
+  "FlowerPainter.Floral.shape.image": "图片种花",
+  "FlowerPainter.Floral.Issue.ImportImage": "请先导入一张包含可见颜色的图片。",
+  "FlowerPainter.Undo.ImportImage": "导入花卉图片"
+}

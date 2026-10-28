@@ -1,0 +1,15 @@
+{
+  "FlowerPainter.UI.Images.Title": "Image flowers",
+  "FlowerPainter.UI.Images.Import": "Import image…",
+  "FlowerPainter.UI.Images.Importing": "Importing…",
+  "FlowerPainter.UI.Images.Formats": "PNG, JPEG, BMP, GIF, TIFF, ICO, EMF, WMF. Animated images use the first frame.",
+  "FlowerPainter.UI.Images.Colors": "Image colours are matched to flower colours. Transparent areas stay empty. Density controls the number of small flowers.",
+  "FlowerPainter.UI.Images.Preview": "Place the design directly, then drag, rotate or resize it. Proportions stay fixed.",
+  "FlowerPainter.UI.Images.DragTip": "Hold and drag the flowers to move them. Right-click or Esc cancels. Edit a built group to adjust it again.",
+  "FlowerPainter.UI.Images.Place": "Place image flowers",
+  "FlowerPainter.UI.Images.PlaceHint": "Click the ground to place the flower design.",
+  "FlowerPainter.UI.Images.Failed": "Import failed. Check the format and try another image.",
+  "FlowerPainter.Floral.shape.image": "Image flowers",
+  "FlowerPainter.Floral.Issue.ImportImage": "Import an image with visible colours first.",
+  "FlowerPainter.Undo.ImportImage": "Import flower image"
+}

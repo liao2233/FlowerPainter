@@ -261,6 +261,7 @@ namespace FlowerPainter.Game.Tool
             try
             {
                 GetAvailableSnapMask(out m_SnapOnMask, out m_SnapOffMask);
+                PollImageImport();
                 _roads.BeginFrame();
                 PumpPreview();
                 UpdateBuild();

@@ -1,6 +1,12 @@
-# 0.1.3 release status
+# 0.1.4 release status
 
 The local release package is a preview candidate, not a claim that all native release gates have passed.
+
+## Image import (0.1.4)
+
+- 723 engine-free tests and 9 flower UI tests pass. The additional tests cover image colour/transparency, source aspect, transform sampling and recipe round-trip.
+- The production decoder was exercised on PNG, JPEG, BMP, GIF, TIFF and ICO files in the Windows .NET host; this is not a Unity runtime result.
+- `image-flowers` native scenario covers decoding, direct placement, dragging, rotation, resizing an existing build, source-file removal and cache-eviction save/reload. Pending: the user game is currently running; no native pass is claimed for image import yet.
 
 ## Completed locally
 

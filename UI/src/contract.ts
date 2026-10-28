@@ -108,6 +108,8 @@ export interface ToolState {
   reachable: Stage[];
   areaMode: AreaMode;
   placingFlag?: boolean;
+  importingImage?: boolean;
+  imageImportError?: string;
   /** rules: sent by s11+ C# (absent = older DLL). */
   brush: { shape: BrushShape; size: number; angle: number; rules?: BrushRules };
   area: AreaInfo;
@@ -540,6 +542,7 @@ export const Triggers = {
   redo: "redo",                             // ()
 
   placeFlag: "placeFlag",
+  importImage: "importImage",
   setAreaMode: "setAreaMode",               // (mode: AreaMode)
   setBrush: "setBrush",                     // (shape: BrushShape, size: number, angle: number)
   setBrushRules: "setBrushRules",           // (json: Partial<BrushRules> as a JSON string) — s11
