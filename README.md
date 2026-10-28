@@ -32,6 +32,6 @@ See [Tests/README.md](Tests/README.md) for the test scope and [docs/publish/RELE
 
 ## License and source
 
-GPL-3.0. Distribute the corresponding source archive alongside the runtime archive and retain the licenses. The public source repository and first Paradox Mods ID have not yet been assigned; do not invent their URLs or IDs.
+GPL-3.0. Distribute the corresponding source archive alongside the runtime archive and retain the licenses. The public source repository is [https://github.com/liao2233/FlowerPainter](https://github.com/liao2233/FlowerPainter). The first Paradox Mods ID has not yet been assigned.
 
 Extracted from Placemaker. Selection/build infrastructure derives from ParkingLotTool (KruemelGames), ParkManager (tomkpunkt), and Grid Road Generator (Ti4goc). Harmony is distributed under MIT; its license is included. Flag sources and artwork notices are in [Assets/Flags/NOTICE.md](Assets/Flags/NOTICE.md).

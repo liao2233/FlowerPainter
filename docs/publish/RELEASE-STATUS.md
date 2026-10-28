@@ -15,8 +15,8 @@ The local release package is a preview candidate, not a claim that all native re
 
 ## Still required before public upload
 
-1. Supply the real public source repository or source-download URL, then add it to `ExternalLink`. There is no configured git remote or published repository. A local matching source ZIP is prepared; it must be made available to recipients.
-2. The author manually starts a clean-profile game and verifies: area fill, independent partitions, curves, dense patches, direct flags, dragging/releasing/cancelling/undo, rotation, near/far display, build and local reload.
+1. The public source repository is https://github.com/liao2233/FlowerPainter; keep it synchronized with the corresponding released version.
+2. Verify the remaining cases in game: area fill, independent partitions, curves, dense patches, direct flags, dragging/releasing/cancelling/undo, rotation, near/far display, build and local reload.
 3. Verify with Placemaker enabled, and verify the documented result when disabling/uninstalling FlowerPainter and loading a backup save. Use a copy of the save.
 4. Verify the new legacy-material reconstruction on a backup containing v6 albedo flags, if those old local development saves are still supported.
 5. Decide whether a local-assets-only preview is acceptable. Save-only cross-PC portability has **not** been implemented or verified. The limitation appears at the top of the player page and runtime README; this is not a fix for portability.
@@ -26,6 +26,6 @@ The local release package is a preview candidate, not a claim that all native re
 
 ## Evidence limits
 
-Screenshots are genuine earlier native game runs of the flower geometry, not a new final-build certification. The earlier move/rotate scenario had a first-placement UI timing error; later build and local reload completed, but that run does not count as a clean release pass. Direct dragging has compile and browser UI evidence, not a completed native game regression. No game is started automatically during this preparation.
+Screenshots are genuine earlier native game runs of the flower geometry, not a new final-build certification. The earlier move/rotate scenario had a first-placement UI timing error; later build and local reload completed, but that run does not count as a clean release pass. On 2026-10-29 a native direct-flag scenario built and locally reloaded 14 patches, and three composition scenarios built without reported errors. Some screenshot settling checks timed out. The native suite does not establish a complete clean-profile regression or cross-machine portability.
 
 The much older README's 99% geometry reduction and 123-test statements describe a discontinued flat-canopy implementation and are archived only as historical notes in `docs/development-history.md`.

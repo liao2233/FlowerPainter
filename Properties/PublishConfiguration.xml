@@ -43,11 +43,12 @@
 
 ## 源码与致谢
 
-许可证为 GPL-3.0，完整源码包与运行包一同提供。二次分发时也应提供对应源码及许可证。公开源码仓库地址尚待发布者填写。
+许可证为 GPL-3.0，完整源码包与运行包一同提供。二次分发时也应提供对应源码及许可证。公开源码仓库：https://github.com/liao2233/FlowerPainter。
 
 选区与建造基础设施源自 Placemaker，以及 ParkingLotTool（KruemelGames）、ParkManager（tomkpunkt）和 Grid Road Generator（Ti4goc）的相关工作；包含 Harmony（MIT）。旗帜图源与许可记录见源码包中的 `Assets/Flags/NOTICE.md`、`CATALOG.md` 和 `extra-sources.json`。组织和主题图案不表示官方关联或背书。
 
 </LongDescription>
+  <ExternalLink Type="github" Url="https://github.com/liao2233/FlowerPainter" />
   <Thumbnail Value="Properties/Thumbnail.png" />
   <Tag Value="Code Mod" />
   <ForumLink Value="" />
