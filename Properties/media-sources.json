@@ -1,0 +1,74 @@
+﻿[
+    {
+        "file":  "Properties/Screenshots/01-curve-fill.jpg",
+        "sourceRun":  "queue-1027-124400",
+        "sourceFile":  "02-flowers-free-curve-clipped.10-built.png",
+        "sourceSha256":  "27560D7FA788569A0401C84F44F8C276113ED0088EFEFBC4F4F42E69BA22AD44",
+        "description":  "Curves and background fill",
+        "kind":  "native-game-screenshot",
+        "changes":  "JPEG encoding only; no scene or UI edits"
+    },
+    {
+        "file":  "Properties/Screenshots/02-partitions.jpg",
+        "sourceRun":  "queue-1027-131421",
+        "sourceFile":  "01-circle-subdivisions.10-circle-filled.png",
+        "sourceSha256":  "29B0D6C75323751101C672E752A1AD2EE90130DE86CC30F1F400DD5385A4257F",
+        "description":  "Independent region fills",
+        "kind":  "native-game-screenshot",
+        "changes":  "JPEG encoding only; no scene or UI edits"
+    },
+    {
+        "file":  "Properties/Screenshots/03-patterns.jpg",
+        "sourceRun":  "queue-1027-124400",
+        "sourceFile":  "01-flowers-circle-heart-regions.13-built.png",
+        "sourceSha256":  "CEE760FFFF432B511FA5DEFDAA5FF3F6031255326EA1C78EBAC7D724DAC6C117",
+        "description":  "Circle and heart composition",
+        "kind":  "native-game-screenshot",
+        "changes":  "JPEG encoding only; no scene or UI edits"
+    },
+    {
+        "file":  "Properties/Screenshots/04-flower-detail.jpg",
+        "sourceRun":  "queue-1027-111849",
+        "sourceFile":  "01-flag-china.06-flag-close.png",
+        "sourceSha256":  "773487E9B11F0A2B7EEEE64163E83390977D15CA9371E9EC4BE0311899E719ED",
+        "description":  "Raised flower detail",
+        "kind":  "native-game-screenshot",
+        "changes":  "JPEG encoding only; no scene or UI edits"
+    },
+    {
+        "file":  "Properties/Screenshots/05-china.jpg",
+        "sourceRun":  "queue-1027-111849",
+        "sourceFile":  "01-flag-china.05-flag-top.png",
+        "sourceSha256":  "8DE0DAFC352109C3B221CA68B06C8A00BE5FBC4168B4C57F420A78D6B304C826",
+        "description":  "China flag built from flowers",
+        "kind":  "native-game-screenshot",
+        "changes":  "JPEG encoding only; no scene or UI edits"
+    },
+    {
+        "file":  "Properties/Screenshots/06-rotation.jpg",
+        "sourceRun":  "queue-1028-010245",
+        "sourceFile":  "01-direct-flag.08-direct-built.png",
+        "sourceSha256":  "828B023473C51A4E45002AD9E844BDEF086741C7C43B762BC82D5B26EDCCC893",
+        "description":  "Rotated Japan flag",
+        "kind":  "native-game-screenshot",
+        "changes":  "JPEG encoding only; no scene or UI edits"
+    },
+    {
+        "file":  "Properties/Screenshots/07-nepal.jpg",
+        "sourceRun":  "queue-1027-111849",
+        "sourceFile":  "06-catalog-np.08-flag-reloaded.png",
+        "sourceSha256":  "4635A9078D3DC01F910064A350F4D89DF5B9F5AE30B1C476A268265E4AF7073A",
+        "description":  "Nepal after local reload",
+        "kind":  "native-game-screenshot",
+        "changes":  "JPEG encoding only; no scene or UI edits"
+    },
+    {
+        "file":  "Properties/Screenshots/08-usa.jpg",
+        "sourceRun":  "queue-1027-111849",
+        "sourceFile":  "05-catalog-us.06-flag-top.png",
+        "sourceSha256":  "1CCC0385A77C7909AF803A22B64E781764E9752C3CFC990D3CC911BDD420F0EC",
+        "description":  "United States flag",
+        "kind":  "native-game-screenshot",
+        "changes":  "JPEG encoding only; no scene or UI edits"
+    }
+]

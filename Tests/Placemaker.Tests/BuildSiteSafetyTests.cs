@@ -236,7 +236,7 @@ namespace FlowerPainter.Tests
             layer.Nets.Add(Line(new float2(0, 50), new float2(100, 50)));
             layer.Nets.Add(Line(new float2(0, 90), new float2(100, 90)));
             layer.Objects.Add(new PlannedObject { Position = new float3(45, 0, 45), Role = ObjectRole.Tree });
-            layer.Areas.Add(new PlannedArea { Ring = Rect3(30, 30, 45, 45), Role = AreaRole.Lot });
+            layer.Areas.Add(new PlannedArea { Ring = Rect3(30, 30, 45, 45), Role = AreaRole.Lot, Asset = new AssetRef("SelectedLot") });
             var plan = PlanOf(layer);
             var work = PlanWork.Flatten(plan);
             var hits = SiteSafety.ItemsTouching(plan, work, new List<float2[]> { Rect2(40, 40, 60, 60) }, null);
@@ -261,6 +261,7 @@ namespace FlowerPainter.Tests
             Assert.Equal(90f, layer.Objects[0].Position.x);
         }
 
+#if PLACEMAKER_LEGACY_GENERATORS
         [Fact]
         public void Composed_park_keeps_off_a_building_in_the_middle()
         {
@@ -281,5 +282,6 @@ namespace FlowerPainter.Tests
             Assert.Same(plan.Protected, plan.Protected);
             Assert.NotEmpty(plan.Protected);
         }
+#endif
     }
 }

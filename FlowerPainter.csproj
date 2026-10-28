@@ -11,7 +11,6 @@
   <PropertyGroup>
     <AssemblyName>FlowerPainter</AssemblyName>
     <RootNamespace>FlowerPainter</RootNamespace>
-    <Version>0.1.1</Version>
     <Configurations>Debug;Release</Configurations>
     <Nullable>disable</Nullable>
     <CS2ToolPath Condition="'$(CSII_TOOLPATH)' != ''">$(CSII_TOOLPATH)</CS2ToolPath>
@@ -29,7 +28,6 @@
     <TargetFramework>net48</TargetFramework>
     <LangVersion>9.0</LangVersion>
     <OutputType>Library</OutputType>
-    <ManagedPath Condition="'$(ManagedPath)' == ''">C:\Program Files (x86)\Steam\steamapps\common\Cities Skylines II\Cities2_Data\Managed</ManagedPath>
     <UserDataPath Condition="'$(UserDataPath)' == ''">$(USERPROFILE)\AppData\LocalLow\Colossal Order\Cities Skylines II</UserDataPath>
     <DeployDir>$(UserDataPath)\Mods\$(AssemblyName)</DeployDir>
     <NoStdLib>true</NoStdLib>
@@ -62,7 +60,7 @@
     <Compile Remove="UI\**;Tests\**;docs\**;bin\**;obj\**;.forensics\**;tools\**;suite\**" />
     <None Remove="UI\**;Tests\**;docs\**" />
     <!-- Output timestamps can come from an older checkout or test bundle. Always ship this checkout's data. -->
-    <None Include="Lang\*.json" CopyToOutputDirectory="Always" LinkBase="Lang" />
+    <None Include="Lang\en-US*.json;Lang\zh-HANS*.json" CopyToOutputDirectory="Always" LinkBase="Lang" />
     <None Include="Recipes\*.json" CopyToOutputDirectory="Always" LinkBase="Recipes" />
     <None Include="Recipes\shelf\*.json" CopyToOutputDirectory="Always" LinkBase="Recipes\shelf" />
     <None Include="LICENSE" CopyToOutputDirectory="PreserveNewest" Condition="Exists('LICENSE')" />
@@ -87,7 +85,7 @@
 
   <!-- UI bundle: built before the C# output is gathered so deploy never ships a stale bundle. -->
   <Target Name="BuildUserInterface" BeforeTargets="BeforeBuild" Condition="'$(SkipUI)' != 'true'">
-    <Error Condition="!Exists('$(MSBuildProjectDirectory)\UI\node_modules')" Text="UI dependencies missing: run 'npm ci' in UI\ (or build with -p:SkipUI=true)." />
+    <Exec Condition="!Exists('$(MSBuildProjectDirectory)\UI\node_modules\webpack\package.json')" WorkingDirectory="$(MSBuildProjectDirectory)\UI" Command="npm ci" />
     <Exec WorkingDirectory="$(MSBuildProjectDirectory)\UI" Command="npm run build" EnvironmentVariables="FLOWERPAINTER_UI_OUT=$(MSBuildProjectDirectory)\UI\build" />
   </Target>
 

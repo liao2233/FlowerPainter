@@ -319,7 +319,7 @@ namespace FlowerPainter.Game.Settings
         [SettingsUISection(SectionMain, GroupBuild)]
         public bool SeeThroughDecals { get; set; }
 
-        [SettingsUISection(SectionMain, GroupBuild)]
+        [SettingsUIHidden]
         public bool ChargeNetConstruction { get; set; }
 
         [SettingsUISection(SectionMain, GroupBuild)]
@@ -330,11 +330,11 @@ namespace FlowerPainter.Game.Settings
         public bool DebugTerrainDump { get; set; }
 
         /// <summary>(s17) Park attractiveness of builds counts for the city's tourism (owner lot AttractivenessProvider).</summary>
-        [SettingsUISection(SectionMain, GroupBuild)]
+        [SettingsUIHidden]
         public bool ApplyParkStats { get; set; }
 
         /// <summary>(s17) A hidden companion park building carries every park stat (leisure, coverage, upkeep…).</summary>
-        [SettingsUISection(SectionMain, GroupBuild)]
+        [SettingsUIHidden]
         public bool RealParkStats { get; set; }
 
         [SettingsUISection(SectionMain, GroupBuild)]
@@ -347,21 +347,16 @@ namespace FlowerPainter.Game.Settings
         [SettingsUISection(SectionMain, GroupBuild)]
         public bool TexturedPreviewSurfaces { get; set; }
 
-        [SettingsUISection(SectionMain, GroupBuild)]
+        [SettingsUIHidden]
         public bool ParkingEconomy { get; set; }
 
-        [SettingsUISlider(min = 0, max = 50, step = 1, scalarMultiplier = 1)]
-        [SettingsUISection(SectionMain, GroupBuild)]
-        [SettingsUIDisableByCondition(typeof(FlowerPainterSettings), nameof(ParkingEconomyOff))]
+        [SettingsUIHidden]
         public int DefaultParkingFee { get; set; }
 
-        [SettingsUISection(SectionMain, GroupBuild)]
+        [SettingsUIHidden]
         public bool ExperimentalParkingCompanion { get; set; }
 
-        [SettingsUISlider(min = 0.5f, max = 3f, step = 0.1f, scalarMultiplier = 1)]
-        [SettingsUICustomFormat(fractionDigits = 1)]
-        [SettingsUISection(SectionMain, GroupBuild)]
-        [SettingsUIDisableByCondition(typeof(FlowerPainterSettings), nameof(CompanionOff))]
+        [SettingsUIHidden]
         public float CompanionUpkeepFactor { get; set; }
 
         public bool ParkingEconomyOff() => !ParkingEconomy;
@@ -441,15 +436,15 @@ namespace FlowerPainter.Game.Settings
             OverlayPavedSurfaces = true;
             DecalsNeverCollide = true;
             SeeThroughDecals = true;
-            ChargeNetConstruction = true;
+            ChargeNetConstruction = false;
             SelectAsOneThing = true;
             DebugTerrainDump = false;
-            ApplyParkStats = true;
-            RealParkStats = true;
+            ApplyParkStats = false;
+            RealParkStats = false;
             ConfirmBulldoze = true;
             SurfaceClones = true;
             TexturedPreviewSurfaces = false;
-            ParkingEconomy = true;
+            ParkingEconomy = false;
             DefaultParkingFee = 0;
             ExperimentalParkingCompanion = false;
             CompanionUpkeepFactor = 1f;

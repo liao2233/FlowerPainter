@@ -140,6 +140,7 @@ namespace FlowerPainter.Tests
             Assert.Equal("Boulder01", l.Objects[12].Asset.Id);     // uncategorised furniture: decoration
         }
 
+#if PLACEMAKER_LEGACY_GENERATORS
         [Theory]
         [InlineData("playground")]
         [InlineData("picnic")]
@@ -162,6 +163,8 @@ namespace FlowerPainter.Tests
             Assert.Contains(plan.Objects, o => o.Role == ObjectRole.Furniture && o.Category == AssetCategories.Playground);
             Assert.Equal(AssetCategories.Playground, RoleCategories.ForObject(plan.Objects.First(o => o.Role == ObjectRole.Furniture)));
         }
+
+#endif
 
         // ───────────────────────── curation ─────────────────────────
 

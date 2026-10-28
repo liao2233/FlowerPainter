@@ -142,6 +142,7 @@ namespace FlowerPainter.Tests
             Assert.Contains("\"disabledReason\":\"FlowerPainter.Why.X\"", full);
         }
 
+#if PLACEMAKER_LEGACY_GENERATORS
         [Fact]
         public void Roads_hides_only_its_per_pattern_essentials()
         {
@@ -153,6 +154,8 @@ namespace FlowerPainter.Tests
                 Assert.Equal(c.VisibleWhen.StartsWith("pattern="), c.HideWhenOff);
             Assert.Contains(conditional, c => !c.HideWhenOff);   // e.g. cul-de-sac options: greyed, not hidden
         }
+
+#endif
 
         [Fact]
         public void State_json_reports_protocol_and_every_area_mode()

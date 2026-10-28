@@ -6,15 +6,19 @@
     <LangVersion>9.0</LangVersion>
     <Nullable>disable</Nullable>
     <IsPackable>false</IsPackable>
-    <ManagedPath Condition="'$(ManagedPath)' == ''">C:\Program Files (x86)\Steam\steamapps\common\Cities Skylines II\Cities2_Data\Managed</ManagedPath>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <NoWarn>$(NoWarn);CS1591</NoWarn>
   </PropertyGroup>
   <ItemGroup>
+    <!-- Supported FlowerPainter behavior and shared infrastructure. The inherited generator
+         tests remain in source control but do not form this standalone mod's release gate. -->
+    <Compile Include="*.cs" Exclude="*Tests.cs" />
+    <Compile Include="ParkTestKitTests.cs;Floral*Tests.cs;FlowerWorkflowTests.cs;Geometry*Tests.cs;Tool*Tests.cs;Build*Tests.cs;AssetCurationTests.cs;ObjectYawTests.cs;RectangleSelectionTests.cs;BrushAreaEditTests.cs" Exclude="BuildLooseTests.cs" />
     <Compile Include="..\..\Core\**\*.cs" Link="Core\%(RecursiveDir)%(Filename)%(Extension)" />
     <Reference Include="Unity.Mathematics"><HintPath>$(ManagedPath)\Unity.Mathematics.dll</HintPath></Reference>
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
     <PackageReference Include="xunit" Version="2.9.2" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" PrivateAssets="all" />
   </ItemGroup>

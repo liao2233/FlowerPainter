@@ -55,7 +55,7 @@ namespace FlowerPainter.Tests
         {
             var root = RepoRoot();
             Assert.NotNull(root);
-            var lang = File.ReadAllText(Path.Combine(root, "Lang", "en-US.build.json"));
+            var lang = string.Join("\n", Directory.GetFiles(Path.Combine(root, "Lang"), "en-US*.json").Select(File.ReadAllText));
             var sources = Directory.GetFiles(Path.Combine(root, "Game"), "*.cs", SearchOption.AllDirectories)
                 .Concat(Directory.GetFiles(Path.Combine(root, "Core", "Build"), "*.cs"))
                 .Where(f => f.Replace('\\', '/').Contains("/Game/Build/") || f.Replace('\\', '/').Contains("/Game/Groups/")

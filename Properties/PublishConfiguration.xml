@@ -1,0 +1,66 @@
+<?xml version='1.0' encoding='utf-8'?>
+<Publish>
+  <ModId Value="" />
+  <DisplayName Value="FlowerPainter 花卉" />
+  <ShortDescription Value="用密集立体小花绘制花毯、曲线、独立分区和 271 个旗帜模板。支持旗帜直接放置、拖动与旋转。预览版暂不支持仅通过存档跨电脑迁移。" />
+  <LongDescription>
+# FlowerPainter 花卉
+
+**当前为预览版，适合本机存档使用。自定义花丛和旗帜模型保存在本机资产目录，尚不支持仅通过存档自动跨电脑迁移。需要公开分享地图或存档时，请暂缓使用这些生成资产。禁用或卸载模组后，自定义花丛也不保证能恢复显示。**
+
+把小花种成曲线、花毯、独立分区和旗帜。近景由密集的立体花头组成，远景使用简化立体花头；花朵合并为花丛块，避免每朵花都成为单独的游戏物件。
+
+## 可以做什么
+
+- 整片填充：流线拼色、花岛拼色。
+- 独立分区：用圆、心形、花瓣或自由曲线划分区域，每块分别设置花色和填充样式，未填的区域保持空白。
+- 曲线组合：绘制和编辑自由曲线，曲线用花与背景填充分别设置。
+- 花卉旗帜：271 个国家、地区、组织及主题模板，支持中文、英文和代码搜索。
+
+## 开始使用
+
+1. 点击花卉按钮，或按 **Ctrl+Shift+F** 打开工具。
+2. 花毯、曲线和分区：先选择区域，再进入“设计”设置。
+3. 旗帜：直接进入“设计 → 旗帜”，选择模板后点击“直接放置旗帜”，再点击地面。无需先画选框。
+4. 放置后，按住旗帜拖动调整位置，松手确定；右键或 Esc 取消这次拖动。旋转和宽度使用滑杆，高度按模板比例自动计算。
+5. 查看预览，确认后建造。已建造的项目可通过编辑重新调整。
+
+## 外观与性能
+
+“立体花密度”有 1–4 档，默认 4 档。数值越高，实际花头越多；“花头间距”和“花丛高度”分别控制花头尺寸与高度。“立体花显示距离”越高，细节保留到越远处，也会增加渲染开销。
+
+大面积、密集花丛首次准备模型需要时间。细小文字和复杂徽章受花头间距与旗帜尺寸限制；远景仍可能看见规则排列纹理。本版不沿用旧贴图底面版本的“减少 99% 三角面”性能数字。
+
+默认使用立体连片花丛，也保留普通花卉物件模式。连片模式按所选花卉对应的颜色生成统一花头，不保留所选物件原有的盆、边框或完整植物形态。
+
+## 兼容与保存
+
+- 无需安装 Placemaker 或第三方花卉资产包。
+- 支持英语与简体中文，其余语言目前回退到英语。
+- 升级不会自动替换已有花丛；需要编辑并重新建造才会采用新版几何。
+- 本机生成资产位于游戏用户目录 `ImportedData/FlowerPainter/Patches`。请保留整个目录并备份；仅复制存档不能保证花丛可用。目前没有经过验证的一键跨机迁移流程。
+- 与 Placemaker 同装的最终发布版回归、全新用户目录读档、卸载后再读档仍待实机确认。
+
+## 源码与致谢
+
+许可证为 GPL-3.0，完整源码包与运行包一同提供。二次分发时也应提供对应源码及许可证。公开源码仓库地址尚待发布者填写。
+
+选区与建造基础设施源自 Placemaker，以及 ParkingLotTool（KruemelGames）、ParkManager（tomkpunkt）和 Grid Road Generator（Ti4goc）的相关工作；包含 Harmony（MIT）。旗帜图源与许可记录见源码包中的 `Assets/Flags/NOTICE.md`、`CATALOG.md` 和 `extra-sources.json`。组织和主题图案不表示官方关联或背书。
+
+</LongDescription>
+  <Thumbnail Value="Properties/Thumbnail.png" />
+  <Tag Value="Code Mod" />
+  <ForumLink Value="" />
+  <ModVersion Value="0.1.2" />
+  <GameVersion Value="1.6.*" />
+  <ChangeLog Value="0.1.2：旗帜直接放置与拖动，旋转和尺寸滑杆，立体花远景与显示距离；独立构建及发布测试闸门，缩小运行包。详见 CHANGELOG.md。" />
+  <AccessLevel Value="Public" />
+  <Screenshot Value="Properties/Screenshots/01-curve-fill.jpg" />
+  <Screenshot Value="Properties/Screenshots/02-partitions.jpg" />
+  <Screenshot Value="Properties/Screenshots/03-patterns.jpg" />
+  <Screenshot Value="Properties/Screenshots/04-flower-detail.jpg" />
+  <Screenshot Value="Properties/Screenshots/05-china.jpg" />
+  <Screenshot Value="Properties/Screenshots/06-rotation.jpg" />
+  <Screenshot Value="Properties/Screenshots/07-nepal.jpg" />
+  <Screenshot Value="Properties/Screenshots/08-usa.jpg" />
+</Publish>

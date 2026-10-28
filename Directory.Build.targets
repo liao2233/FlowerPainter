@@ -1,8 +1,18 @@
 <Project>
-  <!-- Same immutable maps/textures in the game, engine-free tests and real-Core UI mock. -->
+  <!-- Same immutable colour maps in the game, engine-free tests and real-Core UI mock. -->
   <ItemGroup>
     <EmbeddedResource Include="$(MSBuildThisFileDirectory)Assets\Flags\catalog.json" LogicalName="FlowerPainter.Flags.catalog.json" />
     <EmbeddedResource Include="$(MSBuildThisFileDirectory)Assets\Flags\maps\*.bin" LogicalName="FlowerPainter.Flags.maps.%(Filename)%(Extension)" />
-    <EmbeddedResource Include="$(MSBuildThisFileDirectory)Assets\Flags\textures\*.png" LogicalName="FlowerPainter.Flags.textures.%(Filename)%(Extension)" />
   </ItemGroup>
+  <Target Name="ResolveFlowerPainterGamePath" BeforeTargets="ResolveAssemblyReferences">
+    <Exec Condition="'$(ManagedPath)' == ''" Command="powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(MSBuildThisFileDirectory)tools\Find-Game.ps1&quot;" ConsoleToMSBuild="true" StandardOutputImportance="low">
+      <Output TaskParameter="ConsoleOutput" PropertyName="ManagedPath" />
+    </Exec>
+    <Error Condition="!Exists('$(ManagedPath)\Game.dll')" Text="Cities: Skylines II managed assemblies were not found. Set FLOWERPAINTER_GAME_DIR or pass -p:ManagedPath=.../Cities2_Data/Managed." />
+    <ItemGroup>
+      <Reference Condition="Exists('$(ManagedPath)\%(Reference.Identity).dll')">
+        <HintPath>$(ManagedPath)\%(Reference.Identity).dll</HintPath>
+      </Reference>
+    </ItemGroup>
+  </Target>
 </Project>

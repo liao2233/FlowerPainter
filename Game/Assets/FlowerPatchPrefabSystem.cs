@@ -168,13 +168,21 @@ namespace FlowerPainter.Game.Assets
             string name="FlowerPainter Flag Albedo "+flagId+" v6-readable";
             var cached=AssetDatabase.global.GetAsset<SurfaceAsset>(Id(name));
             if(cached!=null){cached.LoadProperties(false);_flagSurfaces[flagId]=cached;return cached;}
-            byte[] png;
-            using(var stream=FlagCatalog.Resource("textures."+flagId+".png"))
-            using(var memory=new MemoryStream()){stream.CopyTo(memory);png=memory.ToArray();}
-            var albedo=new Texture2D(4,4,TextureFormat.RGBA32,true,false){
+            // v6 save compatibility: recover the flag surface from the compact colour map.
+            // Current flags use raised flowers, so full-resolution albedo PNGs need not ship.
+            var template=FlagCatalog.Get(flagId);
+            const int width=512;
+            int textureHeight=math.max(1,(int)math.round(width/template.Ratio));
+            var albedo=new Texture2D(width,textureHeight,TextureFormat.RGBA32,true,false){
                 name=name+" base",filterMode=FilterMode.Trilinear,anisoLevel=4,wrapMode=TextureWrapMode.Clamp
             };
-            if(!ImageConversion.LoadImage(albedo,png,false))throw new InvalidDataException("Flag albedo decode failed: "+flagId);
+            var palette=FlowerPatchMesh.Hex.Select(hex=>{ColorUtility.TryParseHtmlString("#"+hex,out var c);return c;}).ToArray();
+            var pixels=new Color[width*textureHeight];
+            for(int y=0;y<textureHeight;y++)for(int x=0;x<width;x++) {
+                int color=template.Color(new float2((x+.5f)/width,(y+.5f)/textureHeight));
+                pixels[y*width+x]=color<0?Color.clear:palette[color];
+            }
+            albedo.SetPixels(pixels);albedo.Apply();
             var material=new Material(AssetDatabase.global.resources.materialLibrary.GetMaterial(0)){name=name};
             foreach(var property in material.GetTexturePropertyNames()) material.SetTexture(property,null);
             Texture2D Solid(string label,Color color) {

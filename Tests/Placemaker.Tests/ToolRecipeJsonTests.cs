@@ -132,7 +132,13 @@ namespace FlowerPainter.Tests
             while (dir != null && !System.IO.Directory.Exists(System.IO.Path.Combine(dir.FullName, "Recipes"))) dir = dir.Parent;
             Assert.NotNull(dir);
             var files = System.IO.Directory.GetFiles(System.IO.Path.Combine(dir.FullName, "Recipes"), "*.json");
-            Assert.NotEmpty(files);
+            // Standalone FlowerPainter synthesizes its registered one-layer recipes.
+            Assert.NotEmpty(GeneratorRegistry.All);
+            foreach(var generator in GeneratorRegistry.All) {
+                var recipe=Recipe.Single(generator,7);
+                var back=RecipeJson.Parse(RecipeJson.Write(recipe).ToString()).Recipe;
+                Assert.Equal(generator.Id,back.Root.Layer);
+            }
             foreach (var f in files)
             {
                 var file = RecipeJson.Parse(System.IO.File.ReadAllText(f));

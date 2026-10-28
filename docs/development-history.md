@@ -1,0 +1,53 @@
+# Historical development notes
+
+These notes describe earlier implementations and are not current feature or performance claims. See MOD-PAGE.md and CHANGELOG.md for the current release.
+
+# FlowerPainter 花卉
+
+Independent Cities: Skylines II flower planting mod. No Placemaker DLL or enabled Placemaker mod is required.
+
+Select an area and fill it with flowing/island carpets, subdivide it using circles and editable curves, or compose planted ribbons. Subdivision boundaries plant no flowers: choose and fill each enclosed region independently, then edit the boundaries to repartition. Ribbon mode retains independent curve flowers and gap fills. Preview uses real temporary flower meshes without their cyan outlines; geometry remains temporary until Build.
+
+Build `FlowerPainter.csproj` in Release with `Deploy=false` and `ManagedPath` pointing to the installed game's `Cities2_Data/Managed`. UI dependencies and the UI build use npm in `UI`. Deploy while the game is closed.
+
+GPL-3.0. Extracted from the locally developed Placemaker project. Shared selection/build infrastructure derives from ParkingLotTool (KruemelGames), ParkManager (tomkpunkt) and Grid Road Generator (Ti4goc); their GPL notices and bundled Harmony MIT license are retained. FlowerPainter has separate namespaces, UI bindings, components, prefabs and `ModsData/FlowerPainter` storage.
+
+## 使用
+
+点击花朵图标或按 Ctrl+Shift+F 打开。先选定区域，再选择“直接铺满”、“内部再分区”或“曲线组合”。直接铺满保留流线拼色和花岛拼色。
+
+内部再分区：在外框中添加圆、心形、花瓣或自由曲线作为零宽分界线。圆的内外、嵌套区域以及交叉曲线形成的区域可分别选中；悬空且未闭合的线不会产生新区域。自由曲线可重新绘制、拖节点或点击“闭合曲线”。界面按三个步骤组织：先绘制分界线，点击“完成划线 → 选择分区”，再从地图或分区列表选中一块区域。选中只高亮，不会种花；随后设置这块区域自己的 prop 和填充样式，点击“填充此分区”才生效。纯色可选一个 prop，流线和花岛可选多个 prop；再次选中区域会恢复它的配置，修改不会影响其他分区。点击“返回修改分界线”可继续划线。未填区域保持空白，分界线本身不生成花带。移动或重绘边界会重新切分，已有填充按原点击位置重新归属。
+
+曲线组合可画圆、摆花瓣或心形，也可添加自由曲线。图案可移动、缩放、旋转和单独调粗细；自由曲线支持拖动节点、增加节点、右键删除节点。点击“重新绘制曲线”后，在地图上逐点绘制，Enter 或右键结束。超出范围的部分不种植。
+
+“曲线用花（独立设置）”提供独立花色盘，默认奶白色；各曲线和图案可单独指定花卉 prop，列表会显示用花。修改填充花色不会改掉曲线用花。新增两种原版花丛的 8 种花色（珊瑚红、橘橙、明黄、樱粉、玫紫、紫罗兰、矢车菊蓝、奶白），共 16 个独立 prop；保留原模型的绿叶、土壤和边框，花色用于真实模型预览和建造。
+
+“连片花丛”：在直接铺满或分区填充中切换“花的模型 → 连片花丛”，沿分区轮廓裁剪，使用贴合地面的连续花丛表面、共享花瓣纹理和少量立体花朵。默认每块约 17.92 米宽，内部根据地形起伏和花色边界细分；不会为纹理上的每朵花建立网格。花头间距控制视觉密度和图案分辨率，高度独立可调，不受 prop 重叠度影响。普通分区仍先划线，再选区设置各自的花色和填充样式。当前花色取自 FlowerPainter 彩色花 prop 名称，使用新花丛模型。
+
+“旗帜”是独立入口，内置 **271 个模板**：覆盖 193 个联合国成员国和两个观察员国，另有地区、历史变体、联合国／世卫／世贸／欧盟／北约／非盟及医疗、和平、彩虹、赛车等主题。按地区浏览，或用中文、英文、代码搜索。缩略图与花丛使用相同的花色映射；各旗保留原始比例，尼泊尔还会裁剪底层叶丛形成双三角轮廓。详细目录和图源见 [Assets/Flags/CATALOG.md](Assets/Flags/CATALOG.md) 与 [Assets/Flags/NOTICE.md](Assets/Flags/NOTICE.md)。
+
+没有旗帜专用的硬性最小尺寸；通用选区面积范围仍为 25～250,000 平方米。花头间距决定图案分辨率，默认 0.28 米：简单条纹旗建议宽约 11.2 米，中国／韩国等带符号的旗约 28 米，美国及复杂徽章旗约 56 米，联合国／世卫约 61.6 米。这是主要图形的辨识参考，细字不保证可读。界面显示实际宽高、随间距变化的建议尺寸；太小或被异形选区裁掉时提示，但允许继续种植。建议用矩形选区保留完整图案。
+
+旗帜仍按花丛块合并为模型，不逐株创建游戏 prop，也没有 3200 株限制。自定义模型和注册表保存在游戏用户目录 `ImportedData/FlowerPainter/Patches`，材质贴图由游戏资产库保存；转移或分享此版本的存档时，需要同时保留这些生成资产。
+
+相同花块复用模型，面板显示实际花丛块数，准备期间显示按已就绪花块计算的进度。近景保留花瓣纹理和少量立体细节，远景使用简化花色表面；纹理使用分级过滤，减少远处的条纹和闪烁。旗帜细节仍按原花头间距采样，不随花丛块扩大而降低图案分辨率。旧存档花块保留原模型和材质；已有花丛需要编辑后重新建造才会采用新组织方式。空方案或生成失败不会再让预览一直等待。
+
+“Prop 重叠度”直接控制花丛的堆叠密度，范围 0–90%，默认 0%。实际中心距离为基础间距 ×（1 − 重叠度）；50% 把距离减半，数量约为 4 倍。花卉尺寸单独设置，不再随着间距或选区大小自动变化。花毯的 3200 个、旧图案的 1800 个数量限制已取消，预览也完整显示所有 prop，按帧分批生成。
+
+空白区域可以统一填充，也可以选择纯色、流线、花岛或留空，再点击地图中的单个区域。圆内与圆外可分别设置。使用具体花卉模型预览，修改后自动更新，预览不显示每个物件的蓝色描边。确认后点击“检查”，再建造。花卉作为装饰种植，不额外创建公园设施或公园吸引力。
+
+## 验证与分发
+
+2026-10-27 连片花丛优化：连续花丛表面替代逐花网格，少量立体花朵补充近景。123 项花卉与预览状态测试通过，覆盖地形贴合、完整覆盖、曲线裁剪、同色花块复用和中／美／韩／联合国旗帜的原采样精度。最终实机记录 `20261027-085440-flower-canopies`：小旗帜、圆形分区、起伏地形、319×313 米普通花丛和同地块旗帜共 5 个场景均建造成功、0 步骤错误，最后完成存档重载。普通花丛为 361 块、4,969 朵立体细节、237,450 个近景三角面／99,696 个远景三角面，规划 4.17 秒；相比旧版同规模测试，近景三角面减少约 99.2%，花块减少约 94.6%。旗帜为 247 块、139,710 个近景三角面，规划 1.88 秒。分级纹理加隔离边缘后远景颜色串扰明显改善，仍可见轻微规则网格；近景花丛表面较逐株模型平整。以下记录为优化前版本的历史验证。
+
+2026-10-27 地形显示修复：规划直接复制游戏原始高度网格，避免二次采样把花埋进地形；移除横跨凹地、遮挡花头的整块实心底面，保留逐花叶片。117 项花卉与预览状态测试通过。`flower-patch-terrain` 在保留玩家模组和画质设置的实机环境中验证起伏地形上的旗帜、普通花丛：设计页自动预览和正式建造均可见，2 个场景均建造成功、0 步骤错误。记录：`20261027-025124-flower-patch-terrain`。旧 12 秒规划时限还会取消 319×313 米起伏地块的网格生成，现调整为 60 秒；修改选区或退出工具仍会取消旧任务。
+
+大面积回归 `20261027-031446-flower-patch-scale`：319×313 米普通花丛共 1,273,336 朵、6,723 个花块，规划 20.96 秒，规划及模型准备合计约 252 秒；在同一片区编辑成中国旗帜，旗面为 319×212.7 米，共 864,582 朵、4,565 个花块，规划 16 秒。两个场景均实际显示、建造成功、0 步骤错误。保留了玩家模组与画质设置；远景起伏地面仍有局部遮挡，截图记录了实际效果。测试队列现在尊重显式指定的长任务时限，避免模型仍在准备时被固定 6 分钟的估时看门狗中断。
+
+2026-10-27：115 项花卉与预览状态测试通过。`flower-patch-visibility` 实机回归覆盖大旗帜、坡地花丛的远近预览和正式建造；180×140 米选区内的中国旗帜由 275,478 朵花、1,457 个花块组成，规划从超过 12 秒超时降至约 1.13 秒。另测 255×253 米普通花丛：822,604 朵花、4,290 个花块，规划约 6.23 秒；3 个场景均建造成功、0 步骤错误，截图确认地图可见。模型准备仍有成本，大普通花丛首次准备约一分钟。实测记录：`send-patch-visibility-fix-1027-011011`、`send-large-carpet-fix-1027-012055`。
+
+87 项花卉核心测试、7 项界面测试通过。新增精确分区覆盖圆内外、嵌套、交叉、多条开曲线闭合、逐块填花、留空与重绘。分步填充实测 `send-flower-partitions-1026-152149`：圆内外、交叉曲线多分区、重绘边界 3 个场景均建造成功、0 步骤错误；通过真实界面与地图点击验证先选区后设置、选择不种花、应用只修改当前分区、多 prop 流线填充及重新选中修改。截图确认重叠度默认 0%、划线和填充界面分开。密度实测 `send-flower-density-1026-015045`：同一地块从 0% 重叠的 1185 个增加至 60% 的 7387 个，预览和建造均完整保留全部物件；铺满、重叠铺满及独立曲线填充 3 个场景均建造成功、0 步骤错误。曲线与填充独立选花、两种花丛的全部 8 色通过真实游戏建造与截图检查：`send-curve-flower-colors-1024-023454`，3 个场景均建造完成且 0 步骤错误。真实游戏验证了两种铺满、圆与心形、曲线范围裁剪、分区选花及填充、从空白逐点绘制、节点增删、拖动、缩放、粗细调整和撤销重做。成功组合运行：`send-flower-composition-1023-220204`；每个场景均建造完成且 0 步骤错误。游戏日志和原图保存在原工作区的 `.forensics/suite/runs/` 中。
+
+`tools/Package.ps1` 输出独立运行包和完整源码包到 `dist/`。开发时可共享已有 npm 依赖缓存；源码包和运行包都不包含对原 Placemaker 项目的运行时或项目引用。未发布至外部平台。
+
+原 Placemaker 的新建花卉入口已隐藏，其旧花卉代码保留以读取和编辑原有项目；旧项目不会自动转换为 FlowerPainter 的分组。

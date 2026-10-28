@@ -15,7 +15,6 @@
     <RollForward>Major</RollForward>
     <RootNamespace>FlowerPainter.MockHost</RootNamespace>
     <NoWarn>$(NoWarn);CS1591;CS0649</NoWarn>
-    <ManagedPath Condition="'$(ManagedPath)' == ''">C:\Program Files (x86)\Steam\steamapps\common\Cities Skylines II\Cities2_Data\Managed</ManagedPath>
     <!-- The repo-wide .gitignore ignores bin/ and obj/ already. -->
   </PropertyGroup>
   <ItemGroup>
