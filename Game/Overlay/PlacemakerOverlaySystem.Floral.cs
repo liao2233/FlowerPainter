@@ -5,11 +5,43 @@ using Unity.Mathematics;
 using UnityEngine;
 using System.Collections.Generic;
 using FlowerPainter.Core.Layers.Common;
+using FlowerPainter.Core.Layers.Types.Floral;
 
 namespace FlowerPainter.Game.Overlay
 {
     public sealed partial class FlowerPainterOverlaySystem
     {
+        private void DrawDraggedFlag(OverlayRenderSystem.Buffer buffer)
+        {
+            if (!_tool.FlagDragging) return;
+            var settings=_tool.CurrentRecipe.Root.Settings;
+            var template=FlagCatalog.Get(settings.S("flagTemplate","china"));
+            float width=math.clamp(settings.F("flagWidth",30),5,200),height=width/template.Ratio;
+            float2 center=float2.zero;
+            foreach(var point in _tool.Draw.Points)center+=point.xz;
+            center/=_tool.Draw.Count;
+            math.sincos(math.radians(settings.F("flagAngle",0)),out float sin,out float cos);
+            float3 World(float2 uv) {
+                var p=(uv-.5f)*new float2(width,height);
+                return _tool.FloralGround(center+new float2(p.x*cos-p.y*sin,p.x*sin+p.y*cos));
+            }
+            const int columns=48;
+            int rows=math.clamp((int)math.ceil(columns/template.Ratio),16,96);
+            for(int z=0;z<rows;z++) {
+                float v=(z+.5f)/rows;
+                for(int x=0;x<columns;) {
+                    int color=template.Color(new float2((x+.5f)/columns,v));
+                    int end=x+1;
+                    while(end<columns && template.Color(new float2((end+.5f)/columns,v))==color)end++;
+                    if(color>=0 && ColorUtility.TryParseHtmlString("#"+FlowerPatchMesh.Hex[color],out var tint)) {
+                        tint.a=.85f;
+                        buffer.DrawLine(tint,new Line3.Segment(World(new float2(x/(float)columns,v)),World(new float2(end/(float)columns,v))),height/rows);
+                    }
+                    x=end;
+                }
+            }
+        }
+
         private int _floralShapeVersion = -1;
         private LayerRegion _floralRegion;
         private int _floralDesignVersion = -1;

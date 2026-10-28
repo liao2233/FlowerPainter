@@ -87,9 +87,10 @@ namespace FlowerPainter.Game.Overlay
                 if (_tool.Stage == ToolStage.Manage) DrawManage(buffer, w);
                 else
                 {
-                    if (_tool.Stage == ToolStage.Design || _tool.Stage == ToolStage.Review || _tool.Stage == ToolStage.Building)
+                    if (!_tool.FlagDragging && (_tool.Stage == ToolStage.Design || _tool.Stage == ToolStage.Review || _tool.Stage == ToolStage.Building))
                         DrawPlan(buffer, w, detail);
                     DrawSelection(buffer, w);
+                    DrawDraggedFlag(buffer);
                     DrawFloralPatterns(buffer, w);
                     DrawMarkers(buffer, w);
                     DrawErrors(buffer, w);
@@ -230,6 +231,11 @@ namespace FlowerPainter.Game.Overlay
                 _fill.SetLayer("keptBuildings", kept, KeptBuilding, -93.7f, _keptSig);
             }
 
+            if (_tool.DirectFlagEditing) {
+                var points=_tool.Draw.Points;
+                for(int i=0;i<points.Count;i++)buffer.DrawLine(Outline,new Line3.Segment(points[i],points[(i+1)%points.Count]),w);
+                return;
+            }
             if (_tool.FloralEditing && shape != null) { Ring(buffer, shape.Ring, Outline, w); return; }
             switch (_tool.Mode)
             {

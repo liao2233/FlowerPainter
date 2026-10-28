@@ -50,5 +50,7 @@
   "FlowerPainter.UI.Flags.DirectTip": "旗帜按模板比例生成，可在下方调整宽度。",
   "FlowerPainter.Floral.flagAngle": "旗帜旋转",
   "FlowerPainter.Floral.flagAngle.Tooltip": "调整旗帜的朝向。",
-  "FlowerPainter.UI.Flags.Move": "移动旗帜"
+  "FlowerPainter.UI.Flags.Move": "移动旗帜",
+  "FlowerPainter.UI.Flags.DragTip": "按住旗帜拖动，松手确认；右键或 Esc 取消本次移动。",
+  "FlowerPainter.Undo.MoveFlag": "移动旗帜"
 }

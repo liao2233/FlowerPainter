@@ -30,5 +30,7 @@
   "FlowerPainter.UI.Flags.DirectTip": "The template keeps its proportions. Set the flag width below.",
   "FlowerPainter.Floral.flagAngle": "Flag rotation",
   "FlowerPainter.Floral.flagAngle.Tooltip": "Change the direction the flag faces.",
-  "FlowerPainter.UI.Flags.Move": "Move flag"
+  "FlowerPainter.UI.Flags.Move": "Move flag",
+  "FlowerPainter.UI.Flags.DragTip": "Hold and drag the flag to move it. Release to confirm; right-click or Esc cancels.",
+  "FlowerPainter.Undo.MoveFlag": "Move flag"
 }

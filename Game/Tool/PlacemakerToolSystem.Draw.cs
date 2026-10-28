@@ -290,6 +290,7 @@ namespace FlowerPainter.Game.Tool
                 case Gesture.DragEdge:
                 case Gesture.Paint:
                 case Gesture.Erase:
+                case Gesture.FlagMove:
                     _draw.CancelEdgeDrag();
                     // The committed snapshot is the state before the gesture.
                     var s = _history.Current;

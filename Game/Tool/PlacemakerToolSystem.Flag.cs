@@ -7,6 +7,57 @@ namespace FlowerPainter.Game.Tool
     public sealed partial class FlowerPainterToolSystem
     {
         private bool _placingFlag;
+        private float2 _flagGrab, _flagStartCenter, _flagLastCenter;
+        private bool _flagMoved;
+
+        public bool DirectFlagEditing => _stage == ToolStage.Design && _shape != null && _recipe?.Root?.Layer == "floral"
+            && _recipe.Root.Settings.S("shape", "") == "flag" && _recipe.Root.Settings.B("flagDirect", false);
+        public bool FlagDragging => _gesture == Gesture.FlagMove;
+
+        private float2 DirectFlagCenter()
+        {
+            float2 center=float2.zero;
+            foreach(var point in _draw.Points) center+=point.xz;
+            return center/_draw.Points.Count;
+        }
+
+        private void UpdateFlagDrag()
+        {
+            _cursorValid=_in.HasHit;
+            if (_in.HasHit) _cursor=_in.Hit;
+            if (FlagDragging) {
+                if (_in.RightPressed) { CancelGesture(); return; }
+                if (_in.HasHit && _in.OverWorld) {
+                    var center=_flagStartCenter+_in.Hit.xz-_flagGrab;
+                    if (math.distancesq(center,_flagLastCenter)>.0001f) {
+                        _flagLastCenter=center;
+                        _flagMoved=true;
+                        SetDirectFlagRing(center);
+                        ShapeChanged(throttled:true);
+                    }
+                }
+                if (_in.LeftReleased) {
+                    _gesture=Gesture.None;
+                    if (_flagMoved) { ShapeChanged(); Commit("FlowerPainter.Undo.MoveFlag"); }
+                    Touch();
+                }
+                return;
+            }
+            if (!_in.LeftPressed || !_in.HasHit || !_in.OverWorld || _draw.Count!=4) return;
+            var settings=_recipe.Root.Settings;
+            var origin=DirectFlagCenter();
+            var delta=_in.Hit.xz-origin;
+            math.sincos(math.radians(settings.F("flagAngle",0)),out float sin,out float cos);
+            var local=new float2(delta.x*cos+delta.y*sin,-delta.x*sin+delta.y*cos);
+            var template=FlagCatalog.Get(settings.S("flagTemplate","china"));
+            float width=math.clamp(settings.F("flagWidth",30),5,200);
+            if (template.Color(local/new float2(width,width/template.Ratio)+.5f)<0) return;
+            _flagGrab=_in.Hit.xz;
+            _flagStartCenter=_flagLastCenter=origin;
+            _flagMoved=false;
+            _gesture=Gesture.FlagMove;
+            Touch();
+        }
 
         public void BeginFlagPlacement()
         {

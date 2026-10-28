@@ -227,6 +227,23 @@ namespace FlowerPainter.Game.Suite
                     yield return Frames(10);
                     yield return UiAct(st,rec,"flag mode","flower-mode-flag",null,null,()=>((string)_tool.SuiteValue("0","shape"))=="flag",null,mustChange:false);
                     yield return Frames(10);
+                    if ((bool?)step["move"]??false) {
+                        if (!_tool.DirectFlagEditing) {rec["error"]="no placed flag to drag";yield break;}
+                        var start=float2.zero;
+                        foreach(var point in _tool.Shape.Ring)start+=point.xz;
+                        start/=_tool.Shape.Ring.Length;
+                        var target=Pt(step["at"],b,abs);
+                        // Grab away from the centre to catch jumps that lose the grab offset.
+                        var grab=new float2(1,1);
+                        FlowerPainterToolSystem.SuiteDrag(new[]{_tool.FloralGround(start+grab),_tool.FloralGround(target+grab)},12);
+                        yield return Feed(rec);
+                        var end=float2.zero;
+                        foreach(var point in _tool.Shape.Ring)end+=point.xz;
+                        end/=_tool.Shape.Ring.Length;
+                        if(math.distance(end,target)>.05f)rec["error"]="drag did not preserve the grab offset";
+                        rec["dragFrames"]=14;
+                        break;
+                    }
                     yield return UiAct(st,rec,"place flag","place-flag",null,null,()=>_tool.StateInput().PlacingFlag,null);
                     if (!_tool.StateInput().PlacingFlag) {rec["error"]="flag placement did not start";st.Result["status"]="no-outline";yield break;}
                     RaycastHit? hit=null;

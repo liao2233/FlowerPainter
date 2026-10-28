@@ -27,7 +27,7 @@ namespace FlowerPainter.Game.Tool
 
         private FrameInput _in;
 
-        private enum Gesture { None, DragPoint, InsertDrag, DragEdge, Paint, Erase, Floral }
+        private enum Gesture { None, DragPoint, InsertDrag, DragEdge, Paint, Erase, Floral, FlagMove }
         private Gesture _gesture;
 
         private ProxyAction _primaryAction, _undoAction, _redoAction, _redoAltAction;

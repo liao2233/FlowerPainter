@@ -10,6 +10,10 @@ test("flower patches and flags expose their own planting controls",async({page})
     await page.getByTestId("flower-mode-flag").click();
     await expect(page.getByTestId("flag-templates")).toBeVisible();
     await expect(page.getByTestId("place-flag")).toBeVisible();
+    await page.evaluate(()=>{const b=(window as any).pm.backend;b.root.values.flagDirect=true;b.publishAll();});
+    await expect(page.getByTestId("flag-drag-tip")).toBeVisible();
+    await expect(page.getByTestId("place-flag")).toHaveCount(0);
+    await expect(page.getByTestId("slider-flagAngle-input")).toBeVisible();
     await page.getByTestId("slider-flowerDensity-input").fill("3");
     await page.getByTestId("slider-flowerDensity-input").press("Enter");
     await expect.poll(()=>page.evaluate(()=>(window as any).pm.backend.root.values.flowerDensity)).toBe(3);
