@@ -2,7 +2,7 @@
 
 Independent Cities: Skylines II flower planting mod. No Placemaker installation is required.
 
-**Preview-release limitation:** generated flower meshes remain in the local game asset directory. Save-only transfer to another PC is not supported. Do not use this preview for publicly shared saves or maps that require portable flower assets.
+**Preview:** newly saved cities carry their generated flower meshes. Open and resave older cities on the original machine with version 0.1.3 or later before transferring them. Cache-removal tests passed; a separate physical computer has not yet been tested.
 
 Player instructions and the publication description: [docs/publish/MOD-PAGE.md](docs/publish/MOD-PAGE.md). Changes: [CHANGELOG.md](CHANGELOG.md).
 

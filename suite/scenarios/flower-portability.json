@@ -1,0 +1,262 @@
+{
+  "set": "flower-portability",
+  "scenarios": [
+    {
+      "id": "direct-flag",
+      "land": {
+        "size": [
+          90,
+          90
+        ],
+        "roads": "none"
+      },
+      "steps": [
+        {
+          "do": "area",
+          "tool": "flag"
+        },
+        {
+          "do": "value",
+          "id": "flagTemplate",
+          "value": "japan"
+        },
+        {
+          "do": "value",
+          "id": "flagWidth",
+          "value": 67
+        },
+        {
+          "do": "area",
+          "tool": "flag",
+          "move": true,
+          "at": [
+            12,
+            8
+          ]
+        },
+        {
+          "do": "value",
+          "id": "flagAngle",
+          "value": 31
+        },
+        {
+          "do": "value",
+          "id": "flowerViewDistance",
+          "value": 3
+        },
+        {
+          "do": "preview",
+          "shot": "direct-preview",
+          "shotMode": "render",
+          "camera": {
+            "target": "area",
+            "view": "top",
+            "distance": 120
+          }
+        },
+        {
+          "do": "build"
+        },
+        {
+          "do": "camera",
+          "target": "build",
+          "view": "top",
+          "distance": 120,
+          "shot": "direct-built",
+          "shotMode": "render"
+        },
+        {
+          "do": "camera",
+          "target": "build",
+          "view": "top",
+          "distance": 300,
+          "shot": "direct-far",
+          "shotMode": "render"
+        },
+        {
+          "do": "saveReload",
+          "evictNewPatches": true
+        },
+        {
+          "do": "camera",
+          "target": "build",
+          "view": "top",
+          "distance": 120,
+          "shot": "direct-reloaded",
+          "shotMode": "render"
+        }
+      ]
+    },
+    {
+      "id": "flowers-circle-heart-regions",
+      "land": {
+        "size": [
+          140,
+          120
+        ],
+        "roads": "none"
+      },
+      "steps": [
+        {
+          "do": "area",
+          "tool": "points"
+        },
+        {
+          "do": "type",
+          "layer": "floral",
+          "preset": "pattern-collage"
+        },
+        {
+          "do": "motif",
+          "action": "add",
+          "kind": "ring"
+        },
+        {
+          "do": "motif",
+          "action": "scale",
+          "index": 0,
+          "factor": 0.8,
+          "verifyUndo": true
+        },
+        {
+          "do": "motif",
+          "action": "width",
+          "index": 0,
+          "factor": 1.2,
+          "verifyUndo": true
+        },
+        {
+          "do": "motif",
+          "action": "add",
+          "kind": "heart"
+        },
+        {
+          "do": "motif",
+          "action": "move",
+          "index": 1,
+          "by": [
+            25,
+            -10
+          ],
+          "verifyUndo": true
+        },
+        {
+          "do": "motif",
+          "action": "scale",
+          "index": 1,
+          "factor": 1.5,
+          "verifyUndo": true
+        },
+        {
+          "do": "flowerRegion",
+          "style": "single",
+          "at": [
+            0,
+            0
+          ]
+        },
+        {
+          "do": "flowerRegion",
+          "style": "islands",
+          "at": [
+            -25,
+            10
+          ]
+        },
+        {
+          "do": "value",
+          "id": "flowerDensity",
+          "value": 2
+        },
+        {
+          "do": "build"
+        },
+        {
+          "do": "saveReload",
+          "evictNewPatches": true
+        },
+        {
+          "do": "camera",
+          "target": "build",
+          "view": "top",
+          "shot": "after-reload",
+          "shotMode": "render"
+        }
+      ]
+    },
+    {
+      "id": "flowers-free-curve-clipped",
+      "land": {
+        "size": [
+          100,
+          100
+        ],
+        "roads": "none"
+      },
+      "steps": [
+        {
+          "do": "area",
+          "tool": "points"
+        },
+        {
+          "do": "type",
+          "layer": "floral",
+          "preset": "pattern-collage"
+        },
+        {
+          "do": "motif",
+          "action": "add",
+          "kind": "curve"
+        },
+        {
+          "do": "motif",
+          "action": "scale",
+          "index": 0,
+          "factor": 3.5,
+          "verifyUndo": true
+        },
+        {
+          "do": "motif",
+          "action": "node",
+          "index": 0,
+          "point": 1,
+          "by": [
+            -10,
+            18
+          ],
+          "verifyUndo": true
+        },
+        {
+          "do": "motif",
+          "action": "width",
+          "index": 0,
+          "factor": 1.4,
+          "verifyUndo": true
+        },
+        {
+          "do": "motif",
+          "action": "fill"
+        },
+        {
+          "do": "value",
+          "id": "flowerDensity",
+          "value": 2
+        },
+        {
+          "do": "build"
+        },
+        {
+          "do": "saveReload",
+          "evictNewPatches": true
+        },
+        {
+          "do": "camera",
+          "target": "build",
+          "view": "top",
+          "shot": "after-reload",
+          "shotMode": "render"
+        }
+      ]
+    }
+  ]
+}

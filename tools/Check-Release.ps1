@@ -36,4 +36,4 @@ if($ForUpload) {
     if(-not $NativeRegressionConfirmed){throw 'Upload blocked: final clean-profile, reload, uninstall and Placemaker coexistence checks have not been confirmed'}
 }
 Write-Host "Release metadata OK: $version, $($screens.Count) native game screenshots, 1024 x 1024 thumbnail."
-if(-not $ForUpload){Write-Host 'Local packaging is ready; public source hosting and final native regression remain upload prerequisites.'}
+if(-not $ForUpload){Write-Host 'Local packaging metadata is ready; see RELEASE-STATUS.md for remaining upload checks.'}

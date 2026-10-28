@@ -224,7 +224,8 @@ namespace FlowerPainter.Game.Suite
                 case "flag":
                 {
                     if (_tool.Stage!=ToolStage.Design) yield return UiGoToStage(rec,ToolStage.Design);
-                    yield return Frames(10);
+                    // The stage state can change before Cohtml has rendered the design panel.
+                    yield return Seconds(1f);
                     yield return UiAct(st,rec,"flag mode","flower-mode-flag",null,null,()=>((string)_tool.SuiteValue("0","shape"))=="flag",null,mustChange:false);
                     yield return Frames(10);
                     if ((bool?)step["move"]??false) {

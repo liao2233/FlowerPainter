@@ -19,6 +19,9 @@ namespace FlowerPainter.Game.Build
             updateSystem.UpdateBefore<SurfaceCloneSystem, global::Game.Prefabs.PrefabInitializeSystem>(SystemUpdatePhase.PrefabUpdate);
             updateSystem.UpdateBefore<FlowerColorPrefabSystem, global::Game.Prefabs.PrefabInitializeSystem>(SystemUpdatePhase.PrefabUpdate);
             updateSystem.UpdateBefore<FlowerPatchPrefabSystem, global::Game.Prefabs.PrefabInitializeSystem>(SystemUpdatePhase.PrefabUpdate);
+            updateSystem.UpdateBefore<FlowerPatchArchiveSystem, global::Game.Serialization.BeginPrefabSerializationSystem>(SystemUpdatePhase.Serialize);
+            updateSystem.UpdateBefore<FlowerPatchArchiveSystem, global::Game.Serialization.ResolvePrefabsSystem>(SystemUpdatePhase.Deserialize);
+            updateSystem.UpdateBefore<GroupLoadClearSystem, global::Game.Serialization.ClearSystem>(SystemUpdatePhase.Deserialize);
             updateSystem.UpdateBefore<DecalOpacitySystem, global::Game.Prefabs.PrefabInitializeSystem>(SystemUpdatePhase.PrefabUpdate);
             updateSystem.UpdateBefore<ParkingCompanionPrefabSystem, global::Game.Prefabs.PrefabInitializeSystem>(SystemUpdatePhase.PrefabUpdate);
             updateSystem.UpdateBefore<ParkCompanionPrefabSystem, global::Game.Prefabs.PrefabInitializeSystem>(SystemUpdatePhase.PrefabUpdate);

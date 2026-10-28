@@ -349,7 +349,7 @@ namespace FlowerPainter.Game.Assets
 
         /// <summary>True when any loaded prefab has this name (missing-asset detection).</summary>
         public bool PrefabExists(string name) =>
-            !string.IsNullOrEmpty(name) && (World.GetOrCreateSystemManaged<FlowerPatchPrefabSystem>().TryResolve(name, out _)
+            !string.IsNullOrEmpty(name) && (World.GetOrCreateSystemManaged<FlowerPatchPrefabSystem>().HasRegistered(name)
                 || _allPrefabsByName.TryGetValue(name, out var e) && Usable(e));
 
         public bool TryGetItem(string name, out CatalogItem item) => _byName.TryGetValue(name ?? "", out item);

@@ -17,14 +17,28 @@ namespace FlowerPainter.Game.Suite
 {
     public sealed partial class SuiteRunner
     {
-        private IEnumerator StepSaveReload(ScenarioState st,JObject rec)
+        private IEnumerator StepLoadSave(ScenarioState st,JObject step,JObject rec)
+        {
+            var wanted=(string)step["name"];
+            var metadata=AssetDatabase.global.GetAssets<global::Game.Assets.SaveGameMetadata>()
+                .FirstOrDefault(m=>string.Equals(m.target?.displayName??m.name,wanted,StringComparison.Ordinal));
+            if(metadata==null){rec["error"]="Save not found: "+wanted;yield break;}
+            var load=GameManager.instance.Load(GameMode.Game,Purpose.LoadGame,metadata);
+            yield return Until(()=>load.IsCompleted,180,"load existing save");
+            if(!load.IsCompleted||load.IsFaulted||!load.Result){rec["error"]="Loading existing save failed";yield break;}
+            yield return Frames(30);
+            st.Group=Services.Groups.AllGroups.FirstOrDefault();
+            rec["loadedGroup"]=st.Group;
+            if(st.Group==0)rec["error"]="Existing save contains no FlowerPainter group";
+        }
+        private IEnumerator StepSaveReload(ScenarioState st,JObject step,JObject rec)
         {
             string[] PatchNames() {
                 var members=new List<Entity>();Services.Groups.GetMembers(st.Group,members);
                 var prefabs=_world.GetExistingSystemManaged<PrefabSystem>();var em=_world.EntityManager;
                 return members.Where(e=>em.HasComponent<PrefabRef>(e))
                     .Select(e=>prefabs.TryGetPrefab<PrefabBase>(em.GetComponentData<PrefabRef>(e).m_Prefab,out var p)?p.name:"")
-                    .Where(n=>n.StartsWith(FlowerPatchMesh.Prefix,StringComparison.Ordinal)).OrderBy(n=>n).ToArray();
+                    .Where(n=>n.StartsWith(FlowerPatchMesh.Prefix,StringComparison.Ordinal)||n.StartsWith(FlowerPatchMesh.FlagPrefix,StringComparison.Ordinal)).OrderBy(n=>n).ToArray();
             }
             var before=PatchNames();rec["patchesBefore"]=before.Length;
             if(before.Length==0){rec["error"]="No flower patches in the built group";yield break;}
@@ -37,6 +51,10 @@ namespace FlowerPainter.Game.Suite
             yield return Until(()=>save.IsCompleted,120,"save flower patches");
             if(!save.IsCompleted||save.IsFaulted||!save.Result){rec["error"]="Saving flower patches failed";yield break;}
             rec["saveName"]=name;
+            if ((bool?)step["evictNewPatches"] == true) {
+                try { rec["evictedPatches"]=_world.GetExistingSystemManaged<Assets.FlowerPatchPrefabSystem>().EvictNewSuitePatches(before); }
+                catch(Exception e) { rec["error"]="Suite cache isolation failed: "+e.Message; yield break; }
+            }
             var metadata=GameManager.instance.settings.userState.lastSaveGameMetadata;
             var load=GameManager.instance.Load(GameMode.Game,Purpose.LoadGame,metadata);
             yield return Until(()=>load.IsCompleted,180,"reload flower patches");

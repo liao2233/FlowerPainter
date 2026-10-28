@@ -179,7 +179,10 @@
       ]
     },
     "saveReload": {
-      "keys": []
+      "keys": ["evictNewPatches"]
+    },
+    "loadSave": {
+      "keys": ["name"]
     },
     "preset": {
       "keys": [

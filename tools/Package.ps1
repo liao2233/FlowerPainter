@@ -42,7 +42,7 @@ try {
     $ui=Join-Path $root 'UI/build'
     Get-ChildItem $ui -File | Where-Object {$_.Name -match '^FlowerPainter\.(mjs|css)(\.LICENSE\.txt)?$'} | Copy-Item -Destination $stage
     Copy-Item -LiteralPath (Join-Path $ui 'images') -Destination $stage -Recurse
-    [ordered]@{version=[string]$version;commit=$commit;dllSha256=(Get-FileHash $dll -Algorithm SHA256).Hash;validation=$(if($SkipValidation){'Reused previous validation; build and metadata checked'}else{'Unit and FlowerPainter browser tests passed'});savePortability='Local generated assets required; save-only transfer unsupported'} | ConvertTo-Json | Set-Content (Join-Path $stage 'release.json') -Encoding utf8
+    [ordered]@{version=[string]$version;commit=$commit;dllSha256=(Get-FileHash $dll -Algorithm SHA256).Hash;validation=$(if($SkipValidation){'Reused previous validation; build and metadata checked'}else{'Unit and FlowerPainter browser tests passed'});savePortability='New saves include generated meshes; old saves must be resaved on their original machine. 512 MB limit; cross-PC hardware test pending.'} | ConvertTo-Json | Set-Content (Join-Path $stage 'release.json') -Encoding utf8
     New-Item -ItemType Directory -Force -Path $output | Out-Null
     Compress-Archive -LiteralPath $stage -DestinationPath (Join-Path $output 'FlowerPainter.zip') -Force
     $sourceZip=Join-Path $output 'FlowerPainter-source.zip'

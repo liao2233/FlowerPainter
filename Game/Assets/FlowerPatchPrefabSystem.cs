@@ -42,6 +42,7 @@ namespace FlowerPainter.Game.Assets
         private readonly Dictionary<string, SavedPatch> _saved = new Dictionary<string, SavedPatch>();
         private readonly Queue<SavedPatch> _restore = new Queue<SavedPatch>();
         private readonly HashSet<string> _failed = new HashSet<string>();
+        private readonly HashSet<string> _sessionNewGeometry = new HashSet<string>(StringComparer.Ordinal);
         private bool _dirty;
         private const string AssetFolder = "ImportedData/FlowerPainter/Patches";
         private static string _storageRoot;
@@ -78,6 +79,7 @@ namespace FlowerPainter.Game.Assets
             entity=Entity.Null;
             return name!=null && _entities.TryGetValue(name,out entity) && UnityEngine.Time.frameCount-_createdAt[name]>=3 && EntityManager.HasComponent<ObjectGeometryData>(entity);
         }
+        internal bool HasRegistered(string name) => name!=null && _entities.TryGetValue(name,out var entity) && EntityManager.Exists(entity);
         public bool Prepare(ComposedPlan plan,out double progress) {
             bool ready=true;int total=0,complete=0;
             foreach(var layer in plan.Layers) foreach(var obj in layer.Objects) {
@@ -119,8 +121,41 @@ namespace FlowerPainter.Game.Assets
             }
         }
         private static Colossal.Hash128 Id(string name)=>Colossal.Hash128.CreateGuid(name);
-        private static void MakeGeometry(string name,FlowerPatchMesh data) {
+        internal FlowerPatchArchive.Entry ExportPatch(string name) {
+            if (!_saved.TryGetValue(name,out var saved)) throw new InvalidOperationException("Flower patch metadata missing: "+name);
+            var directory=Path.Combine(_storageRoot,AssetFolder);
+            return new FlowerPatchArchive.Entry { Name=name, Metadata=JsonConvert.SerializeObject(saved),
+                Geometry=File.ReadAllBytes(Path.Combine(directory,name+".Geometry")),
+                LodGeometry=File.ReadAllBytes(Path.Combine(directory,name+" LOD.Geometry")) };
+        }
+        internal bool RestorePatch(FlowerPatchArchive.Entry entry) {
+            if (_entities.ContainsKey(entry.Name)) return false;
+            var saved=JsonConvert.DeserializeObject<SavedPatch>(entry.Metadata);
+            if (saved == null || saved.Name != entry.Name) throw new InvalidDataException("Invalid flower patch metadata");
+            if (_source == null) {
+                if (!_prefabs.TryGetPrefab(new PrefabID(nameof(StaticObjectPrefab),"Flowerbed01"),out var source))
+                    throw new InvalidOperationException("Flowerbed prefab unavailable during save restoration");
+                _surface=MakeSurface();_source=(StaticObjectPrefab)source;
+            }
+            RestoreGeometry(entry.Name,entry.Geometry);
+            RestoreGeometry(entry.Name+" LOD",entry.LodGeometry);
+            Register(saved);_saved[entry.Name]=saved;_requested.Add(entry.Name);_dirty=true;
+            return true;
+        }
+        private static void RestoreGeometry(string name,byte[] bytes) {
+            if (AssetDatabase.global.GetAsset<GeometryAsset>(Id(name)) != null) return;
+            // CopyAssetTo in the game writes the file first and registers it afterwards.
+            var file=Path.Combine(_storageRoot,AssetFolder,name+".Geometry");
+            if (File.Exists(file)) {
+                if (!File.ReadAllBytes(file).SequenceEqual(bytes))
+                    throw new InvalidDataException("Flower patch geometry conflicts with an existing file: "+name);
+            } else File.WriteAllBytes(file,bytes);
+            AssetDatabase.user.AddAsset<GeometryAsset>(AssetDataPath.Create(AssetFolder,name,EscapeStrategy.None),Id(name));
+        }
+        private void MakeGeometry(string name,FlowerPatchMesh data) {
             if(AssetDatabase.global.GetAsset<GeometryAsset>(Id(name))!=null)return;
+            var testPath=Path.Combine(_storageRoot,AssetFolder,name+".Geometry");
+            bool newFile=!File.Exists(testPath)&&!File.Exists(testPath+".cid");
             var mesh=new Mesh {name=name,indexFormat=UnityEngine.Rendering.IndexFormat.UInt32};
             mesh.vertices=data.Vertices.Select(v=>new Vector3(v.x,v.y,v.z)).ToArray();
             mesh.uv=data.UV.Select(v=>new Vector2(v.x,v.y)).ToArray();mesh.triangles=data.Indices;
@@ -128,9 +163,30 @@ namespace FlowerPainter.Game.Assets
             mesh.RecalculateNormals();mesh.RecalculateBounds();
             var asset=AssetDatabase.user.AddAsset<GeometryAsset>(AssetDataPath.Create(AssetFolder,name,EscapeStrategy.None),Id(name));
             asset.SetData(new[]{mesh});asset.Save();
+            if(newFile)_sessionNewGeometry.Add(name);
             // The renderer's asynchronous loader expects an unloaded header. SetData populated
             // the import buffers without marking that loader state; release them after saving.
             asset.Unload(true);
+        }
+        // Suite-only fault injection: never remove geometry that existed before this process.
+        internal int EvictNewSuitePatches(IEnumerable<string> patchNames) {
+            var names=patchNames.Distinct(StringComparer.Ordinal).Where(n=>_sessionNewGeometry.Contains(n)&&_sessionNewGeometry.Contains(n+" LOD")).ToArray();
+            if(names.Length==0)throw new InvalidOperationException("No newly created suite geometry is available for the isolation test");
+            foreach(var name in names) {
+                foreach(var n in new[]{name,name+" LOD"}) {
+                    var asset=AssetDatabase.global.GetAsset<GeometryAsset>(Id(n));
+                    if(asset==null||asset.database!=AssetDatabase.user)throw new InvalidOperationException("Suite geometry is not a newly created user asset: "+n);
+                }
+            }
+            foreach(var name in names) {
+                foreach(var id in new[]{new PrefabID(nameof(StaticObjectPrefab),name),new PrefabID(nameof(RenderPrefab),name+" mesh"),new PrefabID(nameof(RenderPrefab),name+" LOD mesh")})
+                    if(_prefabs.TryGetPrefab(id,out var prefab)&&!_prefabs.RemovePrefab(prefab))throw new InvalidOperationException("Suite could not evict prefab: "+id);
+                foreach(var n in new[]{name,name+" LOD"}) {
+                    AssetDatabase.user.DeleteAsset(Id(n));_sessionNewGeometry.Remove(n);
+                }
+                _entities.Remove(name);_createdAt.Remove(name);_saved.Remove(name);_requested.Remove(name);
+            }
+            return names.Length;
         }
         private SurfaceAsset ResolveSurface(SavedPatch saved) {
             if(!string.IsNullOrEmpty(saved.FlagId) && saved.MaterialVersion>=FlowerPatchMesh.FlagMaterialVersion)
