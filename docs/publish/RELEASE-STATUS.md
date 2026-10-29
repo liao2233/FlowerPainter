@@ -27,6 +27,14 @@ The local release package is a preview candidate, not a claim that all native re
 
 ## Completed locally
 
+### Archive failure recovery (local 0.1.4 update)
+
+- Archive capture checks each model's size before reading its files, continues after missing-file/metadata failures, and keeps fitting models within the 512 MiB budget. Encoding no longer collects every model plus a final full-array copy. Successful serialization releases the temporary buffer.
+- Restore failures retain the affected original model data for subsequent saves. Unsupported or malformed archive payloads are preserved byte-for-byte; new models cannot be merged into an unreadable payload. Failed game-private-field resolution retains all archived models. Recovery buffers are intentionally retained while needed, and are cleared when another city is loaded.
+- The flower panel shows persistent English/Chinese warnings. EXIF orientation ignores properties shorter than two bytes. Invalid outer save lengths, truncation in the game's reader and process-wide out-of-memory/disk-full failures are not claimed recoverable.
+- 13 archive unit tests pass, covering missing exports, restoration write failures, unsupported/truncated payloads, changed reflection fields, bounded partial capture, recovery precedence and city isolation.
+- Native run `20261029-113642-flower-archive-recovery` (DLL `97367228`) completed all 10 steps with zero step errors. Evicted 12 new models; all 13 instances returned. A second save/reload also retained all 13 instances, and both saves released their temporary buffers. Each archive contained 701,038 uncompressed bytes; this is not the compressed save-file increase or a large-city benchmark.
+
 - One version authority (`Directory.Build.props`) checked against UI, lock file and publishing metadata.
 - Player page and changelog; the publish XML uses exactly the player page text.
 - 1024 x 1024 thumbnail and eight actual native game screenshots, with source-run and original-file hashes. No mock image is submitted as a game screenshot.

@@ -45,7 +45,8 @@ namespace FlowerPainter.Game.Assets
             using var source=Image.FromFile(path,true);
             // Honour camera orientation before deriving aspect ratio. GIF/TIFF use their first frame.
             if(Array.IndexOf(source.PropertyIdList,0x112)>=0) {
-                int orientation=BitConverter.ToUInt16(source.GetPropertyItem(0x112).Value,0);
+                var orientationBytes=source.GetPropertyItem(0x112)?.Value;
+                int orientation=orientationBytes!=null && orientationBytes.Length>=2 ? BitConverter.ToUInt16(orientationBytes,0) : 1;
                 RotateFlipType[] turns={RotateFlipType.RotateNoneFlipNone,RotateFlipType.RotateNoneFlipNone,
                     RotateFlipType.RotateNoneFlipX,RotateFlipType.Rotate180FlipNone,RotateFlipType.Rotate180FlipX,
                     RotateFlipType.Rotate90FlipX,RotateFlipType.Rotate90FlipNone,RotateFlipType.Rotate270FlipX,RotateFlipType.Rotate270FlipNone};

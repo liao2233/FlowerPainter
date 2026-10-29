@@ -1,0 +1,19 @@
+{
+  "set": "flower-archive-recovery",
+  "scenarios": [{
+    "id": "archive-cache-reload",
+    "land": { "size": [90,90], "roads": "none" },
+    "steps": [
+      {"do":"area","tool":"flag"},
+      {"do":"value","id":"flagTemplate","value":"japan"},
+      {"do":"value","id":"flagWidth","value":55},
+      {"do":"value","id":"patchHeight","value":0.43},
+      {"do":"value","id":"flowerViewDistance","value":2.7},
+      {"do":"preview"},
+      {"do":"build"},
+      {"do":"saveReload","evictNewPatches":true},
+      {"do":"saveReload"},
+      {"do":"camera","target":"build","view":"top","distance":110,"shot":"archive-reloaded","shotMode":"render"}
+    ]
+  }]
+}

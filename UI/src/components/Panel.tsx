@@ -947,6 +947,7 @@ export const FlowerPainterPanel = () => {
                                             </ErrorBoundary>
                                         )}
                                         <VersionNotice state={state} />
+                                        {state.archiveWarning ? <div role="alert" data-testid="archive-warning" className={s.blockedNotice}>{t(state.archiveWarning,"Some flower models could not be saved or restored. Keep the original save backup and check the log before sharing this save.")}</div> : null}
                                         <MarkerBanner state={state} root={design.root} />
                                         <div className={s.bodyWrap} data-testid="panel-body">
                                             <div className={s.body} key={state.stage}>

@@ -1,0 +1,4 @@
+{
+  "FlowerPainter.Archive.Partial": "Some flower models could not be saved or restored. Available recovery data is retained. Keep the original save backup; this save may not restore all flowers on another computer. See the FlowerPainter log for details.",
+  "FlowerPainter.Archive.Opaque": "This version cannot read the flower model archive. Its original data will be preserved when saving, but new flower models cannot be added to it. Keep the original save and use the mod version that created it."
+}

@@ -157,6 +157,7 @@ namespace FlowerPainter.Game.Tool
                 PlacingFlag = _placingFlag,
                 ImportingImage = _imageImport != null,
                 ImageImportError = _imageImportError,
+                ArchiveWarning = World.GetExistingSystemManaged<Assets.FlowerPatchArchiveSystem>()?.WarningKey,
                 BrushSquare = _brushSquare,
                 BrushSize = _brushSize,
                 BrushAngle = _brushAngle,

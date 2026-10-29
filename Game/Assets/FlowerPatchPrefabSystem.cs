@@ -127,10 +127,14 @@ namespace FlowerPainter.Game.Assets
             }
         }
         private static Colossal.Hash128 Id(string name)=>Colossal.Hash128.CreateGuid(name);
-        internal FlowerPatchArchive.Entry ExportPatch(string name) {
+        internal FlowerPatchArchive.Entry ExportPatch(string name,long budget=long.MaxValue) {
             if (!_saved.TryGetValue(name,out var saved)) throw new InvalidOperationException("Flower patch metadata missing: "+name);
             var directory=Path.Combine(_storageRoot,AssetFolder);
-            return new FlowerPatchArchive.Entry { Name=name, Metadata=JsonConvert.SerializeObject(saved),
+            var metadata=JsonConvert.SerializeObject(saved);
+            if(FlowerPatchArchive.EntrySize(name,metadata,new FileInfo(Path.Combine(directory,name+".Geometry")).Length,
+                new FileInfo(Path.Combine(directory,name+" LOD.Geometry")).Length)>budget)
+                throw new InvalidDataException("Archive size limit reached");
+            return new FlowerPatchArchive.Entry { Name=name, Metadata=metadata,
                 Geometry=File.ReadAllBytes(Path.Combine(directory,name+".Geometry")),
                 LodGeometry=File.ReadAllBytes(Path.Combine(directory,name+" LOD.Geometry")) };
         }

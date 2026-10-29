@@ -1,6 +1,13 @@
 import {test,expect,Page} from "@playwright/test";
 import {open,drawPolygon,FIELD,panelShot,waitPlanned} from "./helpers";
 
+test("archive warning stays visible on the flower home page",async({page})=>{
+    await flowers(page);
+    await page.evaluate(()=>{const w=window as any;w.pm.trigger("FlowerPainter","choosePlanting","");const state=w.pm.backend.state();state.archiveWarning="FlowerPainter.Archive.Partial";w.pmPublish("FlowerPainter","state",JSON.stringify(state));});
+    await expect(page.getByTestId("archive-warning")).toBeVisible();
+    await expect(page.getByTestId("archive-warning")).toContainText("original save");
+});
+
 test("flower patches and flags expose their own planting controls",async({page})=>{
     await flowers(page,1280,720);
     await page.getByTestId("planting-patch").click();

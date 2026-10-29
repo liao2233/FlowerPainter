@@ -112,6 +112,7 @@ export interface ToolState {
     placingFlag?: boolean;
   importingImage?: boolean;
   imageImportError?: string;
+  archiveWarning?: string;
   /** rules: sent by s11+ C# (absent = older DLL). */
   brush: { shape: BrushShape; size: number; angle: number; rules?: BrushRules };
   area: AreaInfo;

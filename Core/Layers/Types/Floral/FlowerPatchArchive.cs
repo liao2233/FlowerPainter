@@ -18,6 +18,22 @@ namespace FlowerPainter.Core.Layers.Types.Floral
 
         private const int Version = 1;
 
+        internal static long EntrySize(string name, string metadata, long geometry, long lod)
+        {
+            long TextSize(string value) {
+                int n=Encoding.UTF8.GetByteCount(value), prefix=1;
+                for(int v=n;v>=128;v>>=7)prefix++;
+                return (long)n+prefix;
+            }
+            return TextSize(name)+TextSize(metadata)+8+geometry+lod;
+        }
+
+        internal static void WriteEntry(BinaryWriter writer, Entry entry)
+        {
+            writer.Write(entry.Name);writer.Write(entry.Metadata);
+            WriteBytes(writer,entry.Geometry);WriteBytes(writer,entry.LodGeometry);
+        }
+
         public static byte[] Encode(IEnumerable<Entry> entries)
         {
             using var stream = new MemoryStream();
@@ -27,10 +43,7 @@ namespace FlowerPainter.Core.Layers.Types.Floral
             writer.Write(list.Count);
             foreach (var entry in list)
             {
-                writer.Write(entry.Name);
-                writer.Write(entry.Metadata);
-                WriteBytes(writer, entry.Geometry);
-                WriteBytes(writer, entry.LodGeometry);
+                WriteEntry(writer,entry);
             }
             writer.Flush();
             return stream.ToArray();

@@ -51,6 +51,10 @@ namespace FlowerPainter.Game.Suite
             yield return Until(()=>save.IsCompleted,120,"save flower patches");
             if(!save.IsCompleted||save.IsFaulted||!save.Result){rec["error"]="Saving flower patches failed";yield break;}
             rec["saveName"]=name;
+            var archive=_world.GetExistingSystemManaged<Assets.FlowerPatchArchiveSystem>();
+            rec["archiveBytes"]=archive.LastCaptureBytes;
+            rec["archiveBufferReleased"]=archive.PendingSaveBytes==0;
+            if(archive.PendingSaveBytes!=0){rec["error"]="Serialized flower archive buffer was not released";yield break;}
             if ((bool?)step["evictNewPatches"] == true) {
                 try { rec["evictedPatches"]=_world.GetExistingSystemManaged<Assets.FlowerPatchPrefabSystem>().EvictNewSuitePatches(before); }
                 catch(Exception e) { rec["error"]="Suite cache isolation failed: "+e.Message; yield break; }
