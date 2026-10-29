@@ -1,4 +1,5 @@
 {
+  "FlowerPainter.Archive.Missing": "此存档引用了花丛模型，但未携带模型档案。请保留原始备份；若本机花卉仍完整，可启用 FlowerPainter 另存一份后再分享。已缺失的模型需要原存档或原电脑缓存才能恢复。",
   "FlowerPainter.Archive.Partial": "部分花丛模型未能保存或恢复，已有的恢复数据会保留。请保留原存档备份；此存档在另一台电脑上可能无法恢复全部花卉。详情见 FlowerPainter 日志。",
   "FlowerPainter.Archive.Opaque": "当前版本无法读取花丛模型档案。再次保存会原样保留档案，但无法向其中加入新花丛模型。请保留原存档，并使用创建它的模组版本。"
 }

@@ -32,7 +32,9 @@ namespace FlowerPainter.Game.Assets
         public int LastOperationWarnings { get; private set; }
         public double LastCaptureMilliseconds { get; private set; }
         public const string NotificationId="FlowerPainter.ArchiveWarning";
-        public string WarningKey => !HasWarning ? "" : _recovery.HasOpaqueData ? "FlowerPainter.Archive.Opaque" : "FlowerPainter.Archive.Partial";
+        private bool _checkMissingArchive, _missingArchive;
+        internal bool SuiteOmitNextArchive;
+        public string WarningKey => !HasWarning ? "" : _recovery.HasOpaqueData ? "FlowerPainter.Archive.Opaque" : _missingArchive ? "FlowerPainter.Archive.Missing" : "FlowerPainter.Archive.Partial";
         internal void Warn(string message) { HasWarning=true;LastOperationWarnings++;WarningRevision++;Mod.Log.Warn("Flower patch archive: "+message); }
 
         [Preserve] protected override void OnCreate()
@@ -54,6 +56,7 @@ namespace FlowerPainter.Game.Assets
         private void Capture()
         {
             var watch=System.Diagnostics.Stopwatch.StartNew();LastOperationWarnings=0;
+            if(_missingArchive){_missingArchive=false;HasWarning=false;WarningRevision++;}
             _captured = new ArraySegment<byte>(Array.Empty<byte>());
             var names = new HashSet<string>(StringComparer.Ordinal);
             try {
@@ -67,6 +70,7 @@ namespace FlowerPainter.Game.Assets
             LastCaptureBytes=_captured.Count;
             LastCaptureMilliseconds=watch.Elapsed.TotalMilliseconds;
             Mod.Log.Info("Flower patch save archive: " + names.Count + " referenced models, " + _captured.Count + " bytes, "+LastCaptureMilliseconds.ToString("F1",System.Globalization.CultureInfo.InvariantCulture)+" ms, "+LastOperationWarnings+" warnings");
+            if(SuiteOmitNextArchive){SuiteOmitNextArchive=false;_captured=new ArraySegment<byte>(Array.Empty<byte>());LastCaptureBytes=0;}
         }
 
         public void Serialize<TWriter>(TWriter writer) where TWriter : IWriter
@@ -93,15 +97,37 @@ namespace FlowerPainter.Game.Assets
             _data=Array.Empty<byte>();_captured=new ArraySegment<byte>(Array.Empty<byte>());
             _recovery.Clear();HasWarning=false;
             LastOperationWarnings=0;LastCaptureBytes=0;LastCaptureMilliseconds=0;WarningRevision++;
+            _checkMissingArchive=false;_missingArchive=false;SuiteOmitNextArchive=false;
         }
 
         private void Restore()
         {
-            if (_data.Length == 0) return; // Saves made before the archive existed.
+            if (_data.Length == 0) {
+                _checkMissingArchive=true;
+                // Unresolved IDs may be discarded by ResolvePrefabsSystem; inspect them before that happens.
+                try {
+                    var missing=typeof(PrefabSystem).GetField("m_LoadedObsoleteIDs",BindingFlags.Instance|BindingFlags.NonPublic)?.GetValue(_prefabs) as Dictionary<int,PrefabID>;
+                    if(missing!=null)foreach(var id in missing.Values)if(IsFlowerName(id.GetName())){ReportMissingArchive();break;}
+                } catch(Exception e) when(!(e is OutOfMemoryException)){Warn("Could not inspect unresolved flower references: "+e.Message);}
+                return;
+            }
             bool created = false;
             try {
                 _recovery.Restore(_data,entry=>created|=_patches.RestorePatch(entry),()=>{if(created)ResolveRestoredPrefabs();},Warn);
             } finally { _data=Array.Empty<byte>(); }
+        }
+
+        private static bool IsFlowerName(string name)=>name!=null && (name.StartsWith(FlowerPatchMesh.Prefix,StringComparison.Ordinal)||name.StartsWith(FlowerPatchMesh.FlagPrefix,StringComparison.Ordinal));
+        private void ReportMissingArchive() {
+            _checkMissingArchive=false;_missingArchive=true;
+            Warn("Save references flower models but contains no embedded flower archive. Keep the original backup; local cache may still allow recovery by resaving with FlowerPainter enabled.");
+        }
+        // Called by UIUpdate after prefab resolution, including when the flower panel is closed.
+        internal void CheckMissingArchive() {
+            if(!_checkMissingArchive)return;
+            _checkMissingArchive=false;
+            using(var refs=_objects.ToComponentDataArray<PrefabRef>(Allocator.Temp))
+                foreach(var item in refs)if(_prefabs.TryGetPrefab<PrefabBase>(item.m_Prefab,out var prefab) && prefab!=null && IsFlowerName(prefab.name)){ReportMissingArchive();break;}
         }
 
         private void ResolveRestoredPrefabs()

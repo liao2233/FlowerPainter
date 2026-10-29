@@ -1,4 +1,5 @@
 {
+  "FlowerPainter.Archive.Missing": "This save references flower models but has no embedded flower archive. Keep the original backup. If the local flowers are intact, save a new copy with FlowerPainter enabled before sharing; missing models need the original save or cache.",
   "FlowerPainter.Archive.Partial": "Some flower models could not be saved or restored. Available recovery data is retained. Keep the original save backup; this save may not restore all flowers on another computer. See the FlowerPainter log for details.",
   "FlowerPainter.Archive.Opaque": "This version cannot read the flower model archive. Its original data will be preserved when saving, but new flower models cannot be added to it. Keep the original save and use the mod version that created it."
 }

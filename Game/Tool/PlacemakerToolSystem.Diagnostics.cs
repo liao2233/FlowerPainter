@@ -24,6 +24,7 @@ namespace FlowerPainter.Game.Tool
                 .AppendLine("Archive warning: "+(archive?.WarningKey??"unavailable"))
                 .AppendLine("Last operation warnings: "+(archive?.LastOperationWarnings??0))
                 .AppendLine("Last capture bytes: "+(archive?.LastCaptureBytes??0))
+                .AppendLine("Last capture MiB (before save compression): "+((archive?.LastCaptureBytes??0)/1048576.0).ToString("F2",System.Globalization.CultureInfo.InvariantCulture))
                 .AppendLine("Last capture ms: "+(archive?.LastCaptureMilliseconds??0).ToString("F1",System.Globalization.CultureInfo.InvariantCulture))
                 .AppendLine("Log: "+System.IO.Path.Combine(EnvPath.kUserDataPath,"Logs","FlowerPainter.log"))
                 .AppendLine("Shared/imported save: [please fill in]")

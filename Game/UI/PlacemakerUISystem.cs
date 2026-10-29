@@ -170,6 +170,7 @@ namespace FlowerPainter.Game.UI
         private void UpdateArchiveNotification()
         {
             var archive=World.GetExistingSystemManaged<Assets.FlowerPatchArchiveSystem>();
+            if(ToolRegistration.InGame)archive?.CheckMissingArchive();
             if(archive==null || archive.WarningRevision==_archiveNotificationRevision)return;
             _archiveNotificationRevision=archive.WarningRevision;
             if(!archive.HasWarning) {

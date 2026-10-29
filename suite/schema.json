@@ -180,9 +180,10 @@
       ]
     },
     "saveReload": {
-      "keys": ["evictNewPatches"]
+      "keys": ["evictNewPatches","omitArchive"]
     },
     "archiveNotice": { "keys": [] },
+    "publication": { "keys": ["view"], "enums": {"view":["home","image","partition"]} },
     "loadSave": {
       "keys": ["name"]
     },

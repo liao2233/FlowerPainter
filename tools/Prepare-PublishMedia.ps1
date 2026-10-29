@@ -1,4 +1,4 @@
-﻿param([Parameter(Mandatory=$true)][string]$RunsRoot)
+param([Parameter(Mandatory=$true)][string]$RunsRoot,[switch]$ScreenshotsOnly)
 $ErrorActionPreference='Stop'
 Add-Type -AssemblyName System.Drawing
 $repo=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
@@ -6,9 +6,9 @@ $publish=Join-Path $repo 'Properties'
 $screens=Join-Path $publish 'Screenshots'
 New-Item -ItemType Directory -Force -Path $screens | Out-Null
 $scenes=@(
-    @('01-curve-fill','queue-1027-124400','02-flowers-free-curve-clipped.10-built.png','Curves and background fill'),
-    @('02-partitions','queue-1027-131421','01-circle-subdivisions.10-circle-filled.png','Independent region fills'),
-    @('03-patterns','queue-1027-124400','01-flowers-circle-heart-regions.13-built.png','Circle and heart composition'),
+    @('01-workflow-home','queue-1029-120835','03-image-workflow-publicationx.06-workflow-home.png','Planting method entry with a built image flower illustration'),
+    @('02-image-placement','queue-1029-120835','03-image-workflow-publicationx.00-image-placement.png','Imported sunflower illustration and cursor-following placement preview'),
+    @('03-partition-draft','queue-1029-121630','01-partition-publication.07-partition-draft.png','New partition design with retained unapplied region choices'),
     @('04-flower-detail','queue-1027-111849','01-flag-china.06-flag-close.png','Raised flower detail'),
     @('05-china','queue-1027-111849','01-flag-china.05-flag-top.png','China flag built from flowers'),
     @('06-rotation','queue-1028-010245','01-direct-flag.08-direct-built.png','Rotated Japan flag'),
@@ -29,6 +29,7 @@ foreach($scene in $scenes) {
     $records+=[ordered]@{file=('Properties/Screenshots/'+$scene[0]+'.jpg');sourceRun=$scene[1];sourceFile=$scene[2];sourceSha256=(Get-FileHash -LiteralPath $source -Algorithm SHA256).Hash;description=$scene[3];kind='native-game-screenshot';changes='JPEG encoding only; no scene or UI edits'}
 }
 $records | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $publish 'media-sources.json') -Encoding utf8
+if($ScreenshotsOnly){Write-Host 'Prepared 8 native game screenshots; existing cover retained.';return}
 # A new cover layout using the native screenshot. The title area is editorial;
 # the game image is kept as a separate rectangle, never generated or painted over.
 $cover=New-Object Drawing.Bitmap 1024,1024

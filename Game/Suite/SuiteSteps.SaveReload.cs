@@ -66,11 +66,13 @@ namespace FlowerPainter.Game.Suite
             var preview=global::Game.UI.ScreenCaptureHelper.CreateRenderTarget("FlowerPainter suite save",680,383);
             global::Game.UI.ScreenCaptureHelper.CaptureScreenshot(Camera.main,preview,new MenuHelpers.SaveGamePreviewSettings());
             string name="FlowerPainter Patch Test "+DateTime.Now.ToString("yyyy-MM-dd HH-mm-ss");
+            var archive=_world.GetExistingSystemManaged<Assets.FlowerPatchArchiveSystem>();
+            bool omitArchive=(bool?)step["omitArchive"]==true;
+            archive.SuiteOmitNextArchive=omitArchive;
             var save=GameManager.instance.Save(name,menu.GetSaveInfo(false),AssetDatabase.user,preview);
             yield return Until(()=>save.IsCompleted,120,"save flower patches");
             if(!save.IsCompleted||save.IsFaulted||!save.Result){rec["error"]="Saving flower patches failed";yield break;}
             rec["saveName"]=name;
-            var archive=_world.GetExistingSystemManaged<Assets.FlowerPatchArchiveSystem>();
             rec["archiveBytes"]=archive.LastCaptureBytes;
             rec["archiveCaptureMs"]=archive.LastCaptureMilliseconds;
             rec["archiveBufferReleased"]=archive.PendingSaveBytes==0;
@@ -85,6 +87,9 @@ namespace FlowerPainter.Game.Suite
             if(!load.IsCompleted||load.IsFaulted||!load.Result){rec["error"]="Reloading flower patches failed";yield break;}
             yield return Frames(30);
             var after=PatchNames();rec["patchesAfter"]=after.Length;
+            rec["archiveWarning"]=archive.WarningKey;
+            if(omitArchive && archive.WarningKey!="FlowerPainter.Archive.Missing")rec["error"]="Missing archive was not reported after loading flower references";
+            if(!omitArchive && archive.HasWarning)rec["error"]="Unexpected archive warning after complete archive reload: "+archive.WarningKey;
             if(!before.SequenceEqual(after))rec["error"]="Flower patch prefabs changed or disappeared after reload";
         }
     }

@@ -1,0 +1,133 @@
+{
+  "set": "flower-publication",
+  "scenarios": [
+    {
+      "id": "image-workflow-publication",
+      "land": {
+        "size": [
+          110,
+          90
+        ],
+        "roads": "none"
+      },
+      "steps": [
+        {
+          "do": "publication",
+          "view": "image",
+          "shot": "image-placement",
+          "shotMode": "ui",
+          "camera": {
+            "target": "point",
+            "at": [
+              20,
+              0
+            ],
+            "view": "top",
+            "distance": 170
+          }
+        },
+        {
+          "do": "area",
+          "tool": "image"
+        },
+        {
+          "do": "preview"
+        },
+        {
+          "do": "build"
+        },
+        {
+          "do": "camera",
+          "target": "point",
+          "view": "top",
+          "distance": 170,
+          "at": [
+            20,
+            0
+          ]
+        },
+        {
+          "do": "publication",
+          "view": "home"
+        },
+        {
+          "do": "shot",
+          "name": "workflow-home",
+          "shotMode": "ui"
+        },
+        {
+          "do": "saveReload",
+          "omitArchive": true
+        },
+        {
+          "do": "saveReload"
+        }
+      ]
+    },
+    {
+      "id": "partition-publication",
+      "land": {
+        "size": [
+          60,
+          50
+        ],
+        "roads": "none"
+      },
+      "steps": [
+        {
+          "do": "area",
+          "tool": "points"
+        },
+        {
+          "do": "type",
+          "layer": "floral",
+          "preset": "partition-regions"
+        },
+        {
+          "do": "motif",
+          "action": "add",
+          "kind": "ring"
+        },
+        {
+          "do": "flowerRegion",
+          "style": "single",
+          "flower": "FlowerPainter Flower Red Flowerbed01",
+          "at": [
+            0,
+            0
+          ]
+        },
+        {
+          "do": "flowerRegion",
+          "style": "single",
+          "flower": "FlowerPainter Flower Blue Flowerbed01",
+          "at": [
+            -25,
+            -15
+          ]
+        },
+        {
+          "do": "preview"
+        },
+        {
+          "do": "publication",
+          "view": "partition"
+        },
+        {
+          "do": "shot",
+          "name": "partition-draft",
+          "shotMode": "ui",
+          "camera": {
+            "target": "point",
+            "view": "top",
+            "distance": 200,
+            "at": [
+              20,
+              0
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -27,6 +27,15 @@ The local release package is a preview candidate, not a claim that all native re
 
 ## Completed locally
 
+### Current publication media and missing archives (local 0.1.4 update)
+
+- Three current native screenshots replace old workflow shots: method entry with a built imported illustration, actual cursor-following image placement, and partition design with unapplied choices retained. Five earlier effect screenshots and the existing cover remain. `media-sources.json` records exact native originals and hashes; only JPEG encoding is applied.
+- Missing-archive detection checks unresolved flower IDs before prefab resolution and resolved flower instances afterwards. It warns only when flower references remain; it cannot recover references or model data already removed by the game. A successful new capture from intact local cache clears the missing-archive warning.
+- Native run `20261029-120830-flower-publication` passed both scenarios (18 steps). A suite save deliberately omitted this mod's archive, then reloaded with all 9 flower instances and the expected missing-archive warning. A subsequent full save/reload preserved the same instances and cleared the warning. This is controlled missing-archive injection, not a completed disable-mod/overwrite/re-enable test.
+- Images were reframed in `20261029-121151-flower-publication`. Replaying the partition setup exposed a fixture reusing a previous site's method draft; the suite's fresh-type setup now preserves the newly drawn frame and resets its settings after method selection. Product draft behavior is unchanged.
+- The corrected partition fixture passed all eight steps in `20261029-121614-partition-publication`; its final screenshot shows the complete design frame and retained unapplied choices.
+- Diagnostics adds raw MiB; the player page uses an explicitly scoped 701,038-byte fixture example, not a per-block estimate. It warns against overwriting the only save while the mod is disabled, and does not promise all upgrade/downgrade paths are lossless.
+
 ### Support and release workflow (local 0.1.4 update)
 
 - Archive warnings use the game's native notification system even when the flower panel is closed; clicking opens the panel. Copy diagnostics uses the native clipboard and includes actual game/mod versions, archive state, capture timing and loaded assemblies matching Placemaker. This detection is diagnostic information, not a coexistence guarantee.
