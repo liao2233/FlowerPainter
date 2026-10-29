@@ -44,6 +44,7 @@ namespace FlowerPainter.Game.Tool
             bool image=_recipe?.Root?.Settings.S("shape","")=="image";
             if (_placingFlag) { h.Add(new HintInfo(image?"FlowerPainter.UI.Images.PlaceHint":"FlowerPainter.UI.Flags.PlaceHint")); h.Add(new HintInfo("FlowerPainter.Hint.Back", "Esc")); return h; }
             if (DirectFlagEditing) { h.Add(new HintInfo(image?"FlowerPainter.UI.Images.DragTip":"FlowerPainter.UI.Flags.DragTip")); return h; }
+            if (FlowerArtwork && _stage == ToolStage.Design) { h.Add(new HintInfo(image && !ArtworkReady ? "FlowerPainter.Floral.Issue.ImportImage" : image ? "FlowerPainter.UI.Images.Place" : "FlowerPainter.UI.Flags.Place")); return h; }
             if (FloralEditing) { h.Add(new HintInfo(_floralIndex == -2 ? FloralPartitioning ? "FlowerPainter.UI.Partitions.SelectTip" : "FlowerPainter.UI.Flowers.RegionTip" : FloralPartitioning ? "FlowerPainter.Floral.UI.PartitionDragHint" : "FlowerPainter.Floral.UI.DragHint")); h.Add(new HintInfo("FlowerPainter.Hint.Back", "Esc")); return h; }
             var flash = FlashText;
             if (flash != null) h.Add(new HintInfo(flash.Key) { Text = flash });

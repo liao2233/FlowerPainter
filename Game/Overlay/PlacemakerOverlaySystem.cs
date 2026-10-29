@@ -237,6 +237,7 @@ namespace FlowerPainter.Game.Overlay
                 return;
             }
             if (_tool.FloralEditing && shape != null) { Ring(buffer, shape.Ring, Outline, w); return; }
+            if (_tool.FlowerArtwork) return;
             switch (_tool.Mode)
             {
                 case SelectionMode.Draw: DrawDrawMode(buffer, w, bad, clipped || cutBack); break;

@@ -1,4 +1,12 @@
-# 0.1.4 release status
+# Release status
+
+## 0.1.5 flag input fix (local candidate)
+
+- Flags and imported images never fall through to polygon drawing, including before placement and after cancelling placement. Area mode/stage changes and polygon corner overlays are disabled for artwork. Whole-pattern placement, drag, rotation and size controls remain available.
+- Native run `20261029-125007-flag-input-lock` passed both scenarios with no step errors: actual UI entry, arbitrary world clicks before placement, cancellation then clicking, fixed template ratio (1.5 in the fixture), blocked corner editing, image-mode clicks, flag dragging/rotation, build/save/reload, and normal subdivision drawing/building. The runtime behavior was tested with DLL `cfc301c1` before the metadata-only bump to 0.1.5.
+- Two added stage-machine cases verify that artwork cannot enter or fall back to the area stage, both before and after placement. The existing 18 stage-machine tests also passed.
+
+## 0.1.4 public preview
 
 Published as a public preview on 2026-10-29 with the user's explicit approval to proceed with the documented remaining validation gaps. This is not a claim that all native release gates have passed.
 

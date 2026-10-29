@@ -1,7 +1,7 @@
 <Project>
   <PropertyGroup>
     <!-- Release version: UI and publishing metadata are checked against this value. -->
-    <Version>0.1.4</Version>
+    <Version>0.1.5</Version>
     <Deploy Condition="'$(Deploy)' == ''">false</Deploy>
     <ManagedPath Condition="'$(ManagedPath)' == '' And '$(FLOWERPAINTER_GAME_DIR)' != ''">$(FLOWERPAINTER_GAME_DIR)\Cities2_Data\Managed</ManagedPath>
     <ManagedPath Condition="'$(ManagedPath)' == '' And Exists('$(MSBuildThisFileDirectory)..\Cities2_Data\Managed\Game.dll')">$(MSBuildThisFileDirectory)..\Cities2_Data\Managed</ManagedPath>

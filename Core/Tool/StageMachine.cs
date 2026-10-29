@@ -116,7 +116,7 @@ namespace FlowerPainter.Core.Tool
         {
             var r = new List<ToolStage>(4);
             if (f.BuildRunning) { r.Add(ToolStage.Building); return r; }
-            r.Add(ToolStage.Area);
+            if (!(f.FlowerWorkflow && f.Artwork)) r.Add(ToolStage.Area);
             if (f.AreaValid || f.CanDesignWithoutArea) r.Add(ToolStage.Design);
             if (f.AreaValid && f.HasRecipe) r.Add(ToolStage.Review);
             r.Add(ToolStage.Manage);
@@ -133,6 +133,7 @@ namespace FlowerPainter.Core.Tool
         public static ToolStage Normalize(ToolStage current, StageFacts f)
         {
             if (f.BuildRunning) return ToolStage.Building;
+            if (f.FlowerWorkflow && f.Artwork && (current == ToolStage.Area || current == ToolStage.Building)) return ToolStage.Design;
             if (current == ToolStage.Building) return f.AreaValid && f.HasRecipe ? ToolStage.Review : ToolStage.Area;
             if (current == ToolStage.Review && !(f.AreaValid && f.HasRecipe)) current = ToolStage.Design;
             if (current == ToolStage.Design && !f.AreaValid && !f.CanDesignWithoutArea) current = ToolStage.Area;

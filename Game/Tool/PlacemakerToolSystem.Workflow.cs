@@ -10,7 +10,7 @@ namespace FlowerPainter.Game.Tool {
         private ToolSnapshot _beforeFlowerEdit;
         public bool FlowerWorkflowIdle => FlowerWorkflow && (_flowerHome || _flowerCompleted);
         private bool FlowerWorkflow => _recipe?.Root?.Layer=="floral";
-        private bool FlowerArtwork => FlowerWorkflow && (_recipe.Root.Settings.S("shape","")=="flag" || _recipe.Root.Settings.S("shape","")=="image");
+        internal bool FlowerArtwork => FlowerWorkflow && (_recipe.Root.Settings.S("shape","")=="flag" || _recipe.Root.Settings.S("shape","")=="image");
         private string FlowerMode => ModeKey(_recipe?.Root?.Settings.S("shape","flow"));
         private static string ModeKey(string shape)=>shape=="flag"||shape=="image"||shape=="partition"||shape=="collage"?shape:"flow";
         public void ChoosePlanting(string mode) {

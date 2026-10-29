@@ -6,6 +6,20 @@ namespace FlowerPainter.Tests
     public class ToolStageMachineTests
     {
         [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void ArtworkNeverReturnsToFreeAreaDrawing(bool placed)
+        {
+            var f = new StageFacts { FlowerWorkflow=true, Artwork=true, CanDesignWithoutArea=true, AreaValid=placed, HasRecipe=true };
+            Assert.False(StageMachine.CanGoTo(ToolStage.Area,f));
+            Assert.True(StageMachine.CanGoTo(ToolStage.Design,f));
+            Assert.Equal(ToolStage.Design,StageMachine.Normalize(ToolStage.Area,f));
+            Assert.Equal(ToolStage.Design,StageMachine.Normalize(ToolStage.Building,f));
+            f.Artwork=false;
+            Assert.True(StageMachine.CanGoTo(ToolStage.Area,f));
+        }
+
+        [Theory]
         [InlineData(ToolStage.Design)]
         [InlineData(ToolStage.Review)]
         public void ManualPlanningRequiresClickAndBlocksWithoutEntrance(ToolStage stage)

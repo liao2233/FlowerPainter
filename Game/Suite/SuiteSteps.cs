@@ -277,6 +277,7 @@ namespace FlowerPainter.Game.Suite
                 case "saveReload": yield return StepSaveReload(st, step, rec); break;
                 case "archiveNotice": yield return StepArchiveNotice(st, step, rec); break;
                 case "publication": yield return StepPublication(st, step, rec); break;
+                case "artworkInput": yield return StepArtworkInput(st, step, rec); break;
                 case "loadSave": yield return StepLoadSave(st, step, rec); break;
                 case "undo": yield return StepUndoRedo(st, step, rec, true); break;
                 case "redo": yield return StepUndoRedo(st, step, rec, false); break;

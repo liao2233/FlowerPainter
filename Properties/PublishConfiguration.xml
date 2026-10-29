@@ -75,9 +75,9 @@
   <Thumbnail Value="Properties/Thumbnail.png" />
   <Tag Value="Code Mod" />
   <ForumLink Value="" />
-  <ModVersion Value="0.1.4" />
+  <ModVersion Value="0.1.5" />
   <GameVersion Value="1.6.*" />
-  <ChangeLog Value="0.1.4：导入图片转为立体花丛，支持透明背景、拖动、旋转和等比例缩放；图片数据随设计保存。详见 CHANGELOG.md。" />
+  <ChangeLog Value="0.1.5：修复旗帜和图片模式误入自由选点画框。取消放置后仍禁止画区域，保留固定比例放置、整面拖动、旋转和缩放。" />
   <AccessLevel Value="Public" />
   <Screenshot Value="Properties/Screenshots/01-workflow-home.jpg" />
   <Screenshot Value="Properties/Screenshots/02-image-placement.jpg" />

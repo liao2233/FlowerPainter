@@ -270,10 +270,14 @@ namespace FlowerPainter.Game.Tool
                 if (HandleKeys()) { /* key handled: no tool input this frame */ }
                 else if (_stage == ToolStage.Building) { /* input ignored while building */ }
                 else if (FlowerWorkflow && (_flowerHome || _flowerCompleted)) PickFlowerGroup();
+                else if (FlowerArtwork)
+                {
+                    if (_placingFlag) UpdateFlagPlacement();
+                    else if (DirectFlagEditing) UpdateFlagDrag();
+                    else _cursorValid = false;
+                }
                 else if (_markerKind != null) UpdateMarkers();
                 else if (_stage == ToolStage.Manage) UpdateManage();
-                else if (_placingFlag) UpdateFlagPlacement();
-                else if (DirectFlagEditing) UpdateFlagDrag();
                 else if (UpdateBuiltBrush()) { }
                 else if (UpdateFloralPatterns()) { }
                 else
@@ -487,6 +491,7 @@ namespace FlowerPainter.Game.Tool
 
         public void SetAreaMode(SelectionMode mode)
         {
+            if (FlowerArtwork) return;
             if (_placingFlag) { _placingFlag=false; Touch(); }
             if (mode == _mode) return;
             CancelGesture();
@@ -513,7 +518,7 @@ namespace FlowerPainter.Game.Tool
             _markersEdited.Clear();
             DesignChanged();
             Commit("FlowerPainter.Undo.ClearArea");
-            SetStage(ToolStage.Area);
+            SetStage(FlowerArtwork ? ToolStage.Design : ToolStage.Area);
         }
 
         private void ClearSelectionState()
