@@ -5,8 +5,10 @@ The local release package is a preview candidate, not a claim that all native re
 ## Image import (0.1.4)
 
 - 723 engine-free tests and 9 flower UI tests pass. The additional tests cover image colour/transparency, source aspect, transform sampling and recipe round-trip.
-- The production decoder was exercised on PNG, JPEG, BMP, GIF, TIFF and ICO files in the Windows .NET host; this is not a Unity runtime result.
-- `image-flowers` native scenario covers decoding, direct placement, dragging, rotation, resizing an existing build, source-file removal and cache-eviction save/reload. Pending: the user game is currently running; no native pass is claimed for image import yet.
+- PNG, JPEG, BMP, GIF, TIFF and ICO decoded successfully in the actual Unity game runtime (in addition to the Windows .NET decoder check).
+- Native run `20261029-080903-image-flowers`: import, direct placement, dragging, rotation, resizing an existing build, source-file removal and cache-eviction save/reload completed with zero step errors. Nine new distinct models were evicted; all 10 flower instances returned. Two screenshot settling checks timed out; the reloaded view was visually inspected.
+- Native run `queue-1029-082311`: clicked the real import button, opened the Windows file picker, selected `fixture.png`, and verified the filename, dimensions and flower preview after returning to the game. The earlier managed `OPENFILENAME` marshalling crashed Mono; the final picker uses a blittable structure and explicit native buffers.
+- Fixed the imported filename/dimensions wrapping into separate lines in Cohtml. No change to the already-tested flower planning or archive code was needed for the picker fix.
 
 ## Completed locally
 

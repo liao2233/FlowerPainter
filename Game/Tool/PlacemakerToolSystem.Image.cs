@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using FlowerPainter.Core;
@@ -21,9 +20,9 @@ namespace FlowerPainter.Game.Tool
             _imageImportRecipe=_recipe;_imageImportError=null;
             var completion=new TaskCompletionSource<FlowerImageImporter.Result>();
             _imageImport=completion.Task;
-            var owner=Process.GetCurrentProcess().MainWindowHandle;
+            Mod.Log.Info("FlowerPainter: opening image file picker");
             var thread=new Thread(()=> {
-                try {completion.SetResult(FlowerImageImporter.Choose(owner));}
+                try {completion.SetResult(FlowerImageImporter.Choose());}
                 catch(Exception e) {completion.SetException(e);}
             }) {IsBackground=true,Name="FlowerPainter image import"};
             thread.SetApartmentState(ApartmentState.STA);thread.Start();Touch();

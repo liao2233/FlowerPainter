@@ -49,7 +49,7 @@ export const FlowerDesignStage = ({ catalog, design, state }: {catalog: Catalog;
             <div className={s.hint}>{t("FlowerPainter.UI.Images.Colors","Image colours are matched to flower colours. Transparent areas stay empty. Density controls the number of small flowers.")}</div>
             {state.imageImportError ? <div role="alert">{t("FlowerPainter.UI.Images.Failed","Import failed. Check the format and try another image.")} {state.imageImportError}</div> : null}
             {step.values.imageData ? <>
-                <div data-testid="image-name">{String(step.values.imageName || "")} · {String(step.values.imageWidth)} × {String(step.values.imageHeight)}</div>
+                <div data-testid="image-name">{`${step.values.imageName || ""} · ${step.values.imageWidth} × ${step.values.imageHeight}`}</div>
                 {step.values.flagDirect && state.area.closed ? <div className={s.hint} data-testid="image-drag-tip">{t("FlowerPainter.UI.Images.DragTip","Hold and drag the flowers to move them. Right-click or Esc cancels. Edit a built group to adjust it again.")}</div> : <Btn label={t("FlowerPainter.UI.Images.Place","Place image flowers")} selected={!!state.placingFlag} onClick={()=>act.placeFlag()} testId="place-image" />}
                 {state.placingFlag ? <div className={s.hint}>{t("FlowerPainter.UI.Images.PlaceHint","Click the ground to place the flower design.")}</div> : null}
                 <ControlList step={step} layer={layer} state={state} flat only={["flagWidth","flagAngle"]} />

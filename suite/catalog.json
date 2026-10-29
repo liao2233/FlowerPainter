@@ -1,6 +1,6 @@
 {
   "generatedBy": "the in-game suite from GeneratorRegistry",
-  "assembly": "0.1.1+f4910b5-dirty",
+  "assembly": "0.1.4+cf3cf3c",
   "categories": [
     {
       "id": "flowers",
@@ -386,6 +386,7 @@
           "id": "shape",
           "kind": "Choice",
           "options": [
+            "image",
             "flag",
             "partition",
             "collage",
