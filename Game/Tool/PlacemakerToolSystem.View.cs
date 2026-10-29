@@ -153,6 +153,7 @@ namespace FlowerPainter.Game.Tool
                 Stage = _stage,
                 Reachable = StageMachine.Reachable(facts),
                 Mode = _mode,
+                FlowerHome=_flowerHome,FlowerCompleted=_flowerCompleted,
                 PlacingFlag = _placingFlag,
                 ImportingImage = _imageImport != null,
                 ImageImportError = _imageImportError,

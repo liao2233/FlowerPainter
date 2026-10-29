@@ -12,6 +12,7 @@ namespace FlowerPainter.Core.Layers.Types.Floral
         private static readonly object Gate = new object();
         private static string _encoded;
         private static FlagTemplate _template;
+        private static string _thumbnail;
         public static readonly string[] Hex = BuildPalette();
         private static string[] BuildPalette() {
             var colors=new System.Collections.Generic.List<string>(FlowerPatchMesh.Hex);
@@ -67,10 +68,26 @@ namespace FlowerPainter.Core.Layers.Types.Floral
                 }
                 if(stream.Position!=stream.Length || !painted)throw new InvalidDataException("The image contains no visible flowers or invalid data.");
                 var result=new FlagTemplate(w,h,pixels) {Id="image",Ratio=(float)ow/oh,RecommendedColumns=w,Outline=Array.Empty<float2>()};
-                _encoded=encoded;_template=result;return result;
+                _encoded=encoded;_template=result;_thumbnail=null;return result;
             }
         }
 
+        public static string Thumbnail(string encoded) {
+            lock(Gate) {
+                var map=Read(encoded);if(_thumbnail!=null)return _thumbnail;
+                const int width=64;int height=math.clamp((int)Math.Round(width/map.Ratio),1,64);
+                var svg=new System.Text.StringBuilder();
+                svg.Append("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 ").Append(height).Append("' preserveAspectRatio='none'>");
+                for(int y=0;y<height;y++)for(int x=0;x<width;) {
+                    int color=map.Color(new float2((x+.5f)/width,1-(y+.5f)/height)),end=x+1;
+                    while(end<width && map.Color(new float2((end+.5f)/width,1-(y+.5f)/height))==color)end++;
+                    if(color>=0)svg.Append("<rect x='").Append(x).Append("' y='").Append(y).Append("' width='").Append(end-x).Append("' height='1' fill='#").Append(Hex[color]).Append("'/>");
+                    x=end;
+                }
+                svg.Append("</svg>");
+                return _thumbnail="data:image/svg+xml;base64,"+Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(svg.ToString()));
+            }
+        }
         public static bool IsReady(SettingsBag settings)
         {
             try {Read(settings.S("imageData",""));return true;}

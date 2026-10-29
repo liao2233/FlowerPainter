@@ -103,15 +103,18 @@ namespace FlowerPainter.Game.Suite
         // ───────────── select (the Manage stage: a click on the build) ─────────────
 
         /// <summary>A person clicks the build: Manage stage, the game's raycast (lots, nets, objects) at its centre on the screen.</summary>
-        private IEnumerator SelectBuild(ScenarioState st, JObject rec)
+        private IEnumerator SelectBuild(ScenarioState st, JObject rec, bool directEdit=false)
         {
             if (st.Group == 0 || Services.Groups?.Get(st.Group) == null) { rec["error"] = "no build to select"; yield break; }
-            if (_tool.Stage != ToolStage.Manage)
+            if(directEdit && _tool.CurrentRecipe?.Root?.Layer=="floral") {
+                yield return UiAct(st,rec,"choose existing flowers","flower-home","choosePlanting",new object[]{""},()=>_tool.FlowerWorkflowIdle,()=>_tool.ChoosePlanting(""));
+            }
+            else if (_tool.Stage != ToolStage.Manage)
             {
                 yield return UiGoToStage(rec, ToolStage.Manage);
                 if (_tool.Stage != ToolStage.Manage) { yield return KeyPress("esc"); }
             }
-            if (_tool.Stage != ToolStage.Manage) { rec["error"] = "cannot reach the Manage stage from " + _tool.Stage; yield break; }
+            if (_tool.Stage != ToolStage.Manage && !directEdit) { rec["error"] = "cannot reach the Manage stage from " + _tool.Stage; yield break; }
             yield return Frames(3);   // the Manage raycast masks are in place
             // a person looks at the build to click it: when its centre is not comfortably on the screen, frame it first
             if (st.Ring != null)
@@ -138,7 +141,7 @@ namespace FlowerPainter.Game.Suite
                 yield return Press(st, rec, cand, false, h => hit = h);
                 if (rec["error"] != null && tries < 4) { rec.Remove("error"); continue; }
                 yield return Frames(3);
-                if (_tool.ManagedGroup == g) { rec["selected"] = g; rec["selectClicks"] = tries; yield break; }
+                if (_tool.ManagedGroup == g || (directEdit && _tool.EditingGroup==g)) { rec["selected"] = g; rec["selectClicks"] = tries; yield break; }
                 rec["selectMiss" + tries] = $"clicked ({cand.x:F0},{cand.z:F0}): managed {_tool.ManagedGroup}, hover {_tool.HoverGroup}";
                 if (tries >= 4) break;
             }

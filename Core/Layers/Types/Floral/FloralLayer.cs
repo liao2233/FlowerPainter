@@ -90,6 +90,8 @@ namespace FlowerPainter.Core.Layers.Types.Floral
             var settings = Merge(input?.Settings);
             if (settings.S("shape", "") == "image" && !FlowerImage.IsReady(settings))
                 return new Readiness { Ready = false, MarkerKind = "", NextStepKey = "FlowerPainter.Floral.Issue.ImportImage", ReasonKey = "FlowerPainter.Floral.Issue.ImportImage" };
+            if (settings.S("shape", "") == "image" && !settings.B("flagDirect",false))
+                return new Readiness { Ready=false, MarkerKind="", NextStepKey="FlowerPainter.Floral.Issue.PlaceImage", ReasonKey="FlowerPainter.Floral.Issue.PlaceImage" };
             if (settings.S("shape", "flow") == "partition" && FloralFill.Read(settings.L("fills")).Count == 0)
                 return new Readiness { Ready = false, MarkerKind = "", NextStepKey = "FlowerPainter.Floral.Issue.FillPartition", ReasonKey = "FlowerPainter.Floral.Issue.FillPartition" };
             bool empty = settings.S("shape", "collage") == "collage" && !settings.B("fillGaps", false) && FloralMotif.Read(settings.L("motifs")).Count == 0 && FloralFill.Read(settings.L("fills")).Count == 0;

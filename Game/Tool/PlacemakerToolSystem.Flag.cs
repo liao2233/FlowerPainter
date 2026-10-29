@@ -14,6 +14,7 @@ namespace FlowerPainter.Game.Tool
             && ArtworkReady && _recipe.Root.Settings.B("flagDirect", false);
         private bool ArtworkReady => _recipe?.Root?.Settings.S("shape", "") == "flag"
             || (_recipe?.Root?.Settings.S("shape", "") == "image" && FlowerImage.IsReady(_recipe.Root.Settings));
+        public bool PlacingArtwork => _placingFlag;
         public bool FlagDragging => _gesture == Gesture.FlagMove;
 
         private float2 DirectFlagCenter()
@@ -65,12 +66,14 @@ namespace FlowerPainter.Game.Tool
         {
             if (_stage != ToolStage.Design || _building || _recipe?.Root?.Layer != "floral" || !ArtworkReady) return;
             CancelGesture();
+            _flowerHome=false;_flowerCompleted=false;
             _placingFlag = true;
             Touch();
         }
 
         private void UpdateFlagPlacement()
         {
+            if (_stage != ToolStage.Design || !ArtworkReady) { _placingFlag=false; Touch(); return; }
             _cursorValid = _in.HasHit;
             if (_in.HasHit) _cursor = _in.Hit;
             if (_in.RightPressed) { _placingFlag=false; Touch(); return; }

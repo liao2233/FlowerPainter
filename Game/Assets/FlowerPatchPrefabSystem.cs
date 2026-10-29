@@ -100,7 +100,7 @@ namespace FlowerPainter.Game.Assets
             }
             var timer=System.Diagnostics.Stopwatch.StartNew();
             while((_restore.Count>0||_pending.Count>0)&&timer.ElapsedMilliseconds<10) {
-                string name="";
+                string name="";bool restoring=_restore.Count>0;
                 try {
                     if(_restore.Count>0) {var saved=_restore.Dequeue();name=saved.Name;Register(saved);}
                     else {
@@ -114,6 +114,11 @@ namespace FlowerPainter.Game.Assets
                             FlagId=mesh.FlagId,LodBias=mesh.LodBias};
                         Register(saved);_saved[name]=saved;_dirty=true;
                     }
+                } catch(FileNotFoundException e) when(restoring) {
+                    // A registry entry alone is not a usable cache. A new plan supplies the mesh,
+                    // or the save archive supplies its geometry; neither should be blocked forever.
+                    _requested.Remove(name);
+                    Mod.Log.Warn("Flower patch cache incomplete; waiting for plan or save geometry: "+name+" ("+e.Message+")");
                 } catch(Exception e) {_failed.Add(name);Mod.Log.Error(e,"Flower patch creation failed: "+name);}
             }
             if(_dirty&&_pending.Count==0) {
@@ -196,6 +201,10 @@ namespace FlowerPainter.Game.Assets
             return saved.MaterialVersion>=3?(_canopySurface??(_canopySurface=MakeSurface(true))):_surface;
         }
         private void Register(SavedPatch saved) {
+            // Validate both levels before registering either render prefab.
+            foreach(var suffix in new[]{""," LOD"})
+                if(AssetDatabase.global.GetAsset<GeometryAsset>(Id(saved.Name+suffix))==null)
+                    throw new FileNotFoundException("Flower patch geometry missing: "+saved.Name+suffix);
             var bounds=new Bounds3(new float3(saved.Min[0],saved.Min[1],saved.Min[2]),new float3(saved.Max[0],saved.Max[1],saved.Max[2]));
             // Old saved flower geometry keeps its original UV layout and material.
             // Flag albedo meshes (v6+) use a per-flag BaseColorMap; canopy atlas stays for non-flag patches.

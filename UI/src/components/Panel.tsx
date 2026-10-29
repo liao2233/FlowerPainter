@@ -1,3 +1,5 @@
+import {FlowerMethods,FlowerDone} from "./FlowerWorkflow";
+import {RegionDrafts} from "./FloralPartitionFill";
 import { FlowerDesignStage } from "../stages/FlowerDesignStage";
 // The FlowerPainter panel: docked on the RIGHT, tall (below the top bar → above the bottom toolbar),
 // draggable by its header (position remembered; double-click the header to dock it again).
@@ -674,6 +676,7 @@ const MarkerBanner = ({ state, root }: { state: ToolState; root: StepView | null
 // ───────────── panel ─────────────
 
 export const FlowerPainterPanel = () => {
+    const [regionDrafts,setRegionDrafts]=useState<RegionDrafts>({});
     const state = useToolState();
     const catalog = useCatalog();
     const design = useDesign();
@@ -753,7 +756,7 @@ export const FlowerPainterPanel = () => {
             body = <>{leftOut}<AreaStage state={state} /></>;
             break;
         case "design":
-            body = <FlowerDesignStage catalog={catalog} design={design} state={state} />;
+            body = <FlowerDesignStage catalog={catalog} design={design} state={state} regionDrafts={regionDrafts} setRegionDrafts={setRegionDrafts} />;
             break;
         case "review":
             body = (
@@ -768,7 +771,16 @@ export const FlowerPainterPanel = () => {
             break;
     }
 
-    const collapsed = state.panelCollapsed;
+    if(state.flowerHome)body=<FlowerMethods/>;
+    else if(state.flowerCompleted)body=<FlowerDone/>;
+    const floral=design.root?.layer==="floral";
+    const artwork=design.root?.values.shape==="flag" || design.root?.values.shape==="image";
+    const workflowNav=floral && state.stage!=="building"?<div className={s.footer}>
+        {!state.flowerHome?<Btn label={t("FlowerPainter.Workflow.Change","Choose planting method")} onClick={()=>act.choosePlanting("")} testId="flower-home"/>:null}
+        {!state.flowerHome && !state.flowerCompleted && !artwork?<Btn label={t(state.stage==="area"?"FlowerPainter.UI.Stage.Design":"FlowerPainter.UI.Stage.Area",state.stage==="area"?"Design":"Area")} onClick={()=>act.goToStage(state.stage==="area"?"design":"area")} testId="flower-area-design"/>:null}
+        {state.editingGroup?<><Btn label={t("FlowerPainter.Workflow.CancelEdit","Cancel changes")} onClick={()=>act.cancelFlowerEdit()} testId="flower-cancel-edit"/><Btn label={t("FlowerPainter.Workflow.Copy","Place a copy")} onClick={()=>act.repeatFlowers()} testId="flower-copy"/></>:null}
+    </div>:null;
+    const collapsed = state.panelCollapsed && !state.flowerHome && !state.flowerCompleted;
     const showPreviewToggle = false;
     // Header tips open UPWARDS (over the game's top bar), so they never sit on the stage bar below.
     const header = (
@@ -931,7 +943,7 @@ export const FlowerPainterPanel = () => {
                                     <>
                                         {state.stage === "manage" ? null : (
                                             <ErrorBoundary name="stagebar">
-                                                <StageBar state={state} />
+                                                {floral?workflowNav:<StageBar state={state} />}
                                             </ErrorBoundary>
                                         )}
                                         <VersionNotice state={state} />
@@ -942,9 +954,9 @@ export const FlowerPainterPanel = () => {
                                             </div>
                                         </div>
                                         <ErrorBoundary name="footer">
-                                            <Footer state={state} summary={summary} blockedReason={blockedReason} lead={lead} ack={ackShown ? { on: ack, set: setAckBoth } : null} />
+                                            {!state.flowerHome && !state.flowerCompleted?<Footer state={state} summary={summary} blockedReason={blockedReason} lead={lead} ack={ackShown ? { on: ack, set: setAckBoth } : null} />:null}
                                         </ErrorBoundary>
-                                        <Hints state={state} />
+                                        {!state.flowerHome && !state.flowerCompleted?<Hints state={state} />:null}
                                     </>
                                 )}
                             </div>

@@ -1,0 +1,307 @@
+{
+  "set": "flower-workflow",
+  "scenarios": [
+    {
+      "id": "image-flowers",
+      "land": {
+        "size": [
+          90,
+          90
+        ],
+        "roads": "none"
+      },
+      "steps": [
+        {
+          "do": "importImage"
+        },
+        {
+          "do": "area",
+          "tool": "image"
+        },
+        {
+          "do": "value",
+          "id": "flagWidth",
+          "value": 35
+        },
+        {
+          "do": "area",
+          "tool": "image",
+          "move": true,
+          "at": [
+            10,
+            8
+          ]
+        },
+        {
+          "do": "value",
+          "id": "flagAngle",
+          "value": 30
+        },
+        {
+          "do": "preview",
+          "shot": "image-preview",
+          "shotMode": "render",
+          "camera": {
+            "target": "area",
+            "view": "top",
+            "distance": 90
+          }
+        },
+        {
+          "do": "build"
+        },
+        {
+          "do": "key",
+          "key": "enter"
+        },
+        {
+          "do": "camera",
+          "target": "build",
+          "view": "top",
+          "distance": 85,
+          "shot": "image-built",
+          "shotMode": "render"
+        },
+        {
+          "do": "edit",
+          "build": true
+        },
+        {
+          "do": "value",
+          "id": "flagWidth",
+          "value": 45
+        },
+        {
+          "do": "value",
+          "id": "flagAngle",
+          "value": 65
+        },
+        {
+          "do": "area",
+          "tool": "image",
+          "move": true,
+          "at": [
+            -6,
+            3
+          ]
+        },
+        {
+          "do": "build"
+        },
+        {
+          "do": "saveReload"
+        },
+        {
+          "do": "camera",
+          "target": "build",
+          "view": "top",
+          "distance": 100,
+          "shot": "image-reloaded",
+          "shotMode": "render"
+        },
+        {
+          "do": "edit",
+          "build": true
+        },
+        {
+          "do": "value",
+          "id": "flagAngle",
+          "value": 15
+        },
+        {
+          "do": "shot",
+          "name": "image-adjustments",
+          "shotMode": "ui"
+        },
+        {
+          "do": "key",
+          "key": "esc"
+        },
+        {
+          "do": "shot",
+          "name": "workflow-home",
+          "shotMode": "ui"
+        }
+      ]
+    },
+    {
+      "id": "direct-flag",
+      "land": {
+        "size": [
+          90,
+          90
+        ],
+        "roads": "none"
+      },
+      "steps": [
+        {
+          "do": "area",
+          "tool": "flag"
+        },
+        {
+          "do": "value",
+          "id": "flagTemplate",
+          "value": "japan"
+        },
+        {
+          "do": "value",
+          "id": "flagWidth",
+          "value": 45
+        },
+        {
+          "do": "area",
+          "tool": "flag",
+          "move": true,
+          "at": [
+            12,
+            8
+          ]
+        },
+        {
+          "do": "value",
+          "id": "flagAngle",
+          "value": 45
+        },
+        {
+          "do": "value",
+          "id": "flowerViewDistance",
+          "value": 3
+        },
+        {
+          "do": "preview",
+          "shot": "direct-preview",
+          "shotMode": "render",
+          "camera": {
+            "target": "area",
+            "view": "top",
+            "distance": 120
+          }
+        },
+        {
+          "do": "build"
+        },
+        {
+          "do": "camera",
+          "target": "build",
+          "view": "top",
+          "distance": 120,
+          "shot": "direct-built",
+          "shotMode": "render"
+        },
+        {
+          "do": "camera",
+          "target": "build",
+          "view": "top",
+          "distance": 300,
+          "shot": "direct-far",
+          "shotMode": "render"
+        },
+        {
+          "do": "saveReload"
+        },
+        {
+          "do": "camera",
+          "target": "build",
+          "view": "top",
+          "distance": 120,
+          "shot": "direct-reloaded",
+          "shotMode": "render"
+        }
+      ]
+    },
+    {
+      "id": "circle-subdivisions",
+      "land": {
+        "size": [
+          60,
+          50
+        ],
+        "roads": "none"
+      },
+      "steps": [
+        {
+          "do": "area",
+          "tool": "points"
+        },
+        {
+          "do": "type",
+          "layer": "floral",
+          "preset": "partition-regions"
+        },
+        {
+          "do": "motif",
+          "action": "add",
+          "kind": "ring"
+        },
+        {
+          "do": "shot",
+          "name": "boundaries-only",
+          "shotMode": "ui",
+          "camera": {
+            "target": "area",
+            "view": "top",
+            "distance": 120
+          }
+        },
+        {
+          "do": "flowerRegion",
+          "style": "single",
+          "flower": "FlowerPainter Flower Red Flowerbed01",
+          "at": [
+            0,
+            0
+          ]
+        },
+        {
+          "do": "flowerRegion",
+          "style": "single",
+          "flower": "FlowerPainter Flower Blue Flowerbed01",
+          "at": [
+            -25,
+            -15
+          ]
+        },
+        {
+          "do": "flowerRegion",
+          "style": "single",
+          "flower": "FlowerPainter Flower White Flowerbed01",
+          "at": [
+            0,
+            0
+          ]
+        },
+        {
+          "do": "shot",
+          "name": "selected-region-settings",
+          "shotMode": "ui",
+          "camera": {
+            "target": "area",
+            "view": "top",
+            "distance": 120
+          }
+        },
+        {
+          "do": "preview",
+          "shot": "circle-regions",
+          "shotMode": "render",
+          "camera": {
+            "target": "area",
+            "view": "top",
+            "distance": 120
+          }
+        },
+        {
+          "do": "build"
+        },
+        {
+          "do": "camera",
+          "target": "build",
+          "view": "top",
+          "distance": 120,
+          "shot": "circle-filled",
+          "shotMode": "render"
+        }
+      ]
+    }
+  ]
+}

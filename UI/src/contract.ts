@@ -77,7 +77,7 @@ export interface LocText { key: string; args?: (string | number)[] }
 
 export interface PrimaryAction {
   /** What pressing the main button (or Enter) does now. */
-  action: "startPlanning" | "none" | "toDesign" | "toReview" | "build" | "placeMarkers" | "cancelBuild" | "finishEdit";
+  action: "placeArtwork" | "startPlanning" | "none" | "toDesign" | "toReview" | "build" | "placeMarkers" | "cancelBuild" | "finishEdit";
   label: LocText;
   enabled: boolean;
   /** Why disabled, shown as tooltip and inline hint. */
@@ -107,7 +107,9 @@ export interface ToolState {
   /** Stages the player may jump to right now (others are greyed). */
   reachable: Stage[];
   areaMode: AreaMode;
-  placingFlag?: boolean;
+  flowerHome?: boolean;
+    flowerCompleted?: boolean;
+    placingFlag?: boolean;
   importingImage?: boolean;
   imageImportError?: string;
   /** rules: sent by s11+ C# (absent = older DLL). */
@@ -541,7 +543,8 @@ export const Triggers = {
   undo: "undo",                             // ()
   redo: "redo",                             // ()
 
-  placeFlag: "placeFlag",
+  choosePlanting: "choosePlanting", repeatFlowers: "repeatFlowers", cancelFlowerEdit: "cancelFlowerEdit",
+    placeFlag: "placeFlag",
   importImage: "importImage",
   setAreaMode: "setAreaMode",               // (mode: AreaMode)
   setBrush: "setBrush",                     // (shape: BrushShape, size: number, angle: number)

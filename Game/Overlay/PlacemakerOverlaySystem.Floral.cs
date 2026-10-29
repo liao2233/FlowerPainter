@@ -13,13 +13,13 @@ namespace FlowerPainter.Game.Overlay
     {
         private void DrawDraggedFlag(OverlayRenderSystem.Buffer buffer)
         {
-            if (!_tool.FlagDragging) return;
+            if (!_tool.FlagDragging && !(_tool.PlacingArtwork && _tool.CursorValid)) return;
             var settings=_tool.CurrentRecipe.Root.Settings;
             var template=FlowerImage.For(settings);
             float width=math.clamp(settings.F("flagWidth",30),5,200),height=width/template.Ratio;
             float2 center=float2.zero;
-            foreach(var point in _tool.Draw.Points)center+=point.xz;
-            center/=_tool.Draw.Count;
+            if(_tool.PlacingArtwork)center=_tool.Cursor.xz;
+            else {foreach(var point in _tool.Draw.Points)center+=point.xz;center/=_tool.Draw.Count;}
             math.sincos(math.radians(settings.F("flagAngle",0)),out float sin,out float cos);
             float3 World(float2 uv) {
                 var p=(uv-.5f)*new float2(width,height);
@@ -33,7 +33,7 @@ namespace FlowerPainter.Game.Overlay
                     int color=template.Color(new float2((x+.5f)/columns,v));
                     int end=x+1;
                     while(end<columns && template.Color(new float2((end+.5f)/columns,v))==color)end++;
-                    if(color>=0 && ColorUtility.TryParseHtmlString("#"+FlowerPatchMesh.Hex[color],out var tint)) {
+                    if(color>=0 && ColorUtility.TryParseHtmlString("#"+(settings.S("shape","")=="image"?FlowerImage.Hex:FlowerPatchMesh.Hex)[color],out var tint)) {
                         tint.a=.85f;
                         buffer.DrawLine(tint,new Line3.Segment(World(new float2(x/(float)columns,v)),World(new float2(end/(float)columns,v))),height/rows);
                     }

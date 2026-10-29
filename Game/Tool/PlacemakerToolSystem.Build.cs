@@ -113,7 +113,7 @@ namespace FlowerPainter.Game.Tool
             if (svc == null)
             {
                 _building = false;
-                SetStage(ToolStage.Review);
+                SetStage(FlowerWorkflow?ToolStage.Design:ToolStage.Review);
                 _feedback.Failed("FlowerPainter.Reason.BuildUnavailable", null, null);
                 return;
             }
@@ -134,7 +134,7 @@ namespace FlowerPainter.Game.Tool
                     _building = false;
                     // Land in Review (fix or retry, Esc goes back to Design) — then record the failure, so the
                     // stage change does not clear it. Any later change clears message and red markers.
-                    SetStage(ToolStage.Review);
+                    SetStage(FlowerWorkflow?ToolStage.Design:ToolStage.Review);
                     _feedback.Succeeded(st.Warnings);
                     _feedback.Failed(st.MessageKey, st.MessageArgs, st.ErrorPositions);
                     Flash(new LocText(_feedback.Failure.Key, _feedback.Failure.Args), 8f);
@@ -143,7 +143,7 @@ namespace FlowerPainter.Game.Tool
                 case BuildPhase.Cancelled:
                     Acknowledge(svc);
                     _building = false;
-                    SetStage(ToolStage.Review);
+                    SetStage(FlowerWorkflow?ToolStage.Design:ToolStage.Review);
                     _feedback.Succeeded(st.Warnings);
                     bool restored = st.Warnings != null && st.Warnings.Exists(w => w.Key == "FlowerPainter.Build.OriginalRestored");
                     Flash(new LocText(restored ? "FlowerPainter.Build.OriginalRestored" : "FlowerPainter.Hint.BuildCancelled"));
@@ -151,7 +151,7 @@ namespace FlowerPainter.Game.Tool
                 case BuildPhase.Idle:
                     // Service reset without telling us (e.g. game loaded): give the tool back.
                     _building = false;
-                    SetStage(ToolStage.Review);
+                    SetStage(FlowerWorkflow?ToolStage.Design:ToolStage.Review);
                     break;
             }
         }
@@ -210,6 +210,7 @@ namespace FlowerPainter.Game.Tool
                 var first = notes[0];
                 Flash(new LocText(notes.Count == 1 ? first.Key : "FlowerPainter.Hint.BuiltWithNotes", notes.Count == 1 ? (first.Args ?? Array.Empty<object>()) : new object[] { notes.Count }), 10f);
             }
+            if(FlowerWorkflow) {_flowerDrafts[FlowerMode]=Capture();_flowerCompleted=true;_flowerHome=false;_beforeFlowerEdit=null;SetStage(ToolStage.Design);}
             SuiteNoteBuilt(groupId);
             Mod.Log.Info("FlowerPainter: built group " + groupId);
         }
@@ -273,6 +274,8 @@ namespace FlowerPainter.Game.Tool
                 return;
             }
             CancelGesture();
+            if(_editingGroup==0)_beforeFlowerEdit=Capture();
+            _flowerHome=false;_flowerCompleted=false;
             ExitMarkerMode();
             ClearSelectionState();
             // Whatever the original selection mode, the outline comes back as editable corners.

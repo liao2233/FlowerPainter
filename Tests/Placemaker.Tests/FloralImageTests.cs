@@ -41,6 +41,13 @@ namespace FlowerPainter.Tests
             var map=FlowerImage.Read(FlowerImage.Encode(251,1,251,1,pixels));
             for(int i=0;i<pixels.Length;i++)Assert.Equal(pixels[i],map.Color(new float2((i+.5f)/251,.5f)));
         }
+        [Fact] public void ThumbnailShowsTopColoursAndLeavesTransparentAreasEmpty() {
+            string uri=FlowerImage.Thumbnail(Image());
+            string svg=System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(uri.Substring(uri.IndexOf(',')+1)));
+            Assert.Contains("fill='#D8202F'",svg);Assert.Contains("fill='#2352B4'",svg);
+            Assert.DoesNotContain("x='32' y='31'",svg);
+            Assert.Same(uri,FlowerImage.Thumbnail(Image()));
+        }
         [Fact] public void SourceAspectAndImageTopArePreserved() {
             var map=FlowerImage.Read(Image());Assert.Equal(2,map.Ratio);
             Assert.Equal(4,map.Color(new float2(.25f,.75f)));

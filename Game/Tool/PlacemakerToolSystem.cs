@@ -231,7 +231,7 @@ namespace FlowerPainter.Game.Tool
         public override void InitializeRaycast()
         {
             base.InitializeRaycast();
-            if (_stage == ToolStage.Manage)
+            if (_stage == ToolStage.Manage || FlowerWorkflowIdle)
             {
                 m_ToolRaycastSystem.typeMask = TypeMask.Net | TypeMask.StaticObjects | TypeMask.Areas;
                 m_ToolRaycastSystem.areaTypeMask = global::Game.Areas.AreaTypeMask.Lots;
@@ -269,6 +269,7 @@ namespace FlowerPainter.Game.Tool
 
                 if (HandleKeys()) { /* key handled: no tool input this frame */ }
                 else if (_stage == ToolStage.Building) { /* input ignored while building */ }
+                else if (FlowerWorkflow && (_flowerHome || _flowerCompleted)) PickFlowerGroup();
                 else if (_markerKind != null) UpdateMarkers();
                 else if (_stage == ToolStage.Manage) UpdateManage();
                 else if (_placingFlag) UpdateFlagPlacement();
@@ -319,6 +320,7 @@ namespace FlowerPainter.Game.Tool
         private void SetStage(ToolStage s)
         {
             if (s == _stage) return;
+            _placingFlag = false;
             if (_stage == ToolStage.Manage) { _hoverGroup = 0; }
             _stage = s;
             _legendHover = "";   // s22: a hovered legend entry never outlives its stage
@@ -357,6 +359,7 @@ namespace FlowerPainter.Game.Tool
             switch (p.Kind)
             {
                 case PrimaryKind.StartPlanning: StartPlanning(); break;
+                case PrimaryKind.PlaceArtwork: BeginFlagPlacement(); break;
                 case PrimaryKind.ToDesign: SetStage(ToolStage.Design); break;
                 case PrimaryKind.ToReview: SetStage(ToolStage.Review); break;
                 case PrimaryKind.Build:
@@ -372,6 +375,11 @@ namespace FlowerPainter.Game.Tool
         private void Escape()
         {
             if (_placingFlag) { _placingFlag=false; Touch(); return; }
+            if(FlowerWorkflow && _gesture==Gesture.None && _previewBase==null && !FloralEditing) {
+                if(_editingGroup!=0)CancelFlowerEdit();
+                else if(_flowerHome)Close();else ChoosePlanting("");
+                return;
+            }
             if (FloralEditing && _gesture == Gesture.None) { SelectFloralPattern("", -1); return; }
             switch (StageMachine.Escape(_stage, Facts()))
             {

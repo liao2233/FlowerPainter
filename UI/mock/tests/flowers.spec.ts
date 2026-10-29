@@ -10,9 +10,9 @@ test("flower patches and flags expose their own planting controls",async({page})
     await page.getByTestId("flower-mode-flag").click();
     await expect(page.getByTestId("flag-templates")).toBeVisible();
     await expect(page.getByTestId("place-flag")).toBeVisible();
-    await page.evaluate(()=>{const b=(window as any).pm.backend;b.root.values.flagDirect=true;b.publishAll();});
+    await page.evaluate(()=>{const b=(window as any).pm.backend;b.root.values.flagDirect=true;b.ring=[[0,0],[30,0],[30,20],[0,20]];b.closed=true;b.publishAll();});
     await expect(page.getByTestId("flag-drag-tip")).toBeVisible();
-    await expect(page.getByTestId("place-flag")).toHaveCount(0);
+    await expect(page.getByTestId("place-flag")).toBeVisible();
     await expect(page.getByTestId("slider-flagAngle-input")).toBeVisible();
     await page.getByTestId("slider-flowerDensity-input").fill("3");
     await page.getByTestId("slider-flowerDensity-input").press("Enter");
@@ -45,6 +45,7 @@ test("flower patches and flags expose their own planting controls",async({page})
 async function flowers(page:Page,width=1920,height=1080){
     await open(page,{real:true,width,height});
     await page.waitForFunction(()=>(window as any).pm.backend.hostUp===true);
+    await page.getByTestId("flower-mode-carpet").click();
     await drawPolygon(page,FIELD);await page.getByTestId("primary").click();
     await expect(page.getByTestId("flower-mode-carpet")).toBeVisible();
 }
@@ -116,7 +117,8 @@ test("overlap is editable in both planting modes and independent of prop size", 
     await expect(page.getByTestId("slider-flowerScale-input")).toHaveValue(size);
     expect(await page.evaluate(() => (window as any).pm.backend.root.values.overlap)).toBe(70);
     await page.getByTestId("flower-mode-compose").click();
-    await expect(page.getByTestId("slider-overlap-input")).toHaveValue("70");
+    await page.getByTestId("planting-props").click();
+    await expect(page.getByTestId("slider-overlap-input")).toHaveValue("0");
     await page.getByTestId("motif-add-curve").click();
     await page.getByTestId("slider-overlap-input").fill("90");
     await page.getByTestId("slider-overlap-input").press("Enter");
@@ -149,6 +151,7 @@ test("subdivision mode draws boundaries and offers per-region filling", async ({
     expect(points[0]).toBe(points[points.length-1]);
     await panelShot(page,"flowers-partition");
     await page.getByTestId("flower-mode-compose").click();
+    await page.getByTestId("motif-add-curve").click();
     await expect(page.getByTestId("motif-flower")).toBeVisible();
     await expect(page.getByTestId("motif-width-input")).toBeVisible();
 });
@@ -202,7 +205,7 @@ test("image flowers expose import, fixed-aspect transforms and edit guidance",as
     await expect(page.getByTestId("planting-props")).toHaveCount(0);
     await expect(page.getByTestId("place-image")).toHaveCount(0);
     await page.evaluate(()=>{const b=(window as any).pm.backend;
-        Object.assign(b.root.values,{imageData:true,imageName:"garden.png",imageWidth:400,imageHeight:200,flagDirect:true});b.publishAll();});
+        b.ring=[[0,0],[30,0],[30,15],[0,15]];b.closed=true;Object.assign(b.root.values,{imageData:true,imageName:"garden.png",imageWidth:400,imageHeight:200,flagDirect:true});b.publishAll();});
     await expect(page.getByTestId("image-name")).toContainText("garden.png");
     await expect(page.getByTestId("image-drag-tip")).toBeVisible();
     await expect(page.getByTestId("slider-flagWidth-input")).toBeVisible();
@@ -213,4 +216,51 @@ test("image flowers expose import, fixed-aspect transforms and edit guidance",as
     await expect.poll(()=>page.evaluate(()=>(window as any).pm.backend.root.values.flagWidth)).toBe(65);
     await page.getByTestId("flower-mode-flag").click();
     await expect(page.getByTestId("flag-templates")).toBeVisible();
+});
+
+
+test("entry routes artwork without a frame and preserves mode drafts",async({page})=>{
+    await open(page,{real:true});await page.waitForFunction(()=>(window as any).pm.backend.hostUp===true);
+    await expect(page.getByTestId("stage-design")).toHaveCount(0);
+    await page.getByTestId("flower-mode-flag").click();
+    await expect(page.getByTestId("flag-templates")).toBeVisible();
+    await expect(page.getByTestId("flower-area-design")).toHaveCount(0);
+    await expect(page.getByTestId("slider-flagWidth-input")).toBeVisible();
+    await page.getByTestId("slider-flagWidth-input").fill("67");await page.getByTestId("slider-flagWidth-input").press("Enter");
+    await page.getByTestId("place-flag").click();
+    await page.getByTestId("flower-mode-flag").click();
+    expect(await page.evaluate(()=>(window as any).pm.backend.placingFlag)).toBe(true);
+    await page.getByTestId("flower-mode-image").click();
+    expect(await page.evaluate(()=>(window as any).pm.backend.placingFlag)).toBe(false);
+    await expect(page.getByTestId("import-image")).toBeVisible();
+    await expect(page.getByTestId("primary")).toHaveAttribute("aria-disabled","true");
+    await page.getByTestId("flower-mode-flag").click();
+    await expect(page.getByTestId("slider-flagWidth-input")).toHaveValue("65");
+    await panelShot(page,"workflow-flag-design");
+});
+test("unapplied partition choices survive selecting another region and returning",async({page})=>{
+    await flowers(page);await page.getByTestId("flower-mode-partition").click();
+    await page.getByTestId("partition-finish-boundaries").click();
+    await page.evaluate(()=>{const b=(window as any).pm.backend;b.floralPartitions={selected:-1,regions:[{id:1,area:500,fillIndex:-1},{id:2,area:500,fillIndex:-1}]};b.publishAll();});
+    await page.getByTestId("partition-select-1").click();
+    await page.getByTestId("fill-style-flow").click();
+    await expect(page.getByTestId("partition-unsaved")).toBeVisible();
+    await page.getByTestId("partition-select-2").click();
+    await page.getByTestId("partition-select-1").click();
+    await expect(page.getByTestId("fill-style-flow")).toHaveAttribute("aria-pressed","true");
+    expect(await page.evaluate(()=>(window as any).pm.backend.root.values.fills||[])).toEqual([]);
+    await panelShot(page,"workflow-partition-draft");
+});
+
+
+test("completed planting offers explicit repeat instead of another build",async({page})=>{
+    await open(page,{real:true});await page.waitForFunction(()=>(window as any).pm.backend.hostUp===true);
+    await page.getByTestId("flower-mode-flag").click();
+    await page.evaluate(()=>{const b=(window as any).pm.backend;b.flowerCompleted=true;b.stage="design";b.publishAll();});
+    await expect(page.getByTestId("primary")).toHaveCount(0);
+    await expect(page.getByTestId("flower-finish")).toBeVisible();
+    await page.getByTestId("flower-repeat").click();
+    expect(await page.evaluate(()=>(window as any).pm.backend.placingFlag)).toBe(true);
+    await expect(page.getByTestId("flag-templates")).toBeVisible();
+    await expect(page.getByTestId("primary")).toHaveAttribute("aria-disabled","true");
 });

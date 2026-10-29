@@ -278,6 +278,7 @@ namespace FlowerPainter.Game.Tool
         /// <summary>Esc / tool deactivation mid-drag: put everything back as it was before the gesture.</summary>
         private void CancelGesture()
         {
+            _placingFlag = false;
             CancelBrushPlanning();
             _pendingBlockClick = null;
             _pendingPaintStart = null;

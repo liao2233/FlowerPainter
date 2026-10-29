@@ -75,7 +75,7 @@ namespace FlowerPainter.Game.Tool
                 var input = new PreviewInput
                 {
                     Stage = _stage,
-                    ToolActive = IsActive && _closeAfterGhost == 0,
+                    ToolActive = IsActive && !FlowerWorkflowIdle && !_placingFlag && _closeAfterGhost == 0,
                     BuildRunning = _building,
                     ValuePreview = ValuePreviewKind,
                     Dragging = _gesture != Gesture.None,

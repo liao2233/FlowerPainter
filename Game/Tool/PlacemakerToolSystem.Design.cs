@@ -157,6 +157,7 @@ namespace FlowerPainter.Game.Tool
         {
             var v = ParseValue(valueJson);
             if (v == null) return;
+            if (controlId == "shape") CancelGesture();
             if (_previewBase != null)
             {
                 // A drag that ends with setValue instead of endPreview: apply onto the committed base so the step is one undo entry.

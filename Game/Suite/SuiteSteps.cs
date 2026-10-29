@@ -317,7 +317,7 @@ namespace FlowerPainter.Game.Suite
             yield return Frames(2);   // the change reaches the planner's input revision on the next tool update
             if (st != null && st.Pace == "user" && !always) { yield return Frames(4); rec["planWait"] = "skipped (user pace)"; yield break; }
             if (!always && !_tool.Planning && !PlanReady()) { rec["planWait"] = "waiting for Start planning"; yield break; }
-            if (_tool.Shape != null && !PlanReady() && !_tool.Planning)
+            if (_tool.Facts().ManualPlanning && _tool.Shape != null && !PlanReady() && !_tool.Planning)
             {
                 if (_tool.Facts().UnreadyStepPath != null) { rec["planWait"] = "waiting for required inputs"; yield break; }
                 yield return UiAct(st, rec, "start planning", "primary", "startPlanning", null,

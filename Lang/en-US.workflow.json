@@ -1,0 +1,19 @@
+{
+  "FlowerPainter.Workflow.Choose": "What would you like to plant?",
+  "FlowerPainter.Workflow.StartTip": "Images and flags: design, place, then plant. Other flowers: draw an area first. Click existing flowers on the map to edit them.",
+  "FlowerPainter.Workflow.Planted": "Planted",
+  "FlowerPainter.Workflow.Plant": "Plant flowers",
+  "FlowerPainter.Workflow.Place": "Start placing",
+  "FlowerPainter.Workflow.ClickGround": "Click the ground to place; right-click or Esc cancels.",
+  "FlowerPainter.Workflow.FinishGesture": "Finish or cancel the current drag first.",
+  "FlowerPainter.Workflow.DoneTip": "Your flowers are built. Place another copy, or finish. Click a built group to edit it.",
+  "FlowerPainter.Workflow.Repeat": "Place another",
+  "FlowerPainter.Workflow.Finish": "Finish",
+  "FlowerPainter.Workflow.Change": "Choose planting method",
+  "FlowerPainter.Workflow.CancelEdit": "Cancel changes",
+  "FlowerPainter.Workflow.Copy": "Place a copy",
+  "FlowerPainter.Workflow.Unapplied": "Not applied — your choices are kept when switching regions.",
+  "FlowerPainter.Floral.Issue.PlaceImage": "Place the image on the ground first.",
+  "FlowerPainter.UI.Artwork.Reposition": "Place elsewhere",
+  "FlowerPainter.UI.Patches.SpacingTip": "Smaller blossom spacing makes finer, smaller flowers. Higher flower density adds more flowers at the same size and costs more performance."
+}

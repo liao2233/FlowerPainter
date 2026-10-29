@@ -15,6 +15,8 @@ namespace FlowerPainter.Game.Suite
     {
         private IEnumerator StepImportImage(ScenarioState st,JObject step,JObject rec)
         {
+            _tool.ChoosePlanting("image");
+            _tool.ClearArea();
             yield return UiGoToStage(rec,ToolStage.Design);
             yield return Frames(10);
             var formats=new[]{ImageFormat.Png,ImageFormat.Jpeg,ImageFormat.Bmp,ImageFormat.Gif,ImageFormat.Tiff};
@@ -57,7 +59,25 @@ namespace FlowerPainter.Game.Suite
                 } finally {if(File.Exists(iconPath))File.Delete(iconPath);}
             }
             imported.Name="Image flowers test.png";
+            _tool.ChoosePlanting("flow");
+            _tool.GoToStage(ToolStage.Area);
+            var center=_tool.Cursor.xz;
+            var ring=new float3[5];
+            for(int i=0;i<5;i++){float angle=i*math.PI*2/5;ring[i]=new float3(center.x+12*math.cos(angle),0,center.y+12*math.sin(angle));}
+            if(!_tool.SuiteDrawOutline(ring,out var issue))throw new InvalidOperationException("Workflow polygon: "+issue);
+            _tool.ChoosePlanting("image");
+            if(_tool.Shape!=null)throw new InvalidOperationException("Image reused the area's frame.");
             _tool.ApplyImportedImage(imported);
+            if(!_tool.StateInput().PlacingFlag)throw new InvalidOperationException("Image did not start placement.");
+            _tool.ChoosePlanting("flag");_tool.BeginFlagPlacement();
+            _tool.ChoosePlanting("flow");
+            if(_tool.StateInput().PlacingFlag || _tool.Shape?.Ring.Length!=5)throw new InvalidOperationException("Switch did not cancel placement and restore polygon draft.");
+            _tool.ChoosePlanting("image");
+            if(_tool.CurrentRecipe.Root.Settings.S("imageData","")!=imported.Data)throw new InvalidOperationException("Image draft lost.");
+            _tool.BeginFlagPlacement();_tool.GoToStage(ToolStage.Area);
+            if(_tool.StateInput().PlacingFlag)throw new InvalidOperationException("Stage change retained placement.");
+            _tool.GoToStage(ToolStage.Design);_tool.BeginFlagPlacement();
+            rec["workflowSwitches"]=true;
             rec["formats"]=checkedFormats;rec["sourceDeleted"]=true;
             rec["width"]=imported.Width;rec["height"]=imported.Height;
             yield return Frames(12);

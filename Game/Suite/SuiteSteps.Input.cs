@@ -214,6 +214,7 @@ namespace FlowerPainter.Game.Suite
             yield return CameraTo(FocusOf(b), 25f, 55f, (float?)step["cameraDistance"] ?? lookFrom, crec, null);
             rec["areaCamera"] = crec["camera"];
             if (_tool.Stage == ToolStage.Manage) yield return UiGoToStage(rec, ToolStage.Area);
+            if (_tool.FlowerWorkflowIdle) _tool.ChoosePlanting(tool=="flag"||tool=="image"?tool:"flow");
             if (_tool.SuiteHasSelection && !((tool=="flag"||tool=="image") && ((bool?)step["move"]??false)))
             {
                 yield return UiAct(st, rec, "clear area", "clear-area", "clearArea", null, () => !_tool.SuiteHasSelection, () => _tool.ClearArea());
@@ -628,7 +629,16 @@ namespace FlowerPainter.Game.Suite
             string key = ((string)step["key"] ?? "").ToLowerInvariant();
             if (key != "enter" && key != "esc" && key != "undo" && key != "redo") { rec["error"] = "key must be enter, esc, undo or redo"; yield break; }
             var before = (_tool.Stage, _tool.ViewVersion);
+            int buildsBefore=_tool.SuiteBuildsDone;
+            bool completed=_tool.StateInput().FlowerCompleted;
+            int editBefore=_tool.EditingGroup;
+            string savedBefore=editBefore>0?RecipeJson.Write(Services.Groups.GetReceipt(editBefore).Recipe).ToString():null;
             yield return KeyPress(key);
+            if(completed && key=="enter" && (_tool.Building || _tool.SuiteBuildsDone!=buildsBefore))rec["error"]="Enter duplicated a completed planting.";
+            if(editBefore>0 && key=="esc") {
+                if(_tool.EditingGroup!=0 || RecipeJson.Write(Services.Groups.GetReceipt(editBefore).Recipe).ToString()!=savedBefore)rec["error"]="Cancel changed the built receipt or retained edit mode.";
+                else rec["cancelPreservedBuild"]=true;
+            }
             rec["stage"] = _tool.Stage.ToString();
             if (FlowerPainterToolSystem.SuiteKeyPending) { rec["error"] = "the key was never handled (the tool was not running)"; yield break; }
             if (_tool.ViewVersion == before.ViewVersion && _tool.Stage == before.Stage) rec["note"] = "the key changed nothing";

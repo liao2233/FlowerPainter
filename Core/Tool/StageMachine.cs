@@ -11,7 +11,7 @@ namespace FlowerPainter.Core.Tool
 {
     public enum ToolStage { Area = 0, Design = 1, Review = 2, Building = 3, Manage = 4 }
 
-    public enum PrimaryKind { None = 0, ToDesign = 1, ToReview = 2, Build = 3, PlaceMarkers = 4, CancelBuild = 5, FinishEdit = 6, StartPlanning = 7 }
+    public enum PrimaryKind { None = 0, ToDesign = 1, ToReview = 2, Build = 3, PlaceMarkers = 4, CancelBuild = 5, FinishEdit = 6, StartPlanning = 7, PlaceArtwork = 8 }
 
     public enum EscapeAction { None = 0, ExitMarkers = 1, CancelGesture = 2, ToDesign = 3, ToArea = 4, ClearSelection = 5, CloseTool = 6 }
 
@@ -29,6 +29,7 @@ namespace FlowerPainter.Core.Tool
 
         public bool HasRecipe;
         public bool CanDesignWithoutArea;
+        public bool FlowerWorkflow, FlowerHome, FlowerCompleted, Artwork, ArtworkReady, PlacingArtwork;
         /// <summary>A plan for the current inputs is being computed or is outdated.</summary>
         public bool Planning;
         public bool ManualPlanning;
@@ -70,6 +71,7 @@ namespace FlowerPainter.Core.Tool
         {
             switch (k)
             {
+                case PrimaryKind.PlaceArtwork: return "placeArtwork";
                 case PrimaryKind.StartPlanning: return "startPlanning";
                 case PrimaryKind.ToDesign: return "toDesign";
                 case PrimaryKind.ToReview: return "toReview";
@@ -143,6 +145,12 @@ namespace FlowerPainter.Core.Tool
                 return Make(PrimaryKind.CancelBuild, "FlowerPainter.Primary.CancelBuild", f.BuildRunning && f.BuildCancellable,
                     f.BuildRunning ? "FlowerPainter.Build.Finishing" : "FlowerPainter.Reason.NothingToCancel");
 
+            if(f.FlowerWorkflow) {
+                if(f.FlowerHome || f.FlowerCompleted)return Make(PrimaryKind.None,f.FlowerCompleted?"FlowerPainter.Workflow.Planted":"FlowerPainter.Workflow.Choose",false,null);
+                if(f.Artwork && (f.PlacingArtwork || !f.AreaValid))return Make(PrimaryKind.PlaceArtwork,"FlowerPainter.Workflow.Place",f.ArtworkReady && !f.PlacingArtwork,f.PlacingArtwork?"FlowerPainter.Workflow.ClickGround":"FlowerPainter.Floral.Issue.ImportImage");
+                if(stage==ToolStage.Design)stage=ToolStage.Review;
+                if(f.GestureActive)return Make(PrimaryKind.None,"FlowerPainter.Workflow.FinishGesture",false,"FlowerPainter.Workflow.FinishGesture");
+            }
             if (f.MarkerModeActive)
                 return Make(PrimaryKind.PlaceMarkers, "FlowerPainter.Primary.DoneMarkers", true, null);
 
@@ -178,7 +186,7 @@ namespace FlowerPainter.Core.Tool
                     if (!f.AreaValid) return AreaPrimary(f);
                     if (!f.HasRecipe) return Make(PrimaryKind.None, "FlowerPainter.Primary.ChooseType", false, "FlowerPainter.Reason.NoRecipe");
                     var kind = f.Editing ? PrimaryKind.FinishEdit : PrimaryKind.Build;
-                    string label = f.Editing ? "FlowerPainter.Primary.ApplyEdit" : "FlowerPainter.Primary.Build";
+                    string label = f.Editing ? "FlowerPainter.Primary.ApplyEdit" : f.FlowerWorkflow?"FlowerPainter.Workflow.Plant":"FlowerPainter.Primary.Build";
                     var markers = MarkerStep(f, label);
                     if (markers != null) return markers;
 

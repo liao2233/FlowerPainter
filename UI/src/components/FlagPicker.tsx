@@ -33,6 +33,6 @@ export const FlagPicker=({step}:{step:StepView})=>{
             <div className={s.hint}>{t("FlowerPainter.UI.Flags.SizeTip","Smaller flags can still be planted, but stars, lettering and emblems may lose detail. This is a visual guide, not a hard limit.")}</div>
             {!summary.stale?summary.issues.filter(i=>i.text.key.startsWith("FlowerPainter.Floral.Issue.Flag")).map(i=><div className={s.flagWarning} key={i.text.key}>{tl(i.text)}</div>):null}
         </div>
-        <div className={s.hint}>{step.values.flagDirect ? t("FlowerPainter.UI.Flags.DirectTip","The template keeps its proportions. Set the flag width below.") : t("FlowerPainter.UI.Flags.Tip","Each flag keeps its original proportions. Irregular selections can cut the design; use a rectangular selection for a complete flag.")}</div>
+        <div className={s.hint}>{t("FlowerPainter.UI.Flags.DirectTip","The template keeps its proportions. Set the width and click Place a flag.")}</div>
     </div>;
 };

@@ -1,0 +1,19 @@
+{
+  "FlowerPainter.Workflow.Choose": "你想种什么？",
+  "FlowerPainter.Workflow.StartTip": "图片和国旗：设计、放置、种下。其他花卉先画区域。点击地图上已种下的花卉可再次编辑。",
+  "FlowerPainter.Workflow.Planted": "已种下",
+  "FlowerPainter.Workflow.Plant": "种下",
+  "FlowerPainter.Workflow.Place": "开始放置",
+  "FlowerPainter.Workflow.ClickGround": "点击地面放置；右键或 Esc 取消放置。",
+  "FlowerPainter.Workflow.FinishGesture": "先完成或取消当前拖动。",
+  "FlowerPainter.Workflow.DoneTip": "花卉已建造。可以再放一个，或完成操作；点击已有花卉可重新编辑。",
+  "FlowerPainter.Workflow.Repeat": "再放一个",
+  "FlowerPainter.Workflow.Finish": "完成",
+  "FlowerPainter.Workflow.Change": "更换种植方式",
+  "FlowerPainter.Workflow.CancelEdit": "取消修改",
+  "FlowerPainter.Workflow.Copy": "放置副本",
+  "FlowerPainter.Workflow.Unapplied": "尚未应用：切换分区会保留当前选择，点击“填充此区域”后生效。",
+  "FlowerPainter.Floral.Issue.PlaceImage": "请先在地面放置图片花卉。",
+  "FlowerPainter.UI.Artwork.Reposition": "重新放置",
+  "FlowerPainter.UI.Patches.SpacingTip": "花头间距越小，小花越细小。立体花密度越高，同样大小的花会摆得更密，也更消耗性能。"
+}

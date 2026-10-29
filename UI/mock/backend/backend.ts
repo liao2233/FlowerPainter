@@ -91,6 +91,8 @@ export class MockBackend {
     // ── tool ──
     open = true;
     stage: Stage = "area";
+    flowerHome=true;flowerCompleted=false;placingFlag=false;
+    flowerDrafts:Record<string,Snapshot>={};
     mode: AreaMode = "draw";
     brush = { shape: "round" as BrushShape, size: 40, angle: 0 };
     // Block paint brush rules (C# defaults); the mock has no obstacles, they are only shown and toggled.
@@ -582,6 +584,25 @@ export class MockBackend {
             }
         };
         switch (name) {
+            case "choosePlanting": {
+                const key=(shape:unknown)=>["image","flag","partition","collage"].includes(String(shape))?String(shape):"flow";
+                const old=key(this.root?.values.shape),mode=String(a[0]);
+                if(mode && mode===old && !this.flowerHome && !this.flowerCompleted)break;
+                this.placingFlag=false;
+                if(!this.flowerCompleted)this.flowerDrafts[old]=this.snapshot();
+                this.flowerCompleted=false;
+                if(!mode){this.flowerHome=true;this.stage="design";break;}
+                if(mode!==old){
+                    if(this.flowerDrafts[mode])this.restore(this.flowerDrafts[mode]);
+                    else {if([old,mode].some(x=>x==="flag"||x==="image")){this.ring=[];this.closed=false;this.cells.clear();this.picked=[];}
+                        this.root=this.instantiate({layer:"floral",values:{shape:mode}});}
+                }
+                this.flowerHome=false;this.stage=mode==="image"||mode==="flag"||this.areaValid()?"design":"area";
+                this.changed();break;
+            }
+            case "placeFlag": this.placingFlag=true;break;
+            case "repeatFlowers": this.flowerCompleted=false;this.flowerHome=false;this.ring=[];this.closed=false;this.editingGroup=null;this.stage="design";this.placingFlag=true;this.changed();break;
+            case "cancelFlowerEdit": this.editingGroup=null;this.flowerHome=true;this.stage="design";break;
             case "toggleTool":
                 this.open = !this.open;
                 if (this.open) this.selectedGroup = null;
@@ -594,6 +615,7 @@ export class MockBackend {
                 this.userCollapsed = !!a[0];
                 break;
             case "goToStage":
+                this.placingFlag=false;
                 if (this.reachable().includes(a[0])) {
                     this.stage = a[0];
                     this.markerMode = null;
@@ -762,6 +784,7 @@ export class MockBackend {
                 return;
             }
             case "setValue": {
+                if(a[1]==="shape")this.placingFlag=false;
                 const step = this.get(a[0]);
                 const v = json(a[2]);
                 if (!step || v === undefined) break;
@@ -1190,7 +1213,11 @@ export class MockBackend {
     primary(): PrimaryAction {
         const summary = this.summary();
         if (this.markerMode && this.stage !== "building") return { action: "placeMarkers", label: { key: "FlowerPainter.Primary.DoneMarkers" }, enabled: true };
-        switch (this.stage) {
+        const floral=this.root?.layer==="floral";
+        if(floral && (this.flowerHome || this.flowerCompleted))return {action:"none",label:{key:"FlowerPainter.Workflow.Choose"},enabled:false};
+        if(floral && ["flag","image"].includes(String(this.root?.values.shape)) && (!this.areaValid() || this.placingFlag))
+            return {action:"placeArtwork",label:{key:"FlowerPainter.Workflow.Place"},enabled:!this.placingFlag && (this.root?.values.shape==="flag" || !!this.root?.values.imageData)};
+        switch (floral && this.stage==="design"?"review":this.stage) {
             case "area":
                 if (this.areaValid()) return { action: "toDesign", label: { key: "FlowerPainter.Primary.Next" }, enabled: true };
                 return {
@@ -1213,7 +1240,7 @@ export class MockBackend {
                 const editing = this.editingGroup != null;
                 const base = editing
                     ? { action: "finishEdit" as const, label: { key: "FlowerPainter.Primary.ApplyEdit" } }
-                    : { action: "build" as const, label: { key: "FlowerPainter.Primary.Build", args: [this.recipeDisplayName().toLowerCase()] } };
+                    : { action: "build" as const, label: { key: floral?"FlowerPainter.Workflow.Plant":"FlowerPainter.Primary.Build", args: [this.recipeDisplayName().toLowerCase()] } };
                 const r = this.allReady();
                 if (!r.ready && r.kind)
                     return { action: "placeMarkers", label: base.label, enabled: false, reason: { key: "FlowerPainter.Reason.AddEntrance" }, stepPath: r.path, markerKind: r.kind };
@@ -1325,6 +1352,7 @@ export class MockBackend {
         this.undoStack = [];
         this.redoStack = [];
         this.ackPermanent = false;
+        if(this.root?.layer==="floral"){this.flowerCompleted=true;this.stage="design";}
         this.toast = "Built!";
         this.changed();
     }
@@ -1541,6 +1569,7 @@ export class MockBackend {
             floralPartitions:this.floralPartitions,
             stage: this.stage,
             reachable: this.reachable(),
+            flowerHome:this.root?.layer==="floral" && this.flowerHome,flowerCompleted:this.flowerCompleted,placingFlag:this.placingFlag,
             areaMode: this.mode,
             brush: { ...this.brush, rules: this.brushRules },
             area: {

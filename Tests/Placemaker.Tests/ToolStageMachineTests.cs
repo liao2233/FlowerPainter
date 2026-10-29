@@ -21,6 +21,18 @@ namespace FlowerPainter.Tests
             Assert.Equal(stage==ToolStage.Design ? PrimaryKind.ToReview : PrimaryKind.Build,StageMachine.Primary(stage,f).Kind);
         }
 
+        [Fact] public void FlowerWorkflowConfirmsDirectlyAndNeverBuildsWhilePlacingOrDone() {
+            var f=ReadyFacts();f.FlowerWorkflow=true;f.Artwork=true;f.ArtworkReady=true;
+            Assert.Equal(PrimaryKind.Build,StageMachine.Primary(ToolStage.Design,f).Kind);
+            f.Editing=true;Assert.Equal(PrimaryKind.FinishEdit,StageMachine.Primary(ToolStage.Design,f).Kind);
+            f.GestureActive=true;Assert.False(StageMachine.Primary(ToolStage.Design,f).Enabled);f.GestureActive=false;
+            f.PlacingArtwork=true;Assert.False(StageMachine.Primary(ToolStage.Design,f).Enabled);f.PlacingArtwork=false;
+            f.AreaValid=false;Assert.Equal(PrimaryKind.PlaceArtwork,StageMachine.Primary(ToolStage.Design,f).Kind);
+            f.ArtworkReady=false;Assert.False(StageMachine.Primary(ToolStage.Design,f).Enabled);
+            f.AreaValid=true;f.ArtworkReady=true;f.PlanHasErrors=true;Assert.False(StageMachine.Primary(ToolStage.Design,f).Enabled);
+            f.PlanHasErrors=false;f.FlowerCompleted=true;Assert.False(StageMachine.Primary(ToolStage.Design,f).Enabled);
+            f.FlowerCompleted=false;f.FlowerHome=true;Assert.False(StageMachine.Primary(ToolStage.Design,f).Enabled);
+        }
         private static StageFacts ReadyFacts() => new StageFacts
         {
             AreaValid = true, HasSelection = true, HasRecipe = true, PlanReady = true, CanAfford = true, BuildServiceAvailable = true,

@@ -377,10 +377,10 @@ namespace FlowerPainter.Game.Suite
         {
             yield return WaitPlan(st, rec, always: true);
             var primary = _tool.SuitePrimaryInfo();
-            if (_tool.Stage != ToolStage.Review)
+            if (_tool.Stage != ToolStage.Review && !(_tool.CurrentRecipe?.Root?.Layer=="floral" && _tool.Stage==ToolStage.Design))
             {
                 if (primary.Kind == "toReview" && primary.Enabled) yield return UiPrimary(st, rec, "Next");
-                if (_tool.Stage != ToolStage.Review)
+                if (_tool.Stage != ToolStage.Review && !(_tool.CurrentRecipe?.Root?.Layer=="floral" && _tool.Stage==ToolStage.Design))
                 {
                     rec["error"] = "cannot preview: " + primary.Kind + (primary.Enabled ? "" : " disabled") + " " + _tool.SuiteUnreadyText() + (rec["error"] != null ? " / " + rec["error"] : "");
                     st.Result["status"] = "blocked";
@@ -389,8 +389,9 @@ namespace FlowerPainter.Game.Suite
                     yield break;
                 }
             }
-            yield return WaitFor(rec, "review", () => _tool.Stage == ToolStage.Review, 15f);
+            yield return WaitFor(rec, "review", () => _tool.Stage == ToolStage.Review || (_tool.CurrentRecipe?.Root?.Layer=="floral" && _tool.Stage==ToolStage.Design), 15f);
             yield return WaitPlan(st, rec, always: true);
+            if (_tool.Plan?.HasErrors==true) {rec["error"]="preview plan has errors";rec["issues"]=Issues(rec);yield break;}
             if (_tool.PreviewModeSelected == PreviewMode.Ghost) yield return WaitGhost(rec);
             else rec["previewMode"] = "sketch";
             rec["issues"] = Issues(rec);
@@ -426,14 +427,15 @@ namespace FlowerPainter.Game.Suite
 
         private IEnumerator StepEdit(ScenarioState st, JObject step, JObject rec)
         {
+            yield return OpenTool();
             if ((bool?)step["build"] ?? false)
             {
                 if (st.Group == 0 || !st.Built) { rec["error"] = "no build to edit"; yield break; }
                 // a person clicks the build (Manage), then Edit in its panel
-                yield return SelectBuild(st, rec);
+                yield return SelectBuild(st, rec, directEdit:true);
                 if (rec["error"] != null) yield break;
                 int g = st.Group;
-                yield return UiAct(st, rec, "Edit", "manage-edit", "editGroup", new object[] { (double)g }, () => _tool.EditingGroup == g && _tool.Stage == ToolStage.Design, () => _tool.EditGroup(g));
+                if(_tool.EditingGroup!=g)yield return UiAct(st, rec, "Edit", "manage-edit", "editGroup", new object[] { (double)g }, () => _tool.EditingGroup == g && _tool.Stage == ToolStage.Design, () => _tool.EditGroup(g));
                 rec["group"] = g;
                 if (_tool.EditingGroup != g || _tool.Stage != ToolStage.Design) { rec["error"] = $"edit did not load the build (editing {_tool.EditingGroup}, stage {_tool.Stage}" + (_tool.FlashText != null ? ", " + _tool.FlashText.Key : "") + ")"; yield break; }
                 st.Ring = _tool.Shape?.Ring2D() ?? st.Ring;

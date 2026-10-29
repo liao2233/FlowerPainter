@@ -45,14 +45,18 @@ namespace FlowerPainter.Game.Tool
 
         internal void ApplyImportedImage(FlowerImageImporter.Result image)
         {
+            _flowerHome=false;_flowerCompleted=false;
+            bool replacePlaced=DirectFlagEditing && _draw.Count==4;
+            CancelGesture();
             Edit(recipe=> {
                 var values=recipe.Root.Settings.Values;
                 values["imageData"]=image.Data;values["imageName"]=image.Name;
                 values["imageWidth"]=image.Width;values["imageHeight"]=image.Height;
                 values["shape"]="image";values["plantingSystem"]="patch";
-                values["flagDirect"]=true;
+                values["flagDirect"]=replacePlaced;
                 return true;
             },"FlowerPainter.Undo.ImportImage");
+            if(!replacePlaced) BeginFlagPlacement();
         }
     }
 }

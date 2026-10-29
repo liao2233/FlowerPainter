@@ -17,6 +17,14 @@ The local release package is a preview candidate, not a claim that all native re
 - Native run `20261029-094733-image-flowers`, DLL `51836f246f4e` build: six decoder formats, grayscale/warm ramp, transforms, build/edit/rebuild and cache-eviction reload completed with zero step errors. Nine models were evicted and all 10 instances returned. Reload screenshot inspected; discrete colour bands and flower gaps remain visible. The first attempt rejected an unsupported test-script parameter; it was removed before this successful run.
 - Reimport the original image for new colours: old indexed recipes cannot recover colours discarded by the 12-colour import.
 
+## Flower workflow (local 0.1.4 update)
+
+- Choose the planting method first. Images and flags go directly through design, cursor placement, adjustment and planting; area-based flowers keep area drawing and design. Completion requires an explicit repeat action.
+- Clicking existing flowers opens editing. Cancel leaves the original build intact; copying has its own action. Mode drafts and unapplied region choices last for the current game session only.
+- 726 core tests and 12 browser UI tests pass. Release builds have zero errors and four inherited warnings. Native flag-direct and circle-subdivisions scenarios in `20261029-104852-flower-workflow` completed with zero step errors.
+- Fixed a native failure where a missing cached LOD permanently blocked later regeneration of the same patch. Missing-cache restoration now leaves the model eligible for regeneration, and validates both geometry levels before registering render prefabs.
+- Native run `20261029-110833-image-workflow` (DLL `32259f6c`): all 21 steps completed with zero step errors, including mode/draft switching, import, placement, repeated Enter, click-to-edit, resize/rotate/drag, rebuilding, normal save/reload and cancel-edit preservation. Real Chinese UI screenshots were inspected. Cache-eviction evidence remains the earlier dedicated runs: repeating that injection against pre-existing models was correctly refused. The workflow scenario now tests normal reload and explicitly resets its drawing stage for repeated runs.
+
 ## Completed locally
 
 - One version authority (`Directory.Build.props`) checked against UI, lock file and publishing metadata.

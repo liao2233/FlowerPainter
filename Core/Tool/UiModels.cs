@@ -42,6 +42,7 @@ namespace FlowerPainter.Core.Tool
         public ToolStage Stage;
         public List<ToolStage> Reachable = new List<ToolStage>();
         public SelectionMode Mode;
+        public bool FlowerHome,FlowerCompleted;
         public bool PlacingFlag;
         public bool ImportingImage;
         public string ImageImportError;
@@ -139,6 +140,7 @@ namespace FlowerPainter.Core.Tool
             foreach (var st in s.Reachable) reach.Add(StageMachine.Id(st));
             o.Set("reachable", reach);
             o.Set("areaMode", SelectionModes.Id(s.Mode));
+            o.Set("flowerHome",s.FlowerHome);o.Set("flowerCompleted",s.FlowerCompleted);
             o.Set("placingFlag",s.PlacingFlag);
             o.Set("importingImage",s.ImportingImage);
             o.Set("imageImportError",s.ImageImportError ?? "");
@@ -449,6 +451,8 @@ namespace FlowerPainter.Core.Tool
             }
             // The native image map is saved with the recipe; the panel only needs its presence.
             foreach (var k in keys) values.Set(k, k=="imageData" ? JsonValue.Bool(!string.IsNullOrEmpty(shown.S(k,""))) : DesignEditor.ToJson(shown.Values[k]));
+            if(s.Layer=="floral" && shown.S("shape","")=="image" && FlowerPainter.Core.Layers.Types.Floral.FlowerImage.IsReady(shown))
+                values.Set("imagePreview",FlowerPainter.Core.Layers.Types.Floral.FlowerImage.Thumbnail(shown.S("imageData","")));
             o.Set("values", values);
             var locked = new List<string>(s.Locked);
             locked.Sort(StringComparer.Ordinal);

@@ -84,7 +84,7 @@ namespace FlowerPainter.Game.Overlay
                 float w = LineWidth();
                 var detail = ToolRegistration.Settings?.PreviewDetail ?? PreviewDetail.Normal;
 
-                if (_tool.Stage == ToolStage.Manage) DrawManage(buffer, w);
+                if (_tool.FlowerWorkflowIdle || _tool.Stage == ToolStage.Manage) DrawManage(buffer, w);
                 else
                 {
                     if (!_tool.FlagDragging && (_tool.Stage == ToolStage.Design || _tool.Stage == ToolStage.Review || _tool.Stage == ToolStage.Building))

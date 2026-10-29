@@ -16,6 +16,7 @@ namespace FlowerPainter.Core.Layers.Types.Floral
             var regions=new List<(Region region,FloralFill fill)>();
             bool image=shape=="image",flag=shape=="flag"||image;
             if(image && !FlowerImage.IsReady(ctx.Settings)) {ctx.Issue(IssueSeverity.Error,"FlowerPainter.Floral.Issue.ImportImage");return;}
+            if(image && !ctx.B("flagDirect")) {ctx.Issue(IssueSeverity.Error,"FlowerPainter.Floral.Issue.PlaceImage");return;}
             if(shape=="partition") {
                 var map=new FloralPartitions(frame,motifs,ctx.Cancel);
                 var partitionChoices=new Dictionary<int,FloralFill>();

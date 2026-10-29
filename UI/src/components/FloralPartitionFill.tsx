@@ -1,4 +1,4 @@
-import React, {useState} from "react";
+import React from "react";
 import {StepView, ToolState} from "../contract";
 import {act} from "../lib/bindings";
 import {useT} from "../lib/l10n";
@@ -12,7 +12,9 @@ function readFill(value?: string) {
     return {style: fields[3] || "single", flowers: fields[0] === "v2" && fields[5] ? fields[5].split(",").map(decodeURIComponent) : flower ? [flower] : []};
 }
 
-export const FloralPartitionFill = ({step, state}: {step: StepView; state: ToolState}) => {
+export interface RegionDraft { source:string; style:string; flowers:string[] }
+export type RegionDrafts=Record<number,RegionDraft>;
+export const FloralPartitionFill = ({step, state,drafts,setDrafts,context}: {step: StepView; state: ToolState; drafts:RegionDrafts;setDrafts:React.Dispatch<React.SetStateAction<RegionDrafts>>;context:string}) => {
     const {t} = useT();
     const partitions = state.floralPartitions;
     const fills = (step.values.fills || []) as string[];
@@ -26,19 +28,23 @@ export const FloralPartitionFill = ({step, state}: {step: StepView; state: ToolS
             {!partitions?.regions.length ? <div className={s.hint}>{t("FlowerPainter.UI.Partitions.Computing", "Calculating regions…")}</div> : null}
             <Btn label={t("FlowerPainter.UI.Partitions.Back", "Back to boundaries")} onClick={() => act.selectFloralPattern(step.path, -1)} testId="partition-edit-boundaries" />
         </Section>
-        {selected ? <RegionSettings key={`${selected.id}:${fills[selected.fillIndex] || ""}`} id={selected.id} fill={fills[selected.fillIndex]} fallback={step.values.flowerPalette as string[]} /> : <div className={s.hint} data-testid="partition-select-hint">{t("FlowerPainter.UI.Partitions.SelectFirst", "Select a region to choose its props and fill style.")}</div>}
+        {selected ? <RegionSettings key={`${selected.id}:${fills[selected.fillIndex] || ""}`} draft={drafts[selected.id]} source={context+"|"+(fills[selected.fillIndex]||"")} onDraft={draft=>setDrafts(prev=>({...prev,[selected.id]:draft}))} id={selected.id} fill={fills[selected.fillIndex]} fallback={step.values.flowerPalette as string[]} /> : <div className={s.hint} data-testid="partition-select-hint">{t("FlowerPainter.UI.Partitions.SelectFirst", "Select a region to choose its props and fill style.")}</div>}
     </>;
 };
 
-const RegionSettings = ({id, fill, fallback}: {id: number; fill?: string; fallback?: string[]}) => {
+const RegionSettings = ({id, fill, fallback,draft,source,onDraft}: {id: number; fill?: string; fallback?: string[]; draft?:RegionDraft;source:string;onDraft:(draft:RegionDraft)=>void}) => {
     const {t} = useT(); const picker = usePicker(); const assets = useAssetList("flower");
     const saved = readFill(fill);
-    const [style, setStyle] = useState(saved.style);
-    // Old multicolour fills inherit the old palette until edited; new regions start without props.
-    const [flowers, setFlowers] = useState(saved.flowers.length ? saved.flowers : fill && saved.style !== "single" ? fallback || [] : []);
+    const savedFlowers=saved.flowers.length?saved.flowers:fill && saved.style!=="single"?fallback||[]:[];
+    const current=draft?.source===source?draft:{source,style:saved.style,flowers:savedFlowers};
+    const {style,flowers}=current;
+    const setStyle=(style:string)=>onDraft({...current,style});
+    const setFlowers=(flowers:string[])=>onDraft({...current,flowers});
+    const dirty=style!==saved.style || JSON.stringify(flowers)!==JSON.stringify(savedFlowers);
     const labels: Record<string,string> = {single:t("FlowerPainter.UI.Flowers.Single", "One flower"), flow:t("FlowerPainter.UI.Flowers.Flow", "Flowing colours"), islands:t("FlowerPainter.UI.Flowers.Islands", "Colour islands"), empty:t("FlowerPainter.UI.Flowers.Empty", "Leave empty")};
     return <Section title={t("FlowerPainter.UI.Partitions.Settings", "3 · Fill region {0}", [id])} testId="partition-settings">
         <div className={s.hint}>{t("FlowerPainter.UI.Partitions.OwnSettings", "These props and this style apply only to the selected region. Press Fill region to apply.")}</div>
+        {dirty?<div role="status" data-testid="partition-unsaved">{t("FlowerPainter.Workflow.Unapplied","Not applied — your choices are kept when switching regions.")}</div>:null}
         <div className={s.buttons}>{Object.keys(labels).map(k => <Btn key={k} label={labels[k]} selected={style === k} onClick={() => setStyle(k)} testId={`fill-style-${k}`} />)}</div>
         {style !== "empty" ? <>
             <Btn label={t("FlowerPainter.UI.Partitions.Props", "Choose props for this region")} onClick={() => picker.open({category:"flower", mode:style === "single" ? "single" : "multi", selected:style === "single" ? flowers.slice(0,1) : flowers, title:t("FlowerPainter.UI.Partitions.Props", "Choose props for this region"), allowAutomatic:false, onPick:setFlowers})} testId="fill-flower" />

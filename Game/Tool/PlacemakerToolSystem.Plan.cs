@@ -228,7 +228,7 @@ namespace FlowerPainter.Game.Tool
                 _requestedRevision = -1;
                 Touch();
             }
-            if (_stage == ToolStage.Design && _gesture == Gesture.None && _previewBase == null && UnityEngine.Time.realtimeSinceStartup - _lastInputChange > 0.2f) StartPlanning();
+            if (!_flowerHome && !_flowerCompleted && _stage == ToolStage.Design && _gesture == Gesture.None && _previewBase == null && UnityEngine.Time.realtimeSinceStartup - _lastInputChange > 0.2f) StartPlanning();
         }
 
         public void StartPlanning()
@@ -407,9 +407,11 @@ namespace FlowerPainter.Game.Tool
                                  || (_mode == SelectionMode.Perimeter && !_perimeter.Closed && _perimeter.Nodes.Count > 0),
                 AreaProblem = AreaProblem(),
                 HasRecipe = _recipe != null,
-                CanDesignWithoutArea = _recipe?.Root?.Layer == "floral",
+                CanDesignWithoutArea = FlowerWorkflow,
+                FlowerWorkflow=FlowerWorkflow,FlowerHome=_flowerHome,FlowerCompleted=_flowerCompleted,
+                Artwork=FlowerArtwork,ArtworkReady=ArtworkReady,PlacingArtwork=_placingFlag,
                 Planning = Planning,
-                ManualPlanning = true,
+                ManualPlanning = !FlowerWorkflow,
                 PlanReady = _plan != null && _planRevision == _inputRevision,
                 PlanHasErrors = _plan != null && _plan.HasErrors,
                 PlanHasContent = _plan != null && _plan.HasBuildableContent,
