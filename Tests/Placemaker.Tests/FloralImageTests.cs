@@ -22,6 +22,25 @@ namespace FlowerPainter.Tests
             }
             Assert.Equal(255,FlowerImage.Nearest(255,0,0,127));
         }
+        [Fact] public void ExpandedPalettePreservesNeutralsAndReducesPhotoColourError() {
+            Assert.Equal(255,FlowerImage.Hex.Length);
+            int3 RGB(string h)=>new int3(Convert.ToInt32(h.Substring(0,2),16),Convert.ToInt32(h.Substring(2,2),16),Convert.ToInt32(h.Substring(4,2),16));
+            double oldError=0,newError=0;
+            for(int r=0;r<256;r+=17)for(int g=0;g<256;g+=17)for(int b=0;b<256;b+=17) {
+                var source=new int3(r,g,b);
+                double Error(int3 c) {var d=c-source;return math.dot(d,d);}
+                oldError+=FlowerPatchMesh.Hex.Skip(4).Min(h=>Error(RGB(h)));
+                newError+=Error(RGB(FlowerImage.Hex[FlowerImage.Nearest((byte)r,(byte)g,(byte)b,255)]));
+            }
+            Assert.True(newError<oldError*.2,$"Colour error {newError/oldError:P1} of legacy");
+            for(int v=0;v<256;v++) {
+                var c=RGB(FlowerImage.Hex[FlowerImage.Nearest((byte)v,(byte)v,(byte)v,255)]);
+                Assert.Equal(c.x,c.y);Assert.Equal(c.y,c.z);Assert.InRange(Math.Abs(c.x-v),0,6);
+            }
+            var pixels=Enumerable.Range(4,251).Select(i=>(byte)i).ToArray();
+            var map=FlowerImage.Read(FlowerImage.Encode(251,1,251,1,pixels));
+            for(int i=0;i<pixels.Length;i++)Assert.Equal(pixels[i],map.Color(new float2((i+.5f)/251,.5f)));
+        }
         [Fact] public void SourceAspectAndImageTopArePreserved() {
             var map=FlowerImage.Read(Image());Assert.Equal(2,map.Ratio);
             Assert.Equal(4,map.Color(new float2(.25f,.75f)));
@@ -46,7 +65,7 @@ namespace FlowerPainter.Tests
             Assert.Throws<InvalidDataException>(()=>FlowerImage.Read(FlowerImage.Encode(2,2,2,2,new byte[]{255,255,255,255})));
             var bytes=Convert.FromBase64String(Image());Array.Resize(ref bytes,bytes.Length-1);
             Assert.ThrowsAny<IOException>(()=>FlowerImage.Read(Convert.ToBase64String(bytes)));
-            Assert.Throws<InvalidDataException>(()=>FlowerImage.Encode(2,2,2,2,new byte[]{99,4,4,4}));
+            Assert.Throws<InvalidDataException>(()=>FlowerImage.Encode(2,2,2,2,new byte[]{0,4,4,4}));
         }
         [Fact] public void DetailedImageSurvivesBinaryGroupReceiptAndRemainsEditable() {
             int side=FlowerImage.MaxSide;
@@ -75,10 +94,11 @@ namespace FlowerPainter.Tests
             Assert.NotEmpty(plan.Objects);var map=FlowerImage.Read(Image());
             foreach(var obj in plan.Objects) {
                 var mesh=obj.FlowerPatch;Assert.NotEmpty(mesh.Lod.Vertices);
+                Assert.Equal(FlowerPatchMesh.ImageMaterialVersion,mesh.UsedMaterialVersion);
                 Assert.Equal(mesh.Flowers*18,mesh.Indices.Length);
                 for(int i=0;i<mesh.Indices.Length;i+=18) {
                     int v=mesh.Indices[i];var uv=Unrot((mesh.Vertices[v]+obj.Position).xz-center)/new float2(width,height)+.5f;
-                    int expected=map.Color(uv);Assert.True(expected>=0);Assert.Equal(expected,(int)(mesh.UV[v].x*16));
+                    int expected=map.Color(uv);Assert.True(expected>=0);Assert.Equal(expected,(int)(mesh.UV[v].x*16)+16*(int)(mesh.UV[v].y*16));
                 }
             }
         }

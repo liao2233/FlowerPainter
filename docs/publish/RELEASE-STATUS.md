@@ -10,6 +10,13 @@ The local release package is a preview candidate, not a claim that all native re
 - Native run `queue-1029-082311`: clicked the real import button, opened the Windows file picker, selected `fixture.png`, and verified the filename, dimensions and flower preview after returning to the game. The earlier managed `OPENFILENAME` marshalling crashed Mono; the final picker uses a blittable structure and explicit native buffers.
 - Fixed the imported filename/dimensions wrapping into separate lines in Cohtml. No change to the already-tested flower planning or archive code was needed for the picker fix.
 
+## Expanded image colours (local 0.1.4 update)
+
+- 251 image flower colours (legacy 12 plus 216 RGB cube samples and 23 neutral greys); existing colour indices remain stable. Image-only material v7 has neutral centres and less darkening; legacy geometry keeps its original material.
+- 724 core tests pass, including neutral-ramp error <= 6/255, all palette indices round-tripping, and RGB-grid squared error below 20% of the old palette. An earlier run had three intermittent inherited BuildDeclutter failures; the unchanged full rerun passed. UI code is unchanged from the 9-test UI pass above.
+- Native run `20261029-094733-image-flowers`, DLL `51836f246f4e` build: six decoder formats, grayscale/warm ramp, transforms, build/edit/rebuild and cache-eviction reload completed with zero step errors. Nine models were evicted and all 10 instances returned. Reload screenshot inspected; discrete colour bands and flower gaps remain visible. The first attempt rejected an unsupported test-script parameter; it was removed before this successful run.
+- Reimport the original image for new colours: old indexed recipes cannot recover colours discarded by the 12-colour import.
+
 ## Completed locally
 
 - One version authority (`Directory.Build.props`) checked against UI, lock file and publishing metadata.

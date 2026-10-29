@@ -13,6 +13,7 @@ namespace FlowerPainter.Core.Layers.Types.Floral
         public const string Prefix = "FlowerPainter Patch ";
         public const string FlagPrefix = "FlowerPainter Flag ";
         public const int MaterialVersion = 5;
+        public const int ImageMaterialVersion = 7;
         // Flag albedo path: continuous UV + per-flag BaseColorMap (not the 12-colour canopy atlas).
         public const int FlagMaterialVersion = 6;
         public const int TilePitches = 64;
@@ -37,6 +38,8 @@ namespace FlowerPainter.Core.Layers.Types.Floral
         }
         internal sealed class Builder
         {
+            private readonly bool _image;
+            public Builder(bool image=false) {_image=image;}
             private readonly List<float3> _v=new List<float3>();
             private readonly List<float2> _uv=new List<float2>();
             private readonly List<int> _i=new List<int>();
@@ -48,16 +51,16 @@ namespace FlowerPainter.Core.Layers.Types.Floral
             }
             public void Top(float3 a,float3 b,float3 c,int color,int shade=2)
             {
-                var uv=new float2((color+.5f)/16f,.5f+(shade+.5f)/8f);
+                var uv=_image?new float2((color%16+.5f)/16f,(color/16+(shade+.5f)/4f)/16f):new float2((color+.5f)/16f,.5f+(shade+.5f)/8f);
                 Triangle(a,b,c,uv,uv,uv);
             }
             public FlowerPatchMesh Finish()=>new FlowerPatchMesh {Vertices=_v.ToArray(),UV=_uv.ToArray(),Indices=_i.ToArray()};
         }
         internal static FlowerPatchMesh Make(List<Region> pieces,float3 origin,float pitch,float height,int density,
             Func<float2,int> colorAt,Func<float2,float> terrain,Func<float2,float> clearance,System.Threading.CancellationToken cancel,
-            Dictionary<string,FlowerPatchMesh> cache,bool flowersOnly=false,float lodBias=0)
+            Dictionary<string,FlowerPatchMesh> cache,bool flowersOnly=false,float lodBias=0,bool image=false)
         {
-            var near=new Builder();var far=new Builder();int flowers=0;
+            var near=new Builder(image);var far=new Builder(image);int flowers=0;
             var originCell=(int2)math.round(origin.xz/pitch);
             float3 Ground(float2 p,float up) {
                 var index=(int2)math.round(p/pitch);
@@ -143,7 +146,7 @@ namespace FlowerPainter.Core.Layers.Types.Floral
                         }
                         if(!distant) {
                             float core=radius*.16f;
-                            target.Top(center+new float3(-core,.008f,-core),center+new float3(core,.008f,-core),center+new float3(0,.012f,core),3);
+                            target.Top(center+new float3(-core,.008f,-core),center+new float3(core,.008f,-core),center+new float3(0,.012f,core),image?color:3);
                             flowers++;
                         }
                     }
@@ -153,9 +156,9 @@ namespace FlowerPainter.Core.Layers.Types.Floral
             }
             var mesh=near.Finish();mesh.Lod=far.Finish();mesh.Flowers=flowers;
             if(mesh.Lod.Indices.Length==0)mesh.Lod=mesh;
-            mesh.UsedMaterialVersion=MaterialVersion;mesh.FlagId=null;mesh.LodBias=lodBias;
+            mesh.UsedMaterialVersion=image?ImageMaterialVersion:MaterialVersion;mesh.FlagId=null;mesh.LodBias=lodBias;
             using var stream=new MemoryStream();using var writer=new BinaryWriter(stream);
-            writer.Write(5);writer.Write(MaterialVersion);writer.Write(lodBias);
+            writer.Write(5);writer.Write(mesh.UsedMaterialVersion);writer.Write(lodBias);
             foreach(var part in new[]{mesh,mesh.Lod}) {
                 writer.Write(part.Vertices.Length);
                 for(int i=0;i<part.Vertices.Length;i++) {

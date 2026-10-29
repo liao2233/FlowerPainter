@@ -42,7 +42,7 @@ namespace FlowerPainter.Game.Assets
 
         internal static Result Read(string path)
         {
-            using var source=Image.FromFile(path);
+            using var source=Image.FromFile(path,true);
             // Honour camera orientation before deriving aspect ratio. GIF/TIFF use their first frame.
             if(Array.IndexOf(source.PropertyIdList,0x112)>=0) {
                 int orientation=BitConverter.ToUInt16(source.GetPropertyItem(0x112).Value,0);

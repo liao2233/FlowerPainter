@@ -26,12 +26,16 @@ namespace FlowerPainter.Game.Suite
                     g.FillRectangle(Brushes.Red,0,0,120,80);g.FillRectangle(Brushes.Yellow,120,0,120,80);
                     g.FillRectangle(Brushes.Blue,0,80,120,80);g.FillEllipse(Brushes.White,155,98,50,50);
                 }
+                for(int x=0;x<120;x++)for(int y=80;y<160;y++) {
+                    int v=(int)Math.Round(x*255.0/119);
+                    bitmap.SetPixel(x,y,y<120?Color.FromArgb(v,v,v):Color.FromArgb(255,128+v/2,102+v/2));
+                }
                 foreach(var format in formats) {
                     string path=Path.Combine(Path.GetTempPath(),"FlowerPainter-image-test-"+Guid.NewGuid().ToString("N")+"."+format.ToString().ToLowerInvariant());
                     try {
                         bitmap.Save(path,format);var result=FlowerImageImporter.Read(path);
                         var map=FlowerImage.Read(result.Data);
-                        if(math.abs(map.Ratio-1.5f)>.001f || map.Color(new float2(.2f,.8f))!=4 || map.Color(new float2(.8f,.8f))!=5)
+                        if(math.abs(map.Ratio-1.5f)>.001f || map.Color(new float2(.2f,.8f))!=FlowerImage.Nearest(255,0,0,255) || map.Color(new float2(.8f,.8f))!=FlowerImage.Nearest(255,255,0,255))
                             throw new InvalidDataException("Image colours or orientation changed: "+format);
                         if(format.Guid==ImageFormat.Png.Guid) {
                             if(map.Color(new float2(.98f,.02f))!=-1)throw new InvalidDataException("Transparent background was filled.");

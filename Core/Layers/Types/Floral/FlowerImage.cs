@@ -12,7 +12,15 @@ namespace FlowerPainter.Core.Layers.Types.Floral
         private static readonly object Gate = new object();
         private static string _encoded;
         private static FlagTemplate _template;
-        private static readonly int3[] Palette = Array.ConvertAll(FlowerPatchMesh.Hex,
+        public static readonly string[] Hex = BuildPalette();
+        private static string[] BuildPalette() {
+            var colors=new System.Collections.Generic.List<string>(FlowerPatchMesh.Hex);
+            for(int r=0;r<6;r++)for(int g=0;g<6;g++)for(int b=0;b<6;b++)
+                colors.Add((r*51).ToString("X2")+(g*51).ToString("X2")+(b*51).ToString("X2"));
+            for(int i=1;i<=23;i++) {int c=(int)Math.Round(i*255.0/24);colors.Add(c.ToString("X2")+c.ToString("X2")+c.ToString("X2"));}
+            return colors.ToArray();
+        }
+        private static readonly int3[] Palette = Array.ConvertAll(Hex,
             s => new int3(Convert.ToInt32(s.Substring(0,2),16),Convert.ToInt32(s.Substring(2,2),16),Convert.ToInt32(s.Substring(4,2),16)));
 
         public static byte Nearest(byte r, byte g, byte b, byte a)

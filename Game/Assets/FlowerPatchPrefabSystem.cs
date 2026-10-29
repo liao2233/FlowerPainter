@@ -34,6 +34,7 @@ namespace FlowerPainter.Game.Assets
         private StaticObjectPrefab _source;
         private SurfaceAsset _surface;
         private SurfaceAsset _canopySurface;
+        private SurfaceAsset _imageSurface;
         private readonly Dictionary<string, SurfaceAsset> _flagSurfaces = new Dictionary<string, SurfaceAsset>(StringComparer.Ordinal);
         private readonly Queue<FlowerPatchMesh> _pending = new Queue<FlowerPatchMesh>();
         private readonly HashSet<string> _requested = new HashSet<string>();
@@ -191,6 +192,7 @@ namespace FlowerPainter.Game.Assets
         private SurfaceAsset ResolveSurface(SavedPatch saved) {
             if(!string.IsNullOrEmpty(saved.FlagId) && saved.MaterialVersion>=FlowerPatchMesh.FlagMaterialVersion)
                 return FlagSurface(saved.FlagId);
+            if(saved.MaterialVersion==FlowerPatchMesh.ImageMaterialVersion)return _imageSurface??(_imageSurface=MakeSurface(image:true));
             return saved.MaterialVersion>=3?(_canopySurface??(_canopySurface=MakeSurface(true))):_surface;
         }
         private void Register(SavedPatch saved) {
@@ -263,17 +265,17 @@ namespace FlowerPainter.Game.Assets
             asset.Save(0,true,true,false);
             _flagSurfaces[flagId]=asset;return asset;
         }
-        private static SurfaceAsset MakeSurface(bool canopy=false) {
-            string name=canopy?"FlowerPainter Patch Canopy Atlas v5-fullmips":"FlowerPainter Patch Atlas v2";
+        private static SurfaceAsset MakeSurface(bool canopy=false,bool image=false) {
+            string name=image?"FlowerPainter Image Palette v7":canopy?"FlowerPainter Patch Canopy Atlas v5-fullmips":"FlowerPainter Patch Atlas v2";
             var existing=AssetDatabase.global.GetAsset<SurfaceAsset>(Id(name));if(existing!=null){existing.LoadProperties(false);return existing;}
             var material=new Material(AssetDatabase.global.resources.materialLibrary.GetMaterial(0)){name=name};
             // The template contains GPU-only default textures. Import only our readable textures.
             foreach(var property in material.GetTexturePropertyNames()) material.SetTexture(property,null);
-            int width=canopy?8192:128,atlasHeight=canopy?256:32;
+            int width=canopy?8192:128,atlasHeight=image?512:canopy?256:32;
             // Each 128 px tile contains a 64 px flower texture with duplicated edge gutters.
             // The game asset loader expects a complete mip chain when it reloads this texture.
             var atlas=new Texture2D(width,atlasHeight,TextureFormat.RGBA32,canopy?true:false,false){name=name,filterMode=canopy?FilterMode.Trilinear:FilterMode.Point,anisoLevel=canopy?4:1,wrapMode=TextureWrapMode.Clamp};
-            var palette=FlowerPatchMesh.Hex.Select(hex=>{ColorUtility.TryParseHtmlString("#"+hex,out var c);return c;}).ToArray();
+            var palette=(image?FlowerImage.Hex:FlowerPatchMesh.Hex).Select(hex=>{ColorUtility.TryParseHtmlString("#"+hex,out var c);return c;}).ToArray();
             var averages=new Color[palette.Length];
             if(canopy)for(int color=0;color<palette.Length;color++) {
                 var sum=Color.clear;
@@ -282,8 +284,9 @@ namespace FlowerPainter.Game.Assets
             }
             var pixels=new Color[width*atlasHeight];
             for(int y=0;y<atlasHeight;y++)for(int x=0;x<width;x++) {
-                int color=x/(canopy?512:8);var c=palette[color];
-                if(canopy&&y<128) c=CanopyPixel(palette,color,(x/128)%4+1,(math.clamp(x%128-32,0,63)+.5f)/64,(math.clamp(y-32,0,63)+.5f)/64);
+                int color=image?math.min(254,(y/32)*16+x/8):x/(canopy?512:8);var c=palette[color];
+                if(image) {float shade=.94f+.03f*((y%32)/8);c=new Color(c.r*shade,c.g*shade,c.b*shade,1);}
+                else if(canopy&&y<128) c=CanopyPixel(palette,color,(x/128)%4+1,(math.clamp(x%128-32,0,63)+.5f)/64,(math.clamp(y-32,0,63)+.5f)/64);
                 else if(canopy&&y>=248)c=averages[color];
                 else {float shade=.78f+.075f*(canopy?(y-128)/32:y/8);c=new Color(c.r*shade,c.g*shade,c.b*shade,1);}
                 pixels[y*width+x]=c;
