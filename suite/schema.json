@@ -185,6 +185,7 @@
     "archiveNotice": { "keys": [] },
     "publication": { "keys": ["view"], "enums": {"view":["home","image","partition"]} },
     "artworkInput": { "keys": [] },
+    "pasteImage": { "keys": ["fixtureDir"] },
     "loadSave": {
       "keys": ["name"]
     },

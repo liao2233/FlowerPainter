@@ -1,5 +1,12 @@
 # Release status
 
+## 0.1.6 clipboard images (local candidate)
+
+- The image design panel accepts the Paste image button and Ctrl+V outside text inputs. Clipboard PNG is preferred to retain transparency; native Windows bitmap and copied-image-file formats are also supported. Import runs on the existing worker thread and failed/empty clipboard reads preserve the previous image.
+- Native run `20261029-130606-clipboard-native-set` (DLL `bb0e3289`) passed all 22 steps with no step errors. Actual UI button clicks verified PNG colour/aspect/transparency, rejecting text while preserving the design, screenshot bitmaps, and copied files. The following file-import, placement, drag/rotate/resize, build/edit, save/reload and cancel-edit flow also passed. The external clipboard fixture restored the clipboard after testing.
+- The first implementation crashed in Mono's `System.Windows.Forms.XplatUIWin32.DIBtoImage` during native run `20261029-130215-clipboard-images`; it was not installed. Final code uses native Windows clipboard reads and has no Windows.Forms reference. `tools/suite/Clipboard-Fixture.ps1` runs outside Unity under Windows PowerShell -STA; set the first `pasteImage` step's `fixtureDir` to that helper's absolute Directory when running `suite/scenarios/clipboard-images.json`.
+- Browser tests cover the button, Ctrl+V, normal text-field paste and leaving image mode; all 15 flower UI tests passed.
+
 ## 0.1.5 flag input fix (local candidate)
 
 - Flags and imported images never fall through to polygon drawing, including before placement and after cancelling placement. Area mode/stage changes and polygon corner overlays are disabled for artwork. Whole-pattern placement, drag, rotation and size controls remain available.

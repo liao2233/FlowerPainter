@@ -1,6 +1,9 @@
 {
   "FlowerPainter.UI.Images.Title": "Image flowers",
   "FlowerPainter.UI.Images.Import": "Import image…",
+  "FlowerPainter.UI.Images.Paste": "Paste image (Ctrl+V)",
+  "FlowerPainter.UI.Images.NoClipboardImage": "Copy an image or screenshot first, then paste it here.",
+  "FlowerPainter.UI.Images.ClipboardBusy": "The clipboard is busy. Try pasting again.",
   "FlowerPainter.UI.Images.Importing": "Importing…",
   "FlowerPainter.UI.Images.Formats": "PNG, JPEG, BMP, GIF, TIFF, ICO, EMF, WMF. Animated images use the first frame.",
   "FlowerPainter.UI.Images.Colors": "Image colours are matched to flower colours. Transparent areas stay empty. Density controls the number of small flowers.",

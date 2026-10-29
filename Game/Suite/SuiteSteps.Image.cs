@@ -74,8 +74,8 @@ namespace FlowerPainter.Game.Suite
             if(_tool.StateInput().PlacingFlag || _tool.Shape?.Ring.Length!=5)throw new InvalidOperationException("Switch did not cancel placement and restore polygon draft.");
             _tool.ChoosePlanting("image");
             if(_tool.CurrentRecipe.Root.Settings.S("imageData","")!=imported.Data)throw new InvalidOperationException("Image draft lost.");
-            _tool.BeginFlagPlacement();_tool.GoToStage(ToolStage.Area);
-            if(_tool.StateInput().PlacingFlag)throw new InvalidOperationException("Stage change retained placement.");
+            _tool.BeginFlagPlacement();
+            if(_tool.GoToStage(ToolStage.Area) || !_tool.StateInput().PlacingFlag)throw new InvalidOperationException("Artwork area-stage guard changed placement.");
             _tool.GoToStage(ToolStage.Design);_tool.BeginFlagPlacement();
             rec["workflowSwitches"]=true;
             rec["formats"]=checkedFormats;rec["sourceDeleted"]=true;

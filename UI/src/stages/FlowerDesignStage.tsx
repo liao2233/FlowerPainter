@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Catalog, DesignState, ToolState } from "../contract";
 import { act } from "../lib/bindings";
 import { useT } from "../lib/l10n";
@@ -13,6 +13,18 @@ import s from "../components/floral.module.scss";
 export const FlowerDesignStage = ({ catalog, design, state,regionDrafts,setRegionDrafts }: {catalog: Catalog; design: DesignState; state: ToolState;regionDrafts:Record<number,RegionDraft>;setRegionDrafts:React.Dispatch<React.SetStateAction<Record<number,RegionDraft>>>}) => {
     const {t}=useT(); const picker=usePicker(); const flowers=useAssetList("flower");
     const step=design.root; const layer=catalog.layers.find(l=>l.id==="floral");
+    const canPaste=step?.values.shape==="image" && !state.importingImage && !state.panelCollapsed;
+    useEffect(()=>{
+        if(!canPaste)return;
+        const paste=(e:KeyboardEvent)=>{
+            if(e.repeat || !(e.ctrlKey || e.metaKey) || e.altKey || e.key.toLowerCase()!=="v")return;
+            const target=e.target as HTMLElement;
+            if(target?.closest?.("input,textarea,[contenteditable]"))return;
+            e.preventDefault();act.pasteImage();
+        };
+        document.addEventListener("keydown",paste);
+        return ()=>document.removeEventListener("keydown",paste);
+    },[canPaste]);
     if(!step || !layer) return null;
     const partition=step.values.shape==="partition";
     const flag=step.values.shape==="flag";
@@ -45,9 +57,10 @@ export const FlowerDesignStage = ({ catalog, design, state,regionDrafts,setRegio
         </Section> : null}
         {image ? <Section title={t("FlowerPainter.UI.Images.Title","Image flowers")} testId="image-design">
             <Btn label={state.importingImage ? t("FlowerPainter.UI.Images.Importing","Importing…") : t("FlowerPainter.UI.Images.Import","Import image…")} disabled={!!state.importingImage} onClick={()=>act.importImage()} testId="import-image" />
+            <Btn label={t("FlowerPainter.UI.Images.Paste","Paste image (Ctrl+V)")} disabled={!!state.importingImage} onClick={()=>act.pasteImage()} testId="paste-image" />
             <div className={s.hint}>{t("FlowerPainter.UI.Images.Formats","PNG, JPEG, BMP, GIF, TIFF, ICO, EMF, WMF. Animated images use the first frame.")}</div>
             <div className={s.hint}>{t("FlowerPainter.UI.Images.Colors","Image colours are matched to flower colours. Transparent areas stay empty. Density controls the number of small flowers.")}</div>
-            {state.imageImportError ? <div role="alert">{t("FlowerPainter.UI.Images.Failed","Import failed. Check the format and try another image.")} {state.imageImportError}</div> : null}
+            {state.imageImportError ? <div role="alert">{t("FlowerPainter.UI.Images.Failed","Import failed. Check the format and try another image.")} {t(state.imageImportError,state.imageImportError)}</div> : null}
             {step.values.imageData ? <>
                 {step.values.imagePreview?<img data-testid="image-preview" src={String(step.values.imagePreview)} alt={String(step.values.imageName||"")} style={{width:Math.min(240,120*Number(step.values.imageWidth)/Number(step.values.imageHeight))+"rem",height:Math.min(120,240*Number(step.values.imageHeight)/Number(step.values.imageWidth))+"rem"}}/>:null}
                 <div data-testid="image-name">{`${step.values.imageName || ""} · ${step.values.imageWidth} × ${step.values.imageHeight}`}</div>

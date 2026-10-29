@@ -13,16 +13,19 @@ namespace FlowerPainter.Game.Tool
         private Recipe _imageImportRecipe;
         private string _imageImportError;
 
-        public void BeginImageImport()
+        public void BeginImageImport() => BeginImageImport(FlowerImageImporter.Choose);
+        public void PasteImage() => BeginImageImport(FlowerImageImporter.Paste);
+
+        private void BeginImageImport(Func<FlowerImageImporter.Result> read)
         {
-            if(_imageImport!=null || _building || _stage!=ToolStage.Design || _recipe?.Root?.Layer!="floral")return;
+            if(_imageImport!=null || _building || _stage!=ToolStage.Design || _flowerHome || _flowerCompleted || _recipe?.Root?.Layer!="floral" || _recipe.Root.Settings.S("shape","")!="image")return;
             CancelGesture();
             _imageImportRecipe=_recipe;_imageImportError=null;
             var completion=new TaskCompletionSource<FlowerImageImporter.Result>();
             _imageImport=completion.Task;
-            Mod.Log.Info("FlowerPainter: opening image file picker");
+            Mod.Log.Info("FlowerPainter: importing image via "+read.Method.Name);
             var thread=new Thread(()=> {
-                try {completion.SetResult(FlowerImageImporter.Choose());}
+                try {completion.SetResult(read());}
                 catch(Exception e) {completion.SetException(e);}
             }) {IsBackground=true,Name="FlowerPainter image import"};
             thread.SetApartmentState(ApartmentState.STA);thread.Start();Touch();

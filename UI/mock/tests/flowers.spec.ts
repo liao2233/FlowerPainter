@@ -231,6 +231,23 @@ test("image flowers expose import, fixed-aspect transforms and edit guidance",as
     await expect(page.getByTestId("flag-templates")).toBeVisible();
 });
 
+test("image paste works by button and shortcut without stealing text paste",async({page})=>{
+    await flowers(page);
+    await page.getByTestId("flower-mode-image").click();
+    const pastes=()=>page.evaluate(()=>(window as any).pm.triggerLog.filter((e:any)=>e.name==="pasteImage").length);
+    await page.getByTestId("paste-image").click();
+    await expect.poll(pastes).toBe(1);
+    await page.getByTestId("paste-image").press("Control+v");
+    await expect.poll(pastes).toBe(2);
+    await page.evaluate(()=>{const b=(window as any).pm.backend;Object.assign(b.root.values,{imageData:true,imageName:"clipboard.png",imageWidth:200,imageHeight:100});b.publishAll();});
+    await page.getByTestId("slider-flagWidth-input").focus();
+    await page.keyboard.press("Control+v");
+    expect(await pastes()).toBe(2);
+    await page.getByTestId("flower-mode-flag").click();
+    await page.getByTestId("flower-mode-flag").press("Control+v");
+    expect(await pastes()).toBe(2);
+});
+
 
 test("entry routes artwork without a frame and preserves mode drafts",async({page})=>{
     await open(page,{real:true});await page.waitForFunction(()=>(window as any).pm.backend.hostUp===true);

@@ -1,6 +1,9 @@
 {
   "FlowerPainter.UI.Images.Title": "图片种花",
   "FlowerPainter.UI.Images.Import": "导入图片…",
+  "FlowerPainter.UI.Images.Paste": "粘贴图片（Ctrl+V）",
+  "FlowerPainter.UI.Images.NoClipboardImage": "剪贴板里没有图片，请先复制图片或截图，再来粘贴。",
+  "FlowerPainter.UI.Images.ClipboardBusy": "剪贴板正被其他程序占用，请稍后再点粘贴。",
   "FlowerPainter.UI.Images.Importing": "正在导入…",
   "FlowerPainter.UI.Images.Formats": "支持 PNG、JPEG、BMP、GIF、TIFF、ICO、EMF、WMF；动图使用第一帧。",
   "FlowerPainter.UI.Images.Colors": "把图片颜色匹配为花色，用立体小花拼出图案。透明部分留空；花朵密度决定小花数量。",

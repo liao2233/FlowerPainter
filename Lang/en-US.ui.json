@@ -119,6 +119,7 @@
   "FlowerPainter.UI.Images.Formats": "PNG, JPEG, BMP, GIF, TIFF, ICO, EMF, WMF. Animated images use the first frame.",
   "FlowerPainter.UI.Images.Import": "Import image…",
   "FlowerPainter.UI.Images.Importing": "Importing…",
+  "FlowerPainter.UI.Images.Paste": "Paste image (Ctrl+V)",
   "FlowerPainter.UI.Images.PlaceHint": "Click the ground to place the flower design.",
   "FlowerPainter.UI.Images.Preview": "Place the design directly, then drag, rotate or resize it. Proportions stay fixed.",
   "FlowerPainter.UI.Images.Title": "Image flowers",

@@ -330,6 +330,7 @@ export const act = {
     cancelFlowerEdit: () => fire(Triggers.cancelFlowerEdit),
     placeFlag: () => fire(Triggers.placeFlag),
     importImage: () => fire(Triggers.importImage),
+    pasteImage: () => fire(Triggers.pasteImage),
     setAreaMode: (mode: AreaMode) => fire(Triggers.setAreaMode, mode),
     setBrush: (shape: BrushShape, size: number, angle: number) => fire(Triggers.setBrush, shape, size, angle),
     setBrushRules: (rules: Partial<Omit<BrushRules, "walls">> & { walls?: Partial<BucketWalls> }) => fire(Triggers.setBrushRules, JSON.stringify(rules)),

@@ -43,6 +43,47 @@ namespace FlowerPainter.Game.Assets
         internal static Result Read(string path)
         {
             using var source=Image.FromFile(path,true);
+            return Read(source,Path.GetFileName(path));
+        }
+
+        public static Result Paste()
+        {
+            byte[] png=null;Image bitmap=null;string file=null;
+            if(!OpenClipboard(IntPtr.Zero))throw new InvalidOperationException("FlowerPainter.UI.Images.ClipboardBusy");
+            try {
+                // Read only the requested native format. Mono's Windows.Forms clipboard decoder can crash on DIBs.
+                foreach(var format in new[]{"PNG","image/png"}) {
+                    uint id=RegisterClipboardFormat(format);
+                    var handle=id==0?IntPtr.Zero:GetClipboardData(id);
+                    if(handle!=IntPtr.Zero) {
+                        int size=checked((int)GlobalSize(handle).ToUInt64());
+                        if(size==0)throw new InvalidDataException("Clipboard PNG is empty");
+                        var memory=GlobalLock(handle);
+                        if(memory==IntPtr.Zero)throw new InvalidOperationException("FlowerPainter.UI.Images.ClipboardBusy");
+                        try{png=new byte[size];Marshal.Copy(memory,png,0,size);}finally{GlobalUnlock(handle);}
+                        break;
+                    }
+                }
+                if(png==null) {
+                    var handle=GetClipboardData(2); // CF_BITMAP; Windows also synthesizes this from CF_DIB.
+                    if(handle!=IntPtr.Zero)bitmap=Image.FromHbitmap(handle);
+                    else {
+                        var drop=GetClipboardData(15); // CF_HDROP: an image file copied in Explorer.
+                        if(drop!=IntPtr.Zero) {
+                            uint length=DragQueryFile(drop,0,null,0);
+                            if(length>0){var path=new System.Text.StringBuilder(checked((int)length+1));DragQueryFile(drop,0,path,(uint)path.Capacity);file=path.ToString();}
+                        }
+                    }
+                }
+            } finally {CloseClipboard();}
+            if(png!=null){using var input=new MemoryStream(png);using var source=Image.FromStream(input);return Read(source,"Clipboard.png");}
+            if(bitmap!=null){using(bitmap)return Read(bitmap,"Clipboard.png");}
+            if(file!=null)return Read(file);
+            throw new InvalidOperationException("FlowerPainter.UI.Images.NoClipboardImage");
+        }
+
+        private static Result Read(Image source,string name)
+        {
             // Honour camera orientation before deriving aspect ratio. GIF/TIFF use their first frame.
             if(Array.IndexOf(source.PropertyIdList,0x112)>=0) {
                 var orientationBytes=source.GetPropertyItem(0x112)?.Value;
@@ -71,7 +112,7 @@ namespace FlowerPainter.Game.Assets
             } finally {bitmap.UnlockBits(bits);}
             string data=FlowerImage.Encode(ow,oh,w,h,colors);
             FlowerImage.Read(data); // Reject completely transparent images before replacing a design.
-            return new Result {Name=Path.GetFileName(path),Data=data,Width=ow,Height=oh};
+            return new Result {Name=name,Data=data,Width=ow,Height=oh};
         }
 
         [StructLayout(LayoutKind.Sequential)]
@@ -88,6 +129,14 @@ namespace FlowerPainter.Game.Assets
             if(address==IntPtr.Zero)throw new EntryPointNotFoundException(name);
             return (T)Marshal.GetDelegateForFunctionPointer(address,typeof(T));
         }
+        [DllImport("user32.dll")] [return:MarshalAs(UnmanagedType.Bool)] private static extern bool OpenClipboard(IntPtr owner);
+        [DllImport("user32.dll")] [return:MarshalAs(UnmanagedType.Bool)] private static extern bool CloseClipboard();
+        [DllImport("user32.dll")] private static extern IntPtr GetClipboardData(uint format);
+        [DllImport("user32.dll",CharSet=CharSet.Unicode,EntryPoint="RegisterClipboardFormatW")] private static extern uint RegisterClipboardFormat(string format);
+        [DllImport("kernel32.dll")] private static extern UIntPtr GlobalSize(IntPtr memory);
+        [DllImport("kernel32.dll")] private static extern IntPtr GlobalLock(IntPtr memory);
+        [DllImport("kernel32.dll")] [return:MarshalAs(UnmanagedType.Bool)] private static extern bool GlobalUnlock(IntPtr memory);
+        [DllImport("shell32.dll",CharSet=CharSet.Unicode,EntryPoint="DragQueryFileW")] private static extern uint DragQueryFile(IntPtr drop,uint index,System.Text.StringBuilder path,uint size);
         [UnmanagedFunctionPointer(CallingConvention.Winapi,CharSet=CharSet.Unicode)]
         [return:MarshalAs(UnmanagedType.Bool)] private delegate bool OpenDialog(ref OpenFileName dialog);
         [UnmanagedFunctionPointer(CallingConvention.Winapi)] private delegate int DialogError();

@@ -243,6 +243,7 @@ namespace FlowerPainter.Game.Suite
             {
                 case "area": yield return StepArea(st, step, rec); break;
                 case "importImage": yield return StepImportImage(st, step, rec); break;
+                case "pasteImage": yield return StepPasteImage(st, step, rec); break;
                 case "clear": yield return StepClear(st, step, rec); break;
                 case "hover": yield return StepHover(st, step, rec); break;
                 case "type": yield return StepType(st, step, rec); break;

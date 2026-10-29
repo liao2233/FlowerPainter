@@ -548,6 +548,7 @@ export const Triggers = {
   choosePlanting: "choosePlanting", repeatFlowers: "repeatFlowers", cancelFlowerEdit: "cancelFlowerEdit", copyDiagnostics: "copyDiagnostics",
     placeFlag: "placeFlag",
   importImage: "importImage",
+  pasteImage: "pasteImage",
   setAreaMode: "setAreaMode",               // (mode: AreaMode)
   setBrush: "setBrush",                     // (shape: BrushShape, size: number, angle: number)
   setBrushRules: "setBrushRules",           // (json: Partial<BrushRules> as a JSON string) — s11
