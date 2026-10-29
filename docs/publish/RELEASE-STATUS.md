@@ -1,6 +1,13 @@
 # 0.1.4 release status
 
-The local release package is a preview candidate, not a claim that all native release gates have passed.
+Published as a public preview on 2026-10-29 with the user's explicit approval to proceed with the documented remaining validation gaps. This is not a claim that all native release gates have passed.
+
+## Published artifact
+
+- Paradox Mods: https://mods.paradoxplaza.com/mods/165361/Windows (`ModId` 165361, version 0.1.4, Public).
+- Uploaded the previously validated package from commit `a957fd45c902efecf38d0ecbb7635968e8e226cc`: 737 core tests and 14 UI tests passed. DLL SHA-256: `27BF37D082FD5FA39BF8BDFDCEA09820375FD35AEDCB5F6D35F6BC5AA0BBE2C0`.
+- Official ModPublisher returned `Mod published with Id=165361` and exit code 0. The ID is recorded in `Properties/PublishConfiguration.xml`; subsequent file uploads must use `NewVersion` with a new version number, never `Publish`.
+- On this machine, creating the publisher's temporary ZIP through the C: user-data junction failed. Temporarily setting the toolchain's user-level `CSII_PDXCACHEPATH` to the same cache's physical E: path resolved it; the original setting was restored after upload. The runtime package was unchanged.
 
 ## Image import (0.1.4)
 
@@ -60,14 +67,14 @@ The local release package is a preview candidate, not a claim that all native re
 - Hidden seven inherited parking/park economy settings. Runtime packaging includes English and Simplified Chinese; other languages use English fallback.
 - Runtime and corresponding full source archives are packaged from the same committed revision. Package metadata includes the commit and DLL hash.
 
-## Still required before public upload
+## Remaining validation and release follow-up
 
 1. The public source repository is https://github.com/liao2233/FlowerPainter; keep it synchronized with the corresponding released version.
 2. Complete the remaining native checks, particularly drag cancellation/undo and a real second-PC import. The cache-removal suite covers direct flags, regions, curves and reload.
 3. The 0.1.3 direct-flag build and local reload passed with Placemaker loaded; verify the documented result when disabling/uninstalling FlowerPainter and loading a backup save. Use a copy of the save.
 4. Verify the new legacy-material reconstruction on a backup containing v6 albedo flags, if those old local development saves are still supported.
 5. A new save carries the flower meshes it uses. On 2026-10-29 the native suite removed newly created model caches and restored flag, region and curve builds on reload; a pre-0.1.3 save was loaded and resaved locally. A second physical computer has not been tested. Old saves must be opened and resaved on the original machine before transfer; models larger than the 512 MB archive limit cannot be guaranteed portable.
-6. First platform upload assigns `ModId`; record the real returned ID before subsequent uploads.
+6. The first platform upload assigned `ModId` 165361. Keep that ID for every subsequent update and increment the version for new runtime files.
 
 `tools/Check-Release.ps1 -ForUpload` refuses upload readiness without a real source URL and explicit `-NativeRegressionConfirmed`. This tool never uploads. Leave ModId blank only for the first upload.
 
