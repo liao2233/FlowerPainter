@@ -113,6 +113,7 @@ export interface ToolState {
   importingImage?: boolean;
   imageImportError?: string;
   archiveWarning?: string;
+  diagnosticsCopied?: boolean;
   /** rules: sent by s11+ C# (absent = older DLL). */
   brush: { shape: BrushShape; size: number; angle: number; rules?: BrushRules };
   area: AreaInfo;
@@ -544,7 +545,7 @@ export const Triggers = {
   undo: "undo",                             // ()
   redo: "redo",                             // ()
 
-  choosePlanting: "choosePlanting", repeatFlowers: "repeatFlowers", cancelFlowerEdit: "cancelFlowerEdit",
+  choosePlanting: "choosePlanting", repeatFlowers: "repeatFlowers", cancelFlowerEdit: "cancelFlowerEdit", copyDiagnostics: "copyDiagnostics",
     placeFlag: "placeFlag",
   importImage: "importImage",
   setAreaMode: "setAreaMode",               // (mode: AreaMode)

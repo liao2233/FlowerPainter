@@ -158,6 +158,7 @@ namespace FlowerPainter.Game.Tool
                 ImportingImage = _imageImport != null,
                 ImageImportError = _imageImportError,
                 ArchiveWarning = World.GetExistingSystemManaged<Assets.FlowerPatchArchiveSystem>()?.WarningKey,
+                DiagnosticsCopied = UnityEngine.Time.realtimeSinceStartup<_diagnosticsCopiedUntil,
                 BrushSquare = _brushSquare,
                 BrushSize = _brushSize,
                 BrushAngle = _brushAngle,

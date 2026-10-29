@@ -3,7 +3,7 @@ import { expect, Page } from "@playwright/test";
 import fs from "fs";
 import path from "path";
 
-export const SHOTS = process.env.PM_SHOTS_DIR || path.join(__dirname, "..", "screenshots");
+export const SHOTS = process.env.PM_SHOTS_DIR || path.join(__dirname, "..", "..", "..", ".forensics", "ui-shots");
 
 /** Opens the mock. Default: fake catalog (stable for UX tests); { real: true } uses the Core host. */
 export async function open(page: Page, opts: { width?: number; height?: number; real?: boolean } = {}) {

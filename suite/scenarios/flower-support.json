@@ -1,0 +1,17 @@
+{
+  "set":"flower-support",
+  "scenarios":[{
+    "id":"archive-notification-and-diagnostics",
+    "land":{"size":[90,90],"roads":"none"},
+    "steps":[
+      {"do":"area","tool":"flag"},
+      {"do":"value","id":"flagTemplate","value":"japan"},
+      {"do":"value","id":"flagWidth","value":55},
+      {"do":"preview"},
+      {"do":"build"},
+      {"do":"archiveNotice"},
+      {"do":"shot","name":"archive-warning-and-diagnostics","shotMode":"ui"},
+      {"do":"saveReload"}
+    ]
+  }]
+}

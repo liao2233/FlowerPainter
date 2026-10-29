@@ -182,6 +182,7 @@
     "saveReload": {
       "keys": ["evictNewPatches"]
     },
+    "archiveNotice": { "keys": [] },
     "loadSave": {
       "keys": ["name"]
     },

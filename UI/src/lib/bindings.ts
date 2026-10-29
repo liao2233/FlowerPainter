@@ -325,6 +325,7 @@ export const act = {
     undo: () => fire(Triggers.undo),
     redo: () => fire(Triggers.redo),
     choosePlanting: (mode:string) => fire(Triggers.choosePlanting,mode),
+    copyDiagnostics: () => fire(Triggers.copyDiagnostics),
     repeatFlowers: () => fire(Triggers.repeatFlowers),
     cancelFlowerEdit: () => fire(Triggers.cancelFlowerEdit),
     placeFlag: () => fire(Triggers.placeFlag),

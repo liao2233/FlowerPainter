@@ -28,8 +28,12 @@ namespace FlowerPainter.Game.Assets
         public bool HasWarning { get; private set; }
         internal int PendingSaveBytes => _captured.Count;
         internal int LastCaptureBytes { get; private set; }
+        public int WarningRevision { get; private set; }
+        public int LastOperationWarnings { get; private set; }
+        public double LastCaptureMilliseconds { get; private set; }
+        public const string NotificationId="FlowerPainter.ArchiveWarning";
         public string WarningKey => !HasWarning ? "" : _recovery.HasOpaqueData ? "FlowerPainter.Archive.Opaque" : "FlowerPainter.Archive.Partial";
-        private void Warn(string message) { HasWarning=true;Mod.Log.Warn("Flower patch archive: "+message); }
+        internal void Warn(string message) { HasWarning=true;LastOperationWarnings++;WarningRevision++;Mod.Log.Warn("Flower patch archive: "+message); }
 
         [Preserve] protected override void OnCreate()
         {
@@ -49,6 +53,7 @@ namespace FlowerPainter.Game.Assets
 
         private void Capture()
         {
+            var watch=System.Diagnostics.Stopwatch.StartNew();LastOperationWarnings=0;
             _captured = new ArraySegment<byte>(Array.Empty<byte>());
             var names = new HashSet<string>(StringComparer.Ordinal);
             try {
@@ -60,7 +65,8 @@ namespace FlowerPainter.Game.Assets
             } catch(Exception e) when(!(e is OutOfMemoryException)) { Warn("Cannot enumerate all flower models: "+e.Message); }
             _captured=_recovery.Capture(names,(name,budget)=>_patches.ExportPatch(name,budget),MaxArchiveBytes,Warn);
             LastCaptureBytes=_captured.Count;
-            Mod.Log.Info("Flower patch save archive: " + names.Count + " referenced models, " + _captured.Count + " bytes");
+            LastCaptureMilliseconds=watch.Elapsed.TotalMilliseconds;
+            Mod.Log.Info("Flower patch save archive: " + names.Count + " referenced models, " + _captured.Count + " bytes, "+LastCaptureMilliseconds.ToString("F1",System.Globalization.CultureInfo.InvariantCulture)+" ms, "+LastOperationWarnings+" warnings");
         }
 
         public void Serialize<TWriter>(TWriter writer) where TWriter : IWriter
@@ -86,6 +92,7 @@ namespace FlowerPainter.Game.Assets
         public void SetDefaults(Context context) {
             _data=Array.Empty<byte>();_captured=new ArraySegment<byte>(Array.Empty<byte>());
             _recovery.Clear();HasWarning=false;
+            LastOperationWarnings=0;LastCaptureBytes=0;LastCaptureMilliseconds=0;WarningRevision++;
         }
 
         private void Restore()

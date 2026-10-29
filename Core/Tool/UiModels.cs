@@ -47,6 +47,7 @@ namespace FlowerPainter.Core.Tool
         public bool ImportingImage;
         public string ImageImportError;
         public string ArchiveWarning;
+        public bool DiagnosticsCopied;
         public bool BrushSquare;
         public float BrushSize = 150f;
         public float BrushAngle;
@@ -146,6 +147,7 @@ namespace FlowerPainter.Core.Tool
             o.Set("importingImage",s.ImportingImage);
             o.Set("imageImportError",s.ImageImportError ?? "");
             o.Set("archiveWarning",s.ArchiveWarning ?? "");
+            o.Set("diagnosticsCopied",s.DiagnosticsCopied);
             var brush = JsonValue.Obj().Set("shape", s.BrushSquare ? "square" : "round").Set("size", Round(s.BrushSize, 1)).Set("angle", Round(s.BrushAngle, 1));
             if (s.BrushRules != null) brush.Set("rules", BrushRulesJson(s.BrushRules));
             o.Set("brush", brush);

@@ -32,6 +32,7 @@ namespace FlowerPainter.Game.UI
         private string _assetsStamp;
         private string _managedStamp;
         private int _frame;
+        private int _archiveNotificationRevision=-1;
         private readonly SortedSet<string> _requestedCategories = new SortedSet<string>(StringComparer.Ordinal);
 
         [Preserve]
@@ -50,6 +51,7 @@ namespace FlowerPainter.Game.UI
 
             Trigger("toggleTool", () => _tool.Toggle());
             Trigger("close", () => _tool.Close());
+            Trigger("copyDiagnostics", () => _tool.CopyDiagnostics());
             Trigger<bool>("setPanelCollapsed", c => _tool.SetPanelCollapsed(c));
             Trigger<string>("goToStage", s => { if (StageMachine.TryParse(s, out var st)) _tool.GoToStage(st); });
             Trigger("primary", () => _tool.Primary());
@@ -149,6 +151,7 @@ namespace FlowerPainter.Game.UI
             {
                 PollHotkey();
                 _tool.PollBuildWhileInactive();
+                UpdateArchiveNotification();
                 // While the tool is closed only "open" changes; refresh rarely.
                 if (!_tool.IsActive && _stateStamp == _tool.ViewVersion && _frame % 30 != 0) return;
                 PushState();
@@ -162,6 +165,23 @@ namespace FlowerPainter.Game.UI
             {
                 if (_frame % 600 == 1) Mod.Log.Error(e, "FlowerPainter: UI update failed");
             }
+        }
+
+        private void UpdateArchiveNotification()
+        {
+            var archive=World.GetExistingSystemManaged<Assets.FlowerPatchArchiveSystem>();
+            if(archive==null || archive.WarningRevision==_archiveNotificationRevision)return;
+            _archiveNotificationRevision=archive.WarningRevision;
+            if(!archive.HasWarning) {
+                if(global::Game.PSI.NotificationSystem.Exist(Assets.FlowerPatchArchiveSystem.NotificationId))
+                    global::Game.PSI.NotificationSystem.Pop(Assets.FlowerPatchArchiveSystem.NotificationId);
+                return;
+            }
+            global::Game.PSI.NotificationSystem.Push(Assets.FlowerPatchArchiveSystem.NotificationId,
+                title:global::Game.UI.Localization.LocalizedString.Id("FlowerPainter.Name"),
+                text:global::Game.UI.Localization.LocalizedString.Id(archive.WarningKey),
+                progressState:Colossal.PSI.Common.ProgressState.Warning,
+                onClicked:()=>{if(!_tool.IsActive)_tool.Toggle();_tool.SetPanelCollapsed(false);});
         }
 
         private void PollHotkey()

@@ -27,6 +27,13 @@ The local release package is a preview candidate, not a claim that all native re
 
 ## Completed locally
 
+### Support and release workflow (local 0.1.4 update)
+
+- Archive warnings use the game's native notification system even when the flower panel is closed; clicking opens the panel. Copy diagnostics uses the native clipboard and includes actual game/mod versions, archive state, capture timing and loaded assemblies matching Placemaker. This detection is diagnostic information, not a coexistence guarantee.
+- Native run `20261029-115234-flower-support` (DLL `2190c7a2`) passed all eight steps. A synthetic warning was registered with the panel closed; the real Copy diagnostics button populated the clipboard, and save/reload retained all 13 flower instances. Actual game version reported `1.6.2f1`. The fixture archive was 718,372 raw bytes; capture took 95.7 ms in this one run (not a large-city benchmark).
+- UI screenshots are no longer tracked; existing files remain on disk. Default test output is `.forensics/ui-shots`, with `PM_SHOTS_DIR` still supported. Publish screenshots under Properties are unchanged.
+- Player documentation leads with image planting and explains independent installation, verified game version and reporting steps. Parameterized save generation, broad inherited-code/language deletion, and a final v0.1.4 tag are deferred; existing release gates still apply.
+
 ### Archive failure recovery (local 0.1.4 update)
 
 - Archive capture checks each model's size before reading its files, continues after missing-file/metadata failures, and keeps fitting models within the 512 MiB budget. Encoding no longer collects every model plus a final full-array copy. Successful serialization releases the temporary buffer.

@@ -17,6 +17,25 @@ namespace FlowerPainter.Game.Suite
 {
     public sealed partial class SuiteRunner
     {
+        private IEnumerator StepArchiveNotice(ScenarioState st,JObject step,JObject rec)
+        {
+            yield return CloseTool();
+            var archive=_world.GetExistingSystemManaged<Assets.FlowerPatchArchiveSystem>();
+            archive.Warn("Suite notification check only; no model data was removed");
+            yield return Frames(60);
+            rec["notificationWhileClosed"]=!_tool.IsActive && global::Game.PSI.NotificationSystem.Exist(Assets.FlowerPatchArchiveSystem.NotificationId);
+            if(!(bool)rec["notificationWhileClosed"]){rec["error"]="Archive notification missing while flower panel is closed";yield break;}
+            yield return OpenTool();
+            string previous=GUIUtility.systemCopyBuffer;
+            try {
+                yield return UiAct(st,rec,"copy diagnostics","copy-diagnostics","copyDiagnostics",null,
+                    ()=>GUIUtility.systemCopyBuffer.StartsWith("FlowerPainter diagnostics"),()=>_tool.CopyDiagnostics(),mustChange:false);
+                string copied=GUIUtility.systemCopyBuffer;
+                rec["diagnosticsCopied"]=copied.Contains("Archive warning: FlowerPainter.Archive.Partial") && copied.Contains("Loaded Placemaker assemblies:") && copied.Contains("Last capture ms:");
+                if(!(bool)rec["diagnosticsCopied"])rec["error"]="Diagnostic clipboard content is incomplete";
+                rec["gameVersion"]=Application.version;
+            } finally {GUIUtility.systemCopyBuffer=previous;}
+        }
         private IEnumerator StepLoadSave(ScenarioState st,JObject step,JObject rec)
         {
             var wanted=(string)step["name"];
@@ -53,6 +72,7 @@ namespace FlowerPainter.Game.Suite
             rec["saveName"]=name;
             var archive=_world.GetExistingSystemManaged<Assets.FlowerPatchArchiveSystem>();
             rec["archiveBytes"]=archive.LastCaptureBytes;
+            rec["archiveCaptureMs"]=archive.LastCaptureMilliseconds;
             rec["archiveBufferReleased"]=archive.PendingSaveBytes==0;
             if(archive.PendingSaveBytes!=0){rec["error"]="Serialized flower archive buffer was not released";yield break;}
             if ((bool?)step["evictNewPatches"] == true) {

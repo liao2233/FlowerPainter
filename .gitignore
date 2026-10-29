@@ -4,6 +4,7 @@ obj/
 UI/node_modules/
 UI/build/
 UI/mock/dist/
+UI/mock/screenshots/
 UI/test-results/
 UI/playwright-report/
 *.user

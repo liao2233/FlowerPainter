@@ -821,6 +821,7 @@ export const FlowerPainterPanel = () => {
                     </Tip>
                 ) : null}
                 <div className={s.flex} />
+                <Btn label={state.diagnosticsCopied?t("FlowerPainter.Support.Copied","Copied"):t("FlowerPainter.Support.Copy","Copy diagnostics")} onClick={()=>act.copyDiagnostics()} testId="copy-diagnostics"/>
                 {state.stage === "manage" ? null : <UndoRedo state={state} />}
                 {state.anarchy?.available ? (
                     <Btn
