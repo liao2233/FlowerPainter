@@ -163,7 +163,7 @@ namespace FlowerPainter.Game.Build
                             // parking pieces "shown again" but never drawn. The mask goes back exactly as OverrideSystem restores it.
                             EntityManager.RemoveComponent<global::Game.Common.Overridden>(e);
                             EntityManager.AddComponent<global::Game.Common.BatchesUpdated>(e);
-                            if (RestoreSearchMask(e, prefab)) unmasked++;
+                            if (RestoreRenderMasks(World, e, prefab)) unmasked++;
                             restored++;
                         }
                         else Audit.Add("object", name, pos, AuditReason.Hidden);
@@ -183,30 +183,44 @@ namespace FlowerPainter.Game.Build
         }
 
         /// <summary>
-        /// (core) Puts an un-hidden object back into the static object search tree with the mask OverrideSystem gives a visible one
-        /// (Game.Objects.OverrideSystem.GetBoundsMask: NotOverridden | the prefab's mesh layers). Without it the object stays culled.
+        /// Restores both cached visibility masks after removing Overridden, without triggering
+        /// another collision pass through Updated. Used after building, brush editing and loading.
         /// </summary>
-        private bool RestoreSearchMask(Entity e, Entity prefab)
+        internal static bool RestoreRenderMasks(World world, Entity e, Entity prefab)
         {
             try
             {
-                if (!EntityManager.HasComponent<ObjectGeometryData>(prefab)) return false;
-                var layers = EntityManager.GetComponentData<ObjectGeometryData>(prefab).m_Layers;
-                var search = World.GetOrCreateSystemManaged<global::Game.Objects.SearchSystem>();
+                var entityManager = world.EntityManager;
+                if (!entityManager.HasComponent<ObjectGeometryData>(prefab)) return false;
+                var layers = entityManager.GetComponentData<ObjectGeometryData>(prefab).m_Layers;
+                var visibleLayers = global::Game.Common.CommonUtils.GetBoundsMask(layers);
+                // PreCullingSystem caches a separate mask while an object is Overridden.
+                // BatchesUpdated does not recompute it (only Updated does, which also reruns
+                // collision overrides). Restore it together with the search tree mask.
+                if (entityManager.HasComponent<global::Game.Rendering.CullingInfo>(e))
+                {
+                    var culling = entityManager.GetComponentData<global::Game.Rendering.CullingInfo>(e);
+                    culling.m_Mask = (culling.m_Mask & ~global::Game.Common.BoundsMask.AllLayers) | visibleLayers;
+                    entityManager.SetComponentData(e, culling);
+                }
+                var search = world.GetOrCreateSystemManaged<global::Game.Objects.SearchSystem>();
                 var tree = search.GetStaticSearchTree(false, out var deps);
                 deps.Complete();
                 bool ok = false;
                 if (tree.TryGet(e, out var bounds))
                 {
-                    var mask = global::Game.Common.BoundsMask.NotOverridden | global::Game.Common.CommonUtils.GetBoundsMask(layers);
+                    var mask = global::Game.Common.BoundsMask.NotOverridden | visibleLayers;
                     bounds.m_Mask = (bounds.m_Mask & ~(global::Game.Common.BoundsMask.AllLayers | global::Game.Common.BoundsMask.NotOverridden)) | mask;
                     tree.Update(e, bounds);
                     ok = true;
                 }
                 search.AddStaticSearchTreeWriter(default);
+                // The incremental camera culler assumes unchanged visible tree nodes were
+                // already visited. A restored mask needs a fresh traversal, even with a still camera.
+                world.GetOrCreateSystemManaged<global::Game.Rendering.PreCullingSystem>().ResetCulling();
                 return ok;
             }
-            catch (Exception ex) { Mod.Log.Warn("FlowerPainter: search tree restore failed: " + ex.Message); return false; }
+            catch (Exception ex) { Mod.Log.Warn("FlowerPainter: render visibility restore failed: " + ex.Message); return false; }
         }
 
         private static void Tally(Dictionary<string, int> d, string key) => d[key] = (d.TryGetValue(key, out int n) ? n : 0) + 1;

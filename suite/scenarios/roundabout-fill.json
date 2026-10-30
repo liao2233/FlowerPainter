@@ -1,0 +1,122 @@
+{
+  "set": "roundabout-fill",
+  "scenarios": [
+    {
+      "id": "roundabout-flat",
+      "land": {
+        "shape": "circle",
+        "ground": "flat",
+        "roads": "follow",
+        "size": [
+          90,
+          90
+        ],
+        "gap": 10
+      },
+      "steps": [
+        {
+          "layer": "floral",
+          "do": "type",
+          "preset": "patch-carpet"
+        },
+        {
+          "tool": "bucket",
+          "do": "area"
+        },
+        {
+          "camera": {
+            "view": "top",
+            "distance": 160,
+            "target": "area"
+          },
+          "shotMode": "render",
+          "do": "preview",
+          "shot": "preview"
+        },
+        {
+          "do": "build"
+        },
+        {
+          "seconds": 6,
+          "do": "wait"
+        },
+        {
+          "target": "build",
+          "shot": "built",
+          "shotMode": "render",
+          "view": "top",
+          "distance": 160,
+          "do": "camera"
+        },
+        {
+          "build": true,
+          "do": "edit"
+        },
+        {
+          "do": "build"
+        },
+        {
+          "do": "saveReload"
+        },
+        {
+          "shot": "reloaded",
+          "distance": 230,
+          "view": "top",
+          "target": "build",
+          "do": "camera",
+          "shotMode": "render"
+        }
+      ]
+    },
+    {
+      "id": "roundabout-slope",
+      "land": {
+        "grade": 6,
+        "size": [
+          90,
+          90
+        ],
+        "ground": "slope",
+        "gap": 10,
+        "roads": "follow",
+        "shape": "circle"
+      },
+      "steps": [
+        {
+          "layer": "floral",
+          "do": "type",
+          "preset": "patch-carpet"
+        },
+        {
+          "tool": "bucket",
+          "do": "area"
+        },
+        {
+          "camera": {
+            "view": "top",
+            "distance": 160,
+            "target": "area"
+          },
+          "shotMode": "render",
+          "do": "preview",
+          "shot": "preview"
+        },
+        {
+          "do": "build"
+        },
+        {
+          "seconds": 6,
+          "do": "wait"
+        },
+        {
+          "target": "build",
+          "shot": "built",
+          "shotMode": "render",
+          "view": "top",
+          "distance": 160,
+          "do": "camera"
+        }
+      ]
+    }
+  ]
+}

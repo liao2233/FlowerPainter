@@ -11,6 +11,42 @@ namespace FlowerPainter.Tests
 {
     public class FloralPatchTests
     {
+        [Theory]
+        [InlineData("flow")]
+        [InlineData("islands")]
+        public void RoundaboutCarpetReachesTheBoundaryInEveryDirection(string shape)
+        {
+            var center = new float2(-1277.6f, 206.5f);
+            const float radius = 44.3f;
+            var ring = Enumerable.Range(0, 96).Select(i => {
+                float angle = i * 2 * math.PI / 96;
+                var p = center + radius * new float2(math.cos(angle), math.sin(angle));
+                return new float3(p.x, 350, p.y);
+            }).ToArray();
+            var layer = new FloralLayer();
+            var settings = layer.Defaults();
+            settings.Values["shape"] = shape;
+            var plan = layer.Plan(new AreaInput { Settings = settings, Seed = 42,
+                Site = new SiteContext { HeightAt = p => 350 },
+                Shape = new AreaShape { Ring = ring, Source = AreaSource.Block } }, CancellationToken.None);
+            Assert.NotEmpty(plan.Objects);
+            foreach (bool distant in new[] { false, true }) {
+                var reach = new float[16];
+                foreach (var obj in plan.Objects) {
+                    var mesh = distant ? obj.FlowerPatch.Lod : obj.FlowerPatch;
+                    foreach (var vertex in mesh.Vertices) {
+                        var p = (obj.Position + vertex).xz - center;
+                        float distance = math.length(p);
+                        Assert.True(distance <= radius + .05f, $"Flower outside roundabout: {distance}");
+                        int sector = math.min(15, (int)((math.atan2(p.y, p.x) + math.PI) * 16 / (2 * math.PI)));
+                        reach[sector] = math.max(reach[sector], distance);
+                    }
+                }
+                Assert.All(reach, distance => Assert.True(distance > radius - 1.5f,
+                    $"Carpet stopped before the roundabout edge: {distance} (LOD={distant})"));
+            }
+        }
+
         private static AreaPlan Plan(Action<SettingsBag> edit, float width=30, float depth=20, float2 offset=default, Func<float2,float> terrain=null)
         {
             var layer=new FloralLayer();var settings=layer.Defaults();settings.Values["plantingSystem"]="patch";settings.Values["flowerDensity"]=1;edit(settings);

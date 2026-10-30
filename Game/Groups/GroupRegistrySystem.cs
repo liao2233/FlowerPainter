@@ -721,6 +721,8 @@ namespace FlowerPainter.Game.Groups
                     if (blocked) { kept++; continue; }
                     EntityManager.RemoveComponent<Overridden>(e);
                     EntityManager.AddComponent<BatchesUpdated>(e);
+                    if (EntityManager.HasComponent<global::Game.Prefabs.PrefabRef>(e))
+                        Build.BuildService.RestoreRenderMasks(World, e, EntityManager.GetComponentData<global::Game.Prefabs.PrefabRef>(e).m_Prefab);
                     shown++;
                 }
                 if (shown > 0 || kept > 0) Mod.Log.Info($"FlowerPainter load: {shown} hidden object(s) of our own builds shown again, {kept} stay hidden (next to another building).");

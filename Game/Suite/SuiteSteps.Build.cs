@@ -9,6 +9,7 @@ using Game.Common;
 using Game.Tools;
 using Newtonsoft.Json.Linq;
 using FlowerPainter.Core;
+using FlowerPainter.Core.Build;
 using FlowerPainter.Core.Tool;
 using FlowerPainter.Game.Groups;
 using FlowerPainter.Game.Tool;
@@ -98,6 +99,38 @@ namespace FlowerPainter.Game.Suite
             res["notes"] = new JArray(_tool.BuildNotes.Select(n => n.Key + (n.Args != null && n.Args.Length > 0 ? " (" + string.Join(", ", n.Args) + ")" : "")));
             // the game is done with the build when no temporaries are left; the next picture waits for the scene to be still
             yield return WaitFor(rec, "settle", () => TempCount() == 0, 30f);
+            if (_tool.CurrentRecipe?.Root?.Layer == "floral") {
+                // Check permanent objects after the game's deferred override updates have settled.
+                yield return Frames(120);
+                CheckFlowerVisibility(st.Group, rec);
+            }
+        }
+
+        private void CheckFlowerVisibility(int group, JObject rec)
+        {
+            var em = _world.EntityManager;
+            var members = new List<Entity>(); Services.Groups.GetMembers(group, members);
+            var prefabs = _world.GetExistingSystemManaged<global::Game.Prefabs.PrefabSystem>();
+            var tree = _world.GetExistingSystemManaged<global::Game.Objects.SearchSystem>().GetStaticSearchTree(false, out var deps);
+            deps.Complete();
+            var patches = new JArray();
+            foreach (var e in members) {
+                // The invisible group carrier borrows a patch PrefabRef but has no renderer.
+                if (em.GetComponentData<FlowerPainterMember>(e).Kind != MemberKind.Object) continue;
+                if (!em.HasComponent<global::Game.Prefabs.PrefabRef>(e)) continue;
+                var prefab = em.GetComponentData<global::Game.Prefabs.PrefabRef>(e).m_Prefab;
+                string name = prefabs.GetPrefabName(prefab);
+                if (!name.StartsWith(Core.Layers.Types.Floral.FlowerPatchMesh.Prefix) && !name.StartsWith(Core.Layers.Types.Floral.FlowerPatchMesh.FlagPrefix)) continue;
+                bool found = tree.TryGet(e, out var bounds);
+                bool hidden = em.HasComponent<Overridden>(e);
+                var mask = em.HasComponent<global::Game.Rendering.CullingInfo>(e)
+                    ? em.GetComponentData<global::Game.Rendering.CullingInfo>(e).m_Mask : 0;
+                patches.Add(new JObject { ["name"] = name, ["hidden"] = hidden,
+                    ["inSearchTree"] = found, ["mask"] = found ? bounds.m_Mask.ToString() : "missing", ["cullingMask"] = mask.ToString() });
+                if (hidden || !found || (bounds.m_Mask & BoundsMask.AllLayers) == 0 || (mask & BoundsMask.AllLayers) == 0)
+                    rec["error"] = "Built flower patch remains hidden after settling: " + name;
+            }
+            rec["flowerVisibility"] = patches;
         }
 
         // ───────────── select (the Manage stage: a click on the build) ─────────────

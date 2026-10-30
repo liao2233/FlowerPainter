@@ -91,6 +91,8 @@ namespace FlowerPainter.Game.Suite
             if(omitArchive && archive.WarningKey!="FlowerPainter.Archive.Missing")rec["error"]="Missing archive was not reported after loading flower references";
             if(!omitArchive && archive.HasWarning)rec["error"]="Unexpected archive warning after complete archive reload: "+archive.WarningKey;
             if(!before.SequenceEqual(after))rec["error"]="Flower patch prefabs changed or disappeared after reload";
+            yield return Frames(120);
+            CheckFlowerVisibility(st.Group, rec);
         }
     }
 }

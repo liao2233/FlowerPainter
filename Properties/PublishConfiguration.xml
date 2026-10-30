@@ -75,9 +75,9 @@
   <Thumbnail Value="Properties/Thumbnail.png" />
   <Tag Value="Code Mod" />
   <ForumLink Value="" />
-  <ModVersion Value="0.1.6" />
+  <ModVersion Value="0.1.7" />
   <GameVersion Value="1.6.*" />
-  <ChangeLog Value="0.1.6：图片种花支持粘贴剪贴板图片和 Ctrl+V，优先保留 PNG 透明背景；粘贴失败保留现有设计。包含 0.1.5 的旗帜自由选点修复。" />
+  <ChangeLog Value="0.1.7：修复自动填充圆形等不规则区域时，建造后外围花块消失、只剩方块的问题；同步修复局部编辑和读档后的显示恢复。包含旗帜自由选点修复和图片粘贴功能。" />
   <AccessLevel Value="Public" />
   <Screenshot Value="Properties/Screenshots/01-workflow-home.jpg" />
   <Screenshot Value="Properties/Screenshots/02-image-placement.jpg" />

@@ -1,5 +1,12 @@
 # Release status
 
+## 0.1.7 roundabout fill visibility (local candidate)
+
+- Reproduced the reported failure in `queue-1030-214635`: the bucket and preview filled the circle, but permanent placement left rectangular interior patches. Clearing `Overridden` and restoring the search-tree mask alone did not restore the renderer's cached visibility.
+- Building, brush repair and post-load recovery now restore `CullingInfo` and search masks together and call the game's public `PreCullingSystem.ResetCulling()` API. This refreshes the stationary camera without triggering another collision pass.
+- Native regression `queue-1030-220708` (DLL `0f61bcdc`) passed all 16 steps: circular bucket fill on flat and sloping ground, permanent builds, editing/rebuilding and save/reload. Every real patch instance retained visible masks; the invisible carrier is excluded. Inspected the built and reloaded screenshots and confirmed full circular coverage immediately after building. Earlier mask-only checks passed while screenshots still showed gaps; the camera refresh is required.
+- Two core cases check that near and far flower meshes reach all 16 sectors of the roundabout edge for flow and island patterns. The persistent native scenario is `suite/scenarios/roundabout-fill.json`.
+
 ## 0.1.6 clipboard images (local candidate)
 
 - The image design panel accepts the Paste image button and Ctrl+V outside text inputs. Clipboard PNG is preferred to retain transparency; native Windows bitmap and copied-image-file formats are also supported. Import runs on the existing worker thread and failed/empty clipboard reads preserve the previous image.

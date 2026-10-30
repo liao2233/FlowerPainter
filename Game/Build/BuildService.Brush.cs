@@ -100,7 +100,7 @@ namespace FlowerPainter.Game.Build
                     if (_brushVisible.Contains(kv.Key) && EntityManager.HasComponent<Overridden>(kv.Key))
                     {
                         EntityManager.RemoveComponent<Overridden>(kv.Key);
-                        if (EntityManager.HasComponent<PrefabRef>(kv.Key)) RestoreSearchMask(kv.Key, EntityManager.GetComponentData<PrefabRef>(kv.Key).m_Prefab);
+                        if (EntityManager.HasComponent<PrefabRef>(kv.Key)) RestoreRenderMasks(World, kv.Key, EntityManager.GetComponentData<PrefabRef>(kv.Key).m_Prefab);
                     }
                     if (!EntityManager.HasComponent<BatchesUpdated>(kv.Key)) EntityManager.AddComponent<BatchesUpdated>(kv.Key);
                 }
